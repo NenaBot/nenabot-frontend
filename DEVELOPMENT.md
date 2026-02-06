@@ -218,3 +218,26 @@ For issues specific to:
 - **Radix UI**: https://www.radix-ui.com/primitives/docs/overview/introduction
 - **Vite**: https://vitejs.dev/guide/
 - **React**: https://react.dev/
+
+## Running Tests
+
+This project uses Playwright for end-to-end testing.
+
+### Setup
+
+Install Playwright and its dependencies:
+```bash
+npm install --save-dev @playwright/test
+npx playwright install
+```
+
+The tests are configured to automatically start the dev server and test against localhost.
+- `npm run test` - Run tests
+- `npm run test:ui` - Interactive test runner with UI
+- `npm run test:debug` - Debug mode to step through tests
+- add filename e.g. `npm run test tests/example.spec.ts` to run specific file
+
+### Test Files
+
+Test files are located in the `tests/` directory with the `.spec.ts` extension.
+
