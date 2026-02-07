@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Play, MapPin, Grid3x3, Info, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
+import { Play, MapPin, Grid3x3, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
+import { CardSection } from './CardSection';
+import { FormField } from './FormField';
 
 export function RouteTab() {
   const [routeData, setRouteData] = useState({
@@ -21,12 +23,12 @@ export function RouteTab() {
           </p>
         </div>
 
-        <section className="border border-(--md-sys-color-outline-variant) rounded-2xl p-5 bg-(--md-sys-color-surface-container-lowest)">
-          <div className="flex items-center gap-2 mb-4">
+        <CardSection
+          title="Scan Parameters"
+          headerContent={
             <MapPin className="w-5 h-5 text-(--md-sys-color-primary)" />
-            <h3 className="text-lg">Scan Parameters</h3>
-          </div>
-          
+          }
+        >
           <div className="mb-5">
             <label className="flex items-start gap-3 cursor-pointer p-3 rounded-lg hover:bg-(--md-sys-color-surface-variant) transition-colors">
               <input 
@@ -45,11 +47,11 @@ export function RouteTab() {
           </div>
 
           <div className="space-y-4">
-            <div>
-              <label className="flex items-center gap-1 text-sm mb-2 text-(--md-sys-color-on-surface)">
-                Scan Pattern
-                <Info className="w-3.5 h-3.5 text-(--md-sys-color-on-surface-variant)" title="Pattern for area coverage" />
-              </label>
+            <FormField
+              label="Scan Pattern"
+              tooltip="Pattern for area coverage"
+              disabled={!routeData.routeEnabled}
+            >
               <select 
                 value={routeData.scanPattern}
                 onChange={(e) => setRouteData(prev => ({ ...prev, scanPattern: e.target.value }))}
@@ -60,13 +62,14 @@ export function RouteTab() {
                 <option value="spiral">Spiral Pattern</option>
                 <option value="random">Random Sampling</option>
               </select>
-            </div>
+            </FormField>
             
-            <div>
-              <label className="flex items-center gap-1 text-sm mb-2 text-(--md-sys-color-on-surface)">
-                Resolution (points/cm)
-                <Info className="w-3.5 h-3.5 text-(--md-sys-color-on-surface-variant)" title="Measurement density" />
-              </label>
+            <FormField
+              label="Resolution (points/cm)"
+              tooltip="Measurement density"
+              helpText="Higher = More detailed"
+              disabled={!routeData.routeEnabled}
+            >
               <input 
                 type="number" 
                 value={routeData.resolution}
@@ -76,17 +79,14 @@ export function RouteTab() {
                 min="10"
                 max="200"
               />
-              <p className="text-xs text-(--md-sys-color-on-surface-variant) mt-1">
-                Higher = More detailed
-              </p>
-            </div>
+            </FormField>
 
             <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="flex items-center gap-1 text-sm mb-2 text-(--md-sys-color-on-surface)">
-                  Width (cm)
-                  <Info className="w-3.5 h-3.5 text-(--md-sys-color-on-surface-variant)" title="Scan area width" />
-                </label>
+              <FormField
+                label="Width (cm)"
+                tooltip="Scan area width"
+                disabled={!routeData.routeEnabled}
+              >
                 <input 
                   type="number" 
                   value={routeData.areaWidth}
@@ -94,12 +94,12 @@ export function RouteTab() {
                   className="w-full px-3 py-2.5 border border-(--md-sys-color-outline) rounded-lg bg-(--md-sys-color-surface) text-sm focus:outline-none focus:ring-2 focus:ring-(--md-sys-color-primary)"
                   disabled={!routeData.routeEnabled}
                 />
-              </div>
-              <div>
-                <label className="flex items-center gap-1 text-sm mb-2 text-(--md-sys-color-on-surface)">
-                  Height (cm)
-                  <Info className="w-3.5 h-3.5 text-(--md-sys-color-on-surface-variant)" title="Scan area height" />
-                </label>
+              </FormField>
+              <FormField
+                label="Height (cm)"
+                tooltip="Scan area height"
+                disabled={!routeData.routeEnabled}
+              >
                 <input 
                   type="number" 
                   value={routeData.areaHeight}
@@ -107,7 +107,7 @@ export function RouteTab() {
                   className="w-full px-3 py-2.5 border border-(--md-sys-color-outline) rounded-lg bg-(--md-sys-color-surface) text-sm focus:outline-none focus:ring-2 focus:ring-(--md-sys-color-primary)"
                   disabled={!routeData.routeEnabled}
                 />
-              </div>
+              </FormField>
             </div>
           </div>
 
@@ -123,7 +123,7 @@ export function RouteTab() {
               </div>
             </div>
           </div>
-        </section>
+        </CardSection>
 
         <button className="w-full px-6 py-3 bg-(--md-sys-color-primary) text-(--md-sys-color-on-primary) rounded-full flex items-center justify-center gap-2 hover:shadow-lg transition-all text-sm">
           <Play className="w-4 h-4 fill-current" />
@@ -152,7 +152,7 @@ export function RouteTab() {
             </div>
           </div>
           
-          <div className="w-full h-[500px] bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] flex items-center justify-center relative">
+          <div className="w-full h-125 bg-linear-to-br from-[#2a2a2a] to-[#1a1a1a] flex items-center justify-center relative">
             <div className="text-center text-white/50">
               <Grid3x3 className="w-16 h-16 mx-auto mb-3 opacity-30" />
               <p className="text-sm">Map visualization will appear here</p>

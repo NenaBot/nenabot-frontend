@@ -80,7 +80,7 @@ export function ProgressTab() {
           <div className="px-5 py-3 border-b border-(--md-sys-color-outline-variant) bg-(--md-sys-color-surface)">
             <h3 className="text-sm font-medium">Event Log</h3>
           </div>
-          <div className="p-4 max-h-[250px] overflow-y-auto">
+          <div className="p-4 max-h-62.5 overflow-y-auto">
             <div className="space-y-2">
               {events.map((event) => (
                 <div 
@@ -88,13 +88,13 @@ export function ProgressTab() {
                   className="flex items-start gap-3 p-2 rounded-lg hover:bg-(--md-sys-color-surface-variant) transition-colors"
                 >
                   {event.type === 'success' && (
-                    <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
                   )}
                   {event.type === 'info' && (
-                    <div className="w-4 h-4 rounded-full border-2 border-blue-600 mt-0.5 flex-shrink-0" />
+                    <div className="w-4 h-4 rounded-full border-2 border-blue-600 mt-0.5 shrink-0" />
                   )}
                   {event.type === 'warning' && (
-                    <AlertTriangle className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                    <AlertTriangle className="w-4 h-4 text-orange-600 mt-0.5 shrink-0" />
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="text-xs text-(--md-sys-color-on-surface-variant) mb-0.5">
@@ -115,7 +115,7 @@ export function ProgressTab() {
           <div className="px-5 py-3 border-b border-(--md-sys-color-outline-variant) bg-(--md-sys-color-surface)">
             <h3 className="text-sm font-medium">Recent Measurements</h3>
           </div>
-          <div className="p-4 max-h-[250px] overflow-y-auto">
+          <div className="p-4 max-h-62.5 overflow-y-auto">
             <div className="space-y-2">
               {measurements.map((measurement) => (
                 <div 

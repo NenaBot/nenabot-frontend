@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { Play, Upload, Download, Info, RotateCcw, Save } from 'lucide-react';
+import { useState } from 'react';
+import { Play, Upload, Download, RotateCcw, Save } from 'lucide-react';
+import { CardSection } from './CardSection';
+import { FormField } from './FormField';
 
 export function SetupTab() {
   const [formData, setFormData] = useState({
@@ -47,20 +49,16 @@ export function SetupTab() {
       </div>
 
       {/* General Settings */}
-      <section className="border border-(--md-sys-color-outline-variant) rounded-2xl p-6 bg-(--md-sys-color-surface-container-lowest)">
-        <div className="flex items-start justify-between mb-5">
-          <div>
-            <h3 className="text-lg mb-1">General Settings</h3>
-            <p className="text-sm text-(--md-sys-color-on-surface-variant)">
-              Basic scan parameters and operational mode
-            </p>
-          </div>
+      <CardSection
+        title="General Settings"
+        description="Basic scan parameters and operational mode"
+        headerContent={
           <div className="flex items-center gap-2 px-3 py-1.5 bg-(--md-sys-color-surface-variant) rounded-full text-xs">
             <div className={`w-2 h-2 rounded-full ${formData.generalEnabled ? 'bg-green-600' : 'bg-gray-400'}`} />
             <span>{formData.generalEnabled ? 'Enabled' : 'Disabled'}</span>
           </div>
-        </div>
-        
+        }
+      >
         <div className="mb-5">
           <label className="flex items-start gap-3 cursor-pointer p-3 rounded-lg hover:bg-(--md-sys-color-surface-variant) transition-colors">
             <input 
@@ -79,11 +77,12 @@ export function SetupTab() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label className="flex items-center gap-1 text-sm mb-2 text-(--md-sys-color-on-surface)">
-              Scan Mode
-              <Info className="w-3.5 h-3.5 text-(--md-sys-color-on-surface-variant)" title="Select the scanning operation mode" />
-            </label>
+          <FormField
+            label="Scan Mode"
+            tooltip="Select the scanning operation mode"
+            helpText="Current: Continuous"
+            disabled={!formData.generalEnabled}
+          >
             <select 
               value={formData.scanMode}
               onChange={(e) => handleInputChange('scanMode', e.target.value)}
@@ -94,13 +93,14 @@ export function SetupTab() {
               <option value="single">Single Shot</option>
               <option value="burst">Burst Mode</option>
             </select>
-            <p className="text-xs text-(--md-sys-color-on-surface-variant) mt-1">Current: Continuous</p>
-          </div>
-          <div>
-            <label className="flex items-center gap-1 text-sm mb-2 text-(--md-sys-color-on-surface)">
-              Integration Time (ms)
-              <Info className="w-3.5 h-3.5 text-(--md-sys-color-on-surface-variant)" title="Time for signal integration" />
-            </label>
+          </FormField>
+
+          <FormField
+            label="Integration Time (ms)"
+            tooltip="Time for signal integration"
+            helpText="Range: 10-1000ms"
+            disabled={!formData.generalEnabled}
+          >
             <input 
               type="number" 
               value={formData.integrationTime}
@@ -110,13 +110,14 @@ export function SetupTab() {
               min="10"
               max="1000"
             />
-            <p className="text-xs text-(--md-sys-color-on-surface-variant) mt-1">Range: 10-1000ms</p>
-          </div>
-          <div>
-            <label className="flex items-center gap-1 text-sm mb-2 text-(--md-sys-color-on-surface)">
-              Average Scans
-              <Info className="w-3.5 h-3.5 text-(--md-sys-color-on-surface-variant)" title="Number of scans to average" />
-            </label>
+          </FormField>
+
+          <FormField
+            label="Average Scans"
+            tooltip="Number of scans to average"
+            helpText="Range: 1-100"
+            disabled={!formData.generalEnabled}
+          >
             <input 
               type="number" 
               value={formData.averageScans}
@@ -126,13 +127,14 @@ export function SetupTab() {
               min="1"
               max="100"
             />
-            <p className="text-xs text-(--md-sys-color-on-surface-variant) mt-1">Range: 1-100</p>
-          </div>
-          <div>
-            <label className="flex items-center gap-1 text-sm mb-2 text-(--md-sys-color-on-surface)">
-              Smoothing Window
-              <Info className="w-3.5 h-3.5 text-(--md-sys-color-on-surface-variant)" title="Data smoothing factor" />
-            </label>
+          </FormField>
+
+          <FormField
+            label="Smoothing Window"
+            tooltip="Data smoothing factor"
+            helpText="Range: 1-10"
+            disabled={!formData.generalEnabled}
+          >
             <input 
               type="number" 
               value={formData.smoothingWindow}
@@ -142,26 +144,21 @@ export function SetupTab() {
               min="1"
               max="10"
             />
-            <p className="text-xs text-(--md-sys-color-on-surface-variant) mt-1">Range: 1-10</p>
-          </div>
+          </FormField>
         </div>
-      </section>
+      </CardSection>
 
       {/* Spectrometer Settings */}
-      <section className="border border-(--md-sys-color-outline-variant) rounded-2xl p-6 bg-(--md-sys-color-surface-container-lowest)">
-        <div className="flex items-start justify-between mb-5">
-          <div>
-            <h3 className="text-lg mb-1">Spectrometer Settings</h3>
-            <p className="text-sm text-(--md-sys-color-on-surface-variant)">
-              Device-specific configuration for all connected spectrometers
-            </p>
-          </div>
+      <CardSection
+        title="Spectrometer Settings"
+        description="Device-specific configuration for all connected spectrometers"
+        headerContent={
           <div className="flex items-center gap-2 px-3 py-1.5 bg-(--md-sys-color-surface-variant) rounded-full text-xs">
             <div className={`w-2 h-2 rounded-full ${formData.spectrometerEnabled ? 'bg-green-600' : 'bg-gray-400'}`} />
             <span>{formData.spectrometerEnabled ? 'Enabled' : 'Disabled'}</span>
           </div>
-        </div>
-        
+        }
+      >
         <div className="mb-5">
           <label className="flex items-start gap-3 cursor-pointer p-3 rounded-lg hover:bg-(--md-sys-color-surface-variant) transition-colors">
             <input 
@@ -180,11 +177,12 @@ export function SetupTab() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label className="flex items-center gap-1 text-sm mb-2 text-(--md-sys-color-on-surface)">
-              Detection Mode
-              <Info className="w-3.5 h-3.5 text-(--md-sys-color-on-surface-variant)" title="Signal detection method" />
-            </label>
+          <FormField
+            label="Detection Mode"
+            tooltip="Signal detection method"
+            helpText="Current: Auto"
+            disabled={!formData.spectrometerEnabled}
+          >
             <select 
               value={formData.detectionMode}
               onChange={(e) => handleInputChange('detectionMode', e.target.value)}
@@ -195,13 +193,14 @@ export function SetupTab() {
               <option value="manual">Manual</option>
               <option value="adaptive">Adaptive</option>
             </select>
-            <p className="text-xs text-(--md-sys-color-on-surface-variant) mt-1">Current: Auto</p>
-          </div>
-          <div>
-            <label className="flex items-center gap-1 text-sm mb-2 text-(--md-sys-color-on-surface)">
-              Exposure Time (ms)
-              <Info className="w-3.5 h-3.5 text-(--md-sys-color-on-surface-variant)" title="Sensor exposure duration" />
-            </label>
+          </FormField>
+
+          <FormField
+            label="Exposure Time (ms)"
+            tooltip="Sensor exposure duration"
+            helpText="Range: 1-500ms"
+            disabled={!formData.spectrometerEnabled}
+          >
             <input 
               type="number" 
               value={formData.exposureTime}
@@ -211,13 +210,14 @@ export function SetupTab() {
               min="1"
               max="500"
             />
-            <p className="text-xs text-(--md-sys-color-on-surface-variant) mt-1">Range: 1-500ms</p>
-          </div>
-          <div>
-            <label className="flex items-center gap-1 text-sm mb-2 text-(--md-sys-color-on-surface)">
-              Gain Level
-              <Info className="w-3.5 h-3.5 text-(--md-sys-color-on-surface-variant)" title="Signal amplification level" />
-            </label>
+          </FormField>
+
+          <FormField
+            label="Gain Level"
+            tooltip="Signal amplification level"
+            helpText="Range: 1-10"
+            disabled={!formData.spectrometerEnabled}
+          >
             <input 
               type="number" 
               value={formData.gainLevel}
@@ -227,13 +227,14 @@ export function SetupTab() {
               min="1"
               max="10"
             />
-            <p className="text-xs text-(--md-sys-color-on-surface-variant) mt-1">Range: 1-10</p>
-          </div>
-          <div>
-            <label className="flex items-center gap-1 text-sm mb-2 text-(--md-sys-color-on-surface)">
-              Wavelength (nm)
-              <Info className="w-3.5 h-3.5 text-(--md-sys-color-on-surface-variant)" title="Measurement range" />
-            </label>
+          </FormField>
+
+          <FormField
+            label="Wavelength (nm)"
+            tooltip="Measurement range"
+            helpText="Format: min-max"
+            disabled={!formData.spectrometerEnabled}
+          >
             <input 
               type="text" 
               value={formData.wavelengthRange}
@@ -242,10 +243,9 @@ export function SetupTab() {
               disabled={!formData.spectrometerEnabled}
               placeholder="400-900"
             />
-            <p className="text-xs text-(--md-sys-color-on-surface-variant) mt-1">Format: min-max</p>
-          </div>
+          </FormField>
         </div>
-      </section>
+      </CardSection>
 
       {/* Action Buttons */}
       <div className="flex items-center justify-between pt-4 border-t border-(--md-sys-color-outline-variant)">
