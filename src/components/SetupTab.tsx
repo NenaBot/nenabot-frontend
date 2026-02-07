@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Play, Upload, Download, RotateCcw, Save } from 'lucide-react';
+import { ChevronRight, Upload, Download, RotateCcw, Save } from 'lucide-react';
 import { CardSection } from './CardSection';
 import { FormField } from './FormField';
 
@@ -258,8 +258,8 @@ export function SetupTab() {
           </button>
         </div>
         <button className="px-6 py-3 bg-(--md-sys-color-primary) text-(--md-sys-color-on-primary) rounded-full flex items-center gap-2 hover:shadow-lg transition-all text-sm">
-          <Play className="w-4 h-4 fill-current" />
-          Plan Route & Continue
+          Continue to Camera
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
     </div>

@@ -13,22 +13,23 @@ export function RouteTab() {
   });
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Left Panel - Route Settings */}
-      <div className="lg:col-span-1 space-y-6">
-        <div>
-          <h2 className="text-2xl mb-1">Route Planning</h2>
-          <p className="text-sm text-(--md-sys-color-on-surface-variant)">
-            Define the scan area and pattern
-          </p>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl mb-1">Route Planning</h2>
+        <p className="text-sm text-(--md-sys-color-on-surface-variant)">
+          Define the scan area and pattern
+        </p>
+      </div>
 
-        <CardSection
-          title="Scan Parameters"
-          headerContent={
-            <MapPin className="w-5 h-5 text-(--md-sys-color-primary)" />
-          }
-        >
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Panel - Route Settings */}
+        <div className="lg:col-span-1 space-y-6">
+          <CardSection
+            title="Scan Parameters"
+            headerContent={
+              <MapPin className="w-5 h-5 text-(--md-sys-color-primary)" />
+            }
+          >
           <div className="mb-5">
             <label className="flex items-start gap-3 cursor-pointer p-3 rounded-lg hover:bg-(--md-sys-color-surface-variant) transition-colors">
               <input 
@@ -124,48 +125,55 @@ export function RouteTab() {
             </div>
           </div>
         </CardSection>
+        </div>
 
-        <button className="w-full px-6 py-3 bg-(--md-sys-color-primary) text-(--md-sys-color-on-primary) rounded-full flex items-center justify-center gap-2 hover:shadow-lg transition-all text-sm">
+        {/* Right Panel - Map Visualization */}
+        <div className="lg:col-span-2">
+          <div className="border border-(--md-sys-color-outline-variant) rounded-2xl overflow-hidden bg-(--md-sys-color-surface-container-lowest)">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-(--md-sys-color-outline-variant) bg-(--md-sys-color-surface)">
+              <div className="flex items-center gap-2">
+                <Grid3x3 className="w-4 h-4 text-(--md-sys-color-on-surface-variant)" />
+                <h3 className="text-sm font-medium">Scan Area Preview</h3>
+              </div>
+              <div className="flex gap-1">
+                <button className="p-2 hover:bg-(--md-sys-color-surface-variant) rounded transition-colors" title="Zoom in">
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+                <button className="p-2 hover:bg-(--md-sys-color-surface-variant) rounded transition-colors" title="Zoom out">
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <button className="p-2 hover:bg-(--md-sys-color-surface-variant) rounded transition-colors" title="Fit to screen">
+                  <Maximize2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="w-full aspect-video bg-(--md-sys-color-surface-variant) flex items-center justify-center relative">
+              <div className="text-center p-6">
+                <div className="w-16 h-16 bg-(--md-sys-color-primary-container) rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Grid3x3 className="w-8 h-8 text-(--md-sys-color-on-primary-container)" />
+                </div>
+                <h4 className="text-base font-medium text-(--md-sys-color-on-surface) mb-1">Map Preview</h4>
+                <p className="text-xs text-(--md-sys-color-on-surface-variant)">
+                  Configure scan parameters to preview the route
+                </p>
+              </div>
+              
+              {/* Grid overlay */}
+              <div className="absolute inset-0 opacity-10" style={{
+                backgroundImage: 'linear-gradient(var(--md-sys-color-on-surface) 1px, transparent 1px), linear-gradient(90deg, var(--md-sys-color-on-surface) 1px, transparent 1px)',
+                backgroundSize: '50px 50px'
+              }} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-end pt-4 border-t border-(--md-sys-color-outline-variant)">
+        <button className="px-6 py-3 bg-(--md-sys-color-primary) text-(--md-sys-color-on-primary) rounded-full flex items-center gap-2 hover:shadow-lg transition-all text-sm">
           <Play className="w-4 h-4 fill-current" />
           Start Scan
         </button>
-      </div>
-
-      {/* Right Panel - Map Visualization */}
-      <div className="lg:col-span-2">
-        <div className="border border-(--md-sys-color-outline-variant) rounded-2xl overflow-hidden bg-(--md-sys-color-surface-container-lowest)">
-          <div className="flex items-center justify-between px-5 py-3 border-b border-(--md-sys-color-outline-variant) bg-(--md-sys-color-surface)">
-            <div className="flex items-center gap-2">
-              <Grid3x3 className="w-4 h-4 text-(--md-sys-color-on-surface-variant)" />
-              <span className="text-sm">Scan Area Visualization</span>
-            </div>
-            <div className="flex gap-1">
-              <button className="p-2 hover:bg-(--md-sys-color-surface-variant) rounded transition-colors" title="Zoom in">
-                <ZoomIn className="w-4 h-4" />
-              </button>
-              <button className="p-2 hover:bg-(--md-sys-color-surface-variant) rounded transition-colors" title="Zoom out">
-                <ZoomOut className="w-4 h-4" />
-              </button>
-              <button className="p-2 hover:bg-(--md-sys-color-surface-variant) rounded transition-colors" title="Fit to screen">
-                <Maximize2 className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-          
-          <div className="w-full h-125 bg-linear-to-br from-[#2a2a2a] to-[#1a1a1a] flex items-center justify-center relative">
-            <div className="text-center text-white/50">
-              <Grid3x3 className="w-16 h-16 mx-auto mb-3 opacity-30" />
-              <p className="text-sm">Map visualization will appear here</p>
-              <p className="text-xs mt-1">Configure scan parameters to preview route</p>
-            </div>
-            
-            {/* Grid overlay */}
-            <div className="absolute inset-0 opacity-10" style={{
-              backgroundImage: 'linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)',
-              backgroundSize: '50px 50px'
-            }} />
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -19,9 +19,17 @@ export function ProgressTab() {
   ];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Left Panel - Status and Controls */}
-      <div className="lg:col-span-1 space-y-6">
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl mb-1">Scan Progress</h2>
+        <p className="text-sm text-(--md-sys-color-on-surface-variant)">
+          Monitor live status, events, and recent measurements during the scan
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Panel - Status and Controls */}
+        <div className="lg:col-span-1 space-y-6">
         {/* Current Status */}
         <div className="border border-(--md-sys-color-outline-variant) rounded-2xl p-5 bg-(--md-sys-color-surface-container-lowest)">
           <div className="flex items-center justify-between mb-4">
@@ -145,11 +153,12 @@ export function ProgressTab() {
             </div>
           </div>
         </section>
-      </div>
+        </div>
 
-      {/* Right Panel - Live Camera Feed */}
-      <div className="lg:col-span-2">
-        <CameraView title="Live Camera Feed" showStatus={true} height="full" />
+        {/* Right Panel - Live Camera Feed */}
+        <div className="lg:col-span-2">
+          <CameraView title="Live Camera Feed" showStatus={true} height="full" />
+        </div>
       </div>
     </div>
   );

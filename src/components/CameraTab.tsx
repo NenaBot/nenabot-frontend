@@ -30,13 +30,9 @@ export function CameraTab({ onNext }: CameraTabProps) {
           <p className="text-sm text-(--md-sys-color-on-surface-variant) mb-6">
             Once you've verified the camera feed, lighting conditions, and battery detection, proceed to route planning.
           </p>
-          <button 
-            onClick={onNext}
-            className="w-full px-6 py-3 bg-(--md-sys-color-primary) text-(--md-sys-color-on-primary) rounded-full flex items-center justify-center gap-2 hover:shadow-lg transition-all text-sm"
-          >
-            Continue to Route
-            <ChevronRight className="w-4 h-4" />
-          </button>
+          <div className="text-xs text-(--md-sys-color-on-surface-variant)">
+            Make sure the preview is stable before proceeding.
+          </div>
         </div>
       </div>
 
@@ -85,6 +81,16 @@ export function CameraTab({ onNext }: CameraTabProps) {
           </div>
         </div>
       </section>
+
+      <div className="flex items-center justify-end pt-4 border-t border-(--md-sys-color-outline-variant)">
+        <button
+          onClick={onNext}
+          className="px-6 py-3 bg-(--md-sys-color-primary) text-(--md-sys-color-on-primary) rounded-full flex items-center gap-2 hover:shadow-lg transition-all text-sm"
+        >
+          Continue to Route
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 }
