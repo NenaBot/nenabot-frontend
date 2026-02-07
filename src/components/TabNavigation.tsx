@@ -17,29 +17,26 @@ export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
   return (
     <div className="border-b border-(--md-sys-color-outline-variant) bg-(--md-sys-color-surface)">
       <div className="flex gap-1">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => onTabChange(tab.id)}
-              className={`px-6 py-3 text-sm relative transition-all group ${
-                activeTab === tab.id
-                  ? 'text-(--md-sys-color-primary) bg-(--md-sys-color-primary-container)/30'
-                  : 'text-(--md-sys-color-on-surface-variant) hover:bg-(--md-sys-color-surface-variant)'
-              }`}
-              title={tab.description}
-            >
-              <div className="flex items-center gap-2">
-                <Icon className="w-4 h-4" />
-                <span>{tab.label}</span>
-              </div>
-              {activeTab === tab.id && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-(--md-sys-color-primary)" />
-              )}
-            </button>
-          );
-        })}
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => onTabChange(tab.id)}
+            className={`px-6 py-3 text-sm relative transition-all group ${
+              activeTab === tab.id
+                ? 'text-(--md-sys-color-primary) bg-(--md-sys-color-primary-container)/30'
+                : 'text-(--md-sys-color-on-surface-variant) hover:bg-(--md-sys-color-surface-variant)'
+            }`}
+            title={tab.description}
+          >
+            <div className="flex items-center gap-2">
+              <tab.icon className="w-4 h-4" />
+              <span>{tab.label}</span>
+            </div>
+            {activeTab === tab.id && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-(--md-sys-color-primary)" />
+            )}
+          </button>
+        ))}
       </div>
     </div>
   );

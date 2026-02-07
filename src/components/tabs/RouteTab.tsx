@@ -3,7 +3,11 @@ import { Play, MapPin, Grid3x3, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
 import { CardSection } from '../CardSection';
 import { FormField } from '../FormField';
 
-export function RouteTab() {
+interface RouteTabProps {
+  onNext?: () => void;
+}
+
+export function RouteTab({ onNext }: RouteTabProps) {
   const [routeData, setRouteData] = useState({
     routeEnabled: true,
     scanPattern: 'grid',
@@ -170,7 +174,7 @@ export function RouteTab() {
       </div>
 
       <div className="flex items-center justify-end pt-4 border-t border-(--md-sys-color-outline-variant)">
-        <button className="px-6 py-3 bg-(--md-sys-color-primary) text-(--md-sys-color-on-primary) rounded-full flex items-center gap-2 hover:shadow-lg transition-all text-sm">
+        <button onClick={onNext} className="px-6 py-3 bg-(--md-sys-color-primary) text-(--md-sys-color-on-primary) rounded-full flex items-center gap-2 hover:shadow-lg transition-all text-sm">
           <Play className="w-4 h-4 fill-current" />
           Start Scan
         </button>

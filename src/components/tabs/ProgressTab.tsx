@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Square, Pause, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { CameraView } from '../CameraView';
 
-export function ProgressTab() {
+interface ProgressTabProps {
+  onNext?: () => void;
+}
+
+export function ProgressTab({ onNext }: ProgressTabProps) {
   const events = [
     { id: 1, time: '14:32:15', type: 'info', message: 'Scan started successfully' },
     { id: 2, time: '14:32:18', type: 'success', message: 'Spectrometer initialized' },
@@ -17,6 +21,16 @@ export function ProgressTab() {
     { id: 3, point: 'A-003', wavelength: '500nm', intensity: 0.79, status: 'complete' },
     { id: 4, point: 'A-004', wavelength: '525nm', intensity: 0.85, status: 'processing' },
   ];
+
+  const scanProgress = 34; // TODO: Connect to actual scan progress from API
+
+  useEffect(() => {
+    // Auto-advance to results when scan completes
+    if (scanProgress === 100 && onNext) {
+      const timer = setTimeout(onNext, 1000); // 1s delay for visual feedback
+      return () => clearTimeout(timer);
+    }
+  }, [scanProgress, onNext]);
 
   return (
     <div className="space-y-6">
@@ -48,10 +62,10 @@ export function ProgressTab() {
             <div className="w-full h-2 bg-(--md-sys-color-surface-variant) rounded-full overflow-hidden">
               <div 
                 className="h-full bg-(--md-sys-color-primary) rounded-full transition-all"
-                style={{ width: '34%' }}
+                style={{ width: `${scanProgress}%` }}
               />
             </div>
-            <div className="text-xs text-(--md-sys-color-on-surface-variant)">34% complete</div>
+            <div className="text-xs text-(--md-sys-color-on-surface-variant)">{scanProgress}% complete</div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 mb-4">

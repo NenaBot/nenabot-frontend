@@ -11,16 +11,21 @@ import { ResultsTab } from './components/tabs/ResultsTab';
 export default function App() {
   const [activeTab, setActiveTab] = useState('setup');
 
+  const goToCamera = () => setActiveTab('camera');
+  const goToRoute = () => setActiveTab('route');
+  const goToProgress = () => setActiveTab('progress');
+  const goToResults = () => setActiveTab('results');
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'setup':
-        return <SetupTab />;
+        return <SetupTab onNext={goToCamera}/>;
       case 'camera':
-        return <CameraTab onNext={() => setActiveTab('route')} />;
+        return <CameraTab onNext={goToRoute} />;
       case 'route':
-        return <RouteTab />;
+        return <RouteTab onNext={goToProgress} />;
       case 'progress':
-        return <ProgressTab />;
+        return <ProgressTab onNext={goToResults} />;
       case 'results':
         return <ResultsTab />;
       default:

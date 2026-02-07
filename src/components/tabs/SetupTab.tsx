@@ -3,7 +3,11 @@ import { ChevronRight, Upload, Download, RotateCcw, Save } from 'lucide-react';
 import { CardSection } from '../CardSection';
 import { FormField } from '../FormField';
 
-export function SetupTab() {
+interface SetupTabProps {
+  onNext?: () => void;
+}
+
+export function SetupTab({ onNext }: SetupTabProps) {
   const [formData, setFormData] = useState({
     generalEnabled: true,
     spectrometerEnabled: true,
@@ -257,7 +261,7 @@ export function SetupTab() {
             <Download className="w-4 h-4" />
           </button>
         </div>
-        <button className="px-6 py-3 bg-(--md-sys-color-primary) text-(--md-sys-color-on-primary) rounded-full flex items-center gap-2 hover:shadow-lg transition-all text-sm">
+        <button onClick={onNext} className="px-6 py-3 bg-(--md-sys-color-primary) text-(--md-sys-color-on-primary) rounded-full flex items-center gap-2 hover:shadow-lg transition-all text-sm">
           Continue to Camera
           <ChevronRight className="w-4 h-4" />
         </button>
