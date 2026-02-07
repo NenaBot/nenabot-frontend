@@ -1,5 +1,5 @@
 import { CheckCircle, AlertTriangle, ChevronRight } from 'lucide-react';
-import { CameraView } from './CameraView';
+import { CameraView } from '../CameraView';
 
 interface CameraTabProps {
   onNext?: () => void;

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronRight, Upload, Download, RotateCcw, Save } from 'lucide-react';
-import { CardSection } from './CardSection';
-import { FormField } from './FormField';
+import { CardSection } from '../CardSection';
+import { FormField } from '../FormField';
 
 export function SetupTab() {
   const [formData, setFormData] = useState({

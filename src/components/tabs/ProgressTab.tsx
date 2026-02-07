@@ -1,6 +1,6 @@
 import React from 'react';
 import { Square, Pause, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
-import { CameraView } from './CameraView';
+import { CameraView } from '../CameraView';
 
 export function ProgressTab() {
   const events = [
