@@ -1,5 +1,6 @@
 import React from 'react';
-import { Square, Pause, Play, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { Square, Pause, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { CameraView } from './CameraView';
 
 export function ProgressTab() {
   const events = [
@@ -146,33 +147,9 @@ export function ProgressTab() {
         </section>
       </div>
 
-      {/* Right Panel - Live Visualization */}
+      {/* Right Panel - Live Camera Feed */}
       <div className="lg:col-span-2">
-        <div className="border border-(--md-sys-color-outline-variant) rounded-2xl overflow-hidden bg-(--md-sys-color-surface-container-lowest)">
-          <div className="flex items-center justify-between px-5 py-3 border-b border-(--md-sys-color-outline-variant) bg-(--md-sys-color-surface)">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-600 animate-pulse" />
-              <span className="text-sm">Live Progress Visualization</span>
-            </div>
-            <div className="text-xs text-(--md-sys-color-on-surface-variant)">
-              Last update: 1 second ago
-            </div>
-          </div>
-          
-          <div className="w-full h-[600px] bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] flex items-center justify-center relative">
-            <div className="text-center text-white/50">
-              <Play className="w-16 h-16 mx-auto mb-3 opacity-30" />
-              <p className="text-sm">Real-time scan progress visualization</p>
-              <p className="text-xs mt-1">Heat map and measurements will display here</p>
-            </div>
-            
-            {/* Simulated scan pattern */}
-            <div className="absolute inset-0 opacity-20" style={{
-              backgroundImage: 'radial-gradient(circle, rgba(103,80,164,0.5) 2px, transparent 2px)',
-              backgroundSize: '30px 30px'
-            }} />
-          </div>
-        </div>
+        <CameraView title="Live Camera Feed" showStatus={true} height="full" />
       </div>
     </div>
   );

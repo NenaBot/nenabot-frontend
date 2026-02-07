@@ -1,4 +1,4 @@
-import { Settings, MapPin, Activity, BarChart3 } from 'lucide-react';
+import { Settings, MapPin, Activity, BarChart3, Camera } from 'lucide-react';
 
 interface TabNavigationProps {
   activeTab: string;
@@ -8,6 +8,7 @@ interface TabNavigationProps {
 export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
   const tabs = [
     { id: 'setup', label: 'Setup', icon: Settings, description: 'Configure scan parameters' },
+    { id: 'camera', label: 'Camera', icon: Camera, description: 'Verify camera and detection' },
     { id: 'route', label: 'Route', icon: MapPin, description: 'Plan scan route' },
     { id: 'progress', label: 'Progress', icon: Activity, description: 'Monitor live scanning' },
     { id: 'results', label: 'Results', icon: BarChart3, description: 'View analysis' },

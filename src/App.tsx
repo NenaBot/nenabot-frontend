@@ -3,6 +3,7 @@ import { Header } from './components/Header';
 import { StatusCards } from './components/StatusCards';
 import { TabNavigation } from './components/TabNavigation';
 import { SetupTab } from './components/SetupTab';
+import { CameraTab } from './components/CameraTab';
 import { RouteTab } from './components/RouteTab';
 import { ProgressTab } from './components/ProgressTab';
 import { ResultsTab } from './components/ResultsTab';
@@ -14,6 +15,8 @@ export default function App() {
     switch (activeTab) {
       case 'setup':
         return <SetupTab />;
+      case 'camera':
+        return <CameraTab onNext={() => setActiveTab('route')} />;
       case 'route':
         return <RouteTab />;
       case 'progress':
