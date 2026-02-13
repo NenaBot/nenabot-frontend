@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { Square, Pause, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { CameraView } from '../CameraView';
 
@@ -30,6 +30,7 @@ export function ProgressTab({ onNext }: ProgressTabProps) {
       const timer = setTimeout(onNext, 1000); // 1s delay for visual feedback
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [scanProgress, onNext]);
 
   return (

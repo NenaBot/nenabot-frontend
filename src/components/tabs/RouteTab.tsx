@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Play, MapPin, Grid3x3, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { CardSection } from '../CardSection';
 import { FormField } from '../FormField';

@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { BarChart3, Download, Share2, Filter, TrendingUp } from 'lucide-react';
 
 export function ResultsTab() {
