@@ -22,7 +22,7 @@ export function ProgressTab({ onNext }: ProgressTabProps) {
     { id: 4, point: 'A-004', wavelength: '525nm', intensity: 0.85, status: 'processing' },
   ];
 
-  const scanProgress = 34; // TODO: Connect to actual scan progress from API
+  const scanProgress: number = 34; // TODO: Connect to actual scan progress from API
 
   useEffect(() => {
     // Auto-advance to results when scan completes
