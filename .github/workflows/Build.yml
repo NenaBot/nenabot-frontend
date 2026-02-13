@@ -2,9 +2,9 @@ name: Build
 
 on:
   push:
-    branches: [ main, feature/ui-ci ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, feature/ui-ci ]
+    branches: [ main ]
 
 jobs:
   build:
