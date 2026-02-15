@@ -62,6 +62,8 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "test:ui": "playwright test",
+    "test:ui:debug": "playwright test --debug"
   }
 }

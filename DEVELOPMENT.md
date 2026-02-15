@@ -219,9 +219,9 @@ For issues specific to:
 - **Vite**: https://vitejs.dev/guide/
 - **React**: https://react.dev/
 
-## Running Tests
+## Running UI Tests
 
-This project uses Playwright for end-to-end testing.
+This project uses Playwright for UI testing.
 
 ### Setup
 
@@ -233,11 +233,10 @@ npx playwright install
 
 The tests are configured to automatically start the dev server and test against localhost.
 - `npm run test` - Run tests
-- `npm run test:ui` - Interactive test runner with UI
-- `npm run test:debug` - Debug mode to step through tests
+- `npm run test:debug` - Run tests with the UI visible
 - add filename e.g. `npm run test tests/example.spec.ts` to run specific file
 
 ### Test Files
 
-Test files are located in the `tests/` directory with the `.spec.ts` extension.
+Test files are located in the `tests-ui` directory with the `.spec.ts` extension.
 
