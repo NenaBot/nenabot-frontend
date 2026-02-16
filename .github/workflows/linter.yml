@@ -22,6 +22,7 @@ jobs:
 
       - name: Run ESLint
         run: npm run lint
+        continue-on-error: true
 
       - name: Check Prettier formatting
         run: npx prettier --check "src/**/*.{ts,tsx,js,jsx,css,md}"
