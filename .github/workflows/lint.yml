@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6.2.0
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
@@ -22,37 +22,47 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      # We use '|| true' to ensure the workflow continues to the summary steps
       - name: Run ESLint
-        run: npm run lint > eslint-report.txt || true
+        run: npm run lint > eslint-report.txt 2>&1 || true
 
       - name: Run Stylelint
-        run: npm run lint:css > stylelint-report.txt || true
+        run: npm run lint:css > stylelint-report.txt 2>&1 || true
 
-      - name: Summarize ESLint issues in job summary
+      - name: Summarize ESLint issues
         if: always()
         run: |
-            echo "## :mag: ESLint Report" >> $GITHUB_STEP_SUMMARY
-            echo "<details><summary>Show ESLint Output (first 100 lines)</summary>" >> $GITHUB_STEP_SUMMARY
-            echo "```" >> $GITHUB_STEP_SUMMARY
+          touch eslint-report.txt
+          {
+            echo "## :mag: ESLint Report"
+            echo "<details><summary>Click to expand ESLint Output (Max 100 lines)</summary>"
+            echo ""
+            echo "```text"
             if [ -s eslint-report.txt ]; then
-              head -n 100 eslint-report.txt >> $GITHUB_STEP_SUMMARY
+              head -n 100 eslint-report.txt
             else
-              echo "No ESLint output found." >> $GITHUB_STEP_SUMMARY
+              echo "No ESLint output detected (Check if the command ran correctly)."
             fi
-            echo "```" >> $GITHUB_STEP_SUMMARY
-            echo "</details>" >> $GITHUB_STEP_SUMMARY
+            echo "```"
+            echo "</details>"
+            echo ""
+          } >> $GITHUB_STEP_SUMMARY
 
-      - name: Summarize Stylelint issues in job summary
+      - name: Summarize Stylelint issues
         if: always()
         run: |
-            echo "## :nail_care: Stylelint Report" >> $GITHUB_STEP_SUMMARY
-            echo "<details><summary>Show Stylelint Output (first 100 lines)</summary>" >> $GITHUB_STEP_SUMMARY
-            echo "```" >> $GITHUB_STEP_SUMMARY
+          touch stylelint-report.txt
+          {
+            echo "## :nail_care: Stylelint Report"
+            echo "<details><summary>Click to expand Stylelint Output (Max 100 lines)</summary>"
+            echo ""
+            echo "```text"
             if [ -s stylelint-report.txt ]; then
-              head -n 100 stylelint-report.txt >> $GITHUB_STEP_SUMMARY
+              head -n 100 stylelint-report.txt
             else
-              echo "No Stylelint output found." >> $GITHUB_STEP_SUMMARY
+              echo "No Stylelint output detected (Check if the command ran correctly)."
             fi
-            echo "```" >> $GITHUB_STEP_SUMMARY
-            echo "</details>" >> $GITHUB_STEP_SUMMARY
-
+            echo "```"
+            echo "</details>"
+            echo ""
+          } >> $GITHUB_STEP_SUMMARY
