@@ -23,11 +23,11 @@ jobs:
         run: npm ci
 
       - name: Run ESLint
-        run: npm run lint > eslint-report.txt 2>&1 || true
+        run: npm run lint > eslint-report.txt 2>&1
         continue-on-error: true
 
       - name: Run Stylelint
-        run: npm run lint:css > stylelint-report.txt 2>&1 || true
+        run: npm run lint:css > stylelint-report.txt 2>&1
         continue-on-error: true
 
       - name: Summarize ESLint issues
@@ -67,10 +67,3 @@ jobs:
           fi
 
           echo "" >> "$GITHUB_STEP_SUMMARY"
-
-      # Optional debug step – remove once confirmed working
-      - name: Show generated job summary (debug)
-        if: always()
-        run: |
-          echo "=== Job summary preview ==="
-          cat "$GITHUB_STEP_SUMMARY" || echo "(summary file is empty)"
