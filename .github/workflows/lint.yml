@@ -31,23 +31,25 @@ jobs:
       - name: Summarize ESLint issues in job summary
         if: always()
         run: |
-            echo '## :mag: ESLint Report' >> $GITHUB_STEP_SUMMARY
-            echo '<details><summary>Show ESLint Output (first 100 lines)</summary>' >> $GITHUB_STEP_SUMMARY
-            echo '' >> $GITHUB_STEP_SUMMARY
-            echo '\n```' >> $GITHUB_STEP_SUMMARY
+            echo "## :mag: ESLint Report" >> $GITHUB_STEP_SUMMARY
+            echo "<details><summary>Show ESLint Output (first 100 lines)</summary>" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "```" >> $GITHUB_STEP_SUMMARY
             head -n 100 eslint-report.txt >> $GITHUB_STEP_SUMMARY
-            echo '```\n' >> $GITHUB_STEP_SUMMARY
-            echo '</details>' >> $GITHUB_STEP_SUMMARY
+            echo "```" >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
 
       - name: Summarize Stylelint issues in job summary
         if: always()
         run: |
-            echo '## :nail_care: Stylelint Report' >> $GITHUB_STEP_SUMMARY
-            echo '<details><summary>Show Stylelint Output (first 100 lines)</summary>' >> $GITHUB_STEP_SUMMARY
-            echo '' >> $GITHUB_STEP_SUMMARY
-            echo '\n```' >> $GITHUB_STEP_SUMMARY
+            echo "## :nail_care: Stylelint Report" >> $GITHUB_STEP_SUMMARY
+            echo "<details><summary>Show Stylelint Output (first 100 lines)</summary>" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "```" >> $GITHUB_STEP_SUMMARY
             head -n 100 stylelint-report.txt >> $GITHUB_STEP_SUMMARY
-            echo '```\n' >> $GITHUB_STEP_SUMMARY
-            echo '</details>' >> $GITHUB_STEP_SUMMARY
+            echo "```" >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
 
  
