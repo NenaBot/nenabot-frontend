@@ -1,4 +1,4 @@
-name: Build
+name: Lint
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -17,12 +17,13 @@ jobs:
         uses: actions/setup-node@v6.2.0
         with:
           node-version: 20
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm install
-        
-      - name: Type check
-        run: npx tsc --noEmit
 
-      - name: Build
-        run: npm run build
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run Stylelint
+        run: npm run lint:css

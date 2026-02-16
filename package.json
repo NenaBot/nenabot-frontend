@@ -64,6 +64,24 @@
     "dev": "vite",
     "build": "vite build",
     "test:ui": "playwright test",
-    "test:ui:debug": "playwright test --debug"
+    "test:ui:debug": "playwright test --debug",
+    "lint": "eslint src --ext .ts,.tsx",
+    "format": "prettier --write .",
+    "lint:css": "stylelint 'src/**/*.{css,scss}'"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "src/**/*.{css,scss}": [
+      "stylelint --fix",
+      "prettier --write"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
   }
 }
