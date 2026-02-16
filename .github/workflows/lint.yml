@@ -33,10 +33,12 @@ jobs:
         run: |
             echo "## :mag: ESLint Report" >> $GITHUB_STEP_SUMMARY
             echo "<details><summary>Show ESLint Output (first 100 lines)</summary>" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
             echo "```" >> $GITHUB_STEP_SUMMARY
-            head -n 100 eslint-report.txt >> $GITHUB_STEP_SUMMARY
+            if [ -s eslint-report.txt ]; then
+              head -n 100 eslint-report.txt >> $GITHUB_STEP_SUMMARY
+            else
+              echo "No ESLint output found." >> $GITHUB_STEP_SUMMARY
+            fi
             echo "```" >> $GITHUB_STEP_SUMMARY
             echo "</details>" >> $GITHUB_STEP_SUMMARY
 
@@ -45,11 +47,12 @@ jobs:
         run: |
             echo "## :nail_care: Stylelint Report" >> $GITHUB_STEP_SUMMARY
             echo "<details><summary>Show Stylelint Output (first 100 lines)</summary>" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
             echo "```" >> $GITHUB_STEP_SUMMARY
-            head -n 100 stylelint-report.txt >> $GITHUB_STEP_SUMMARY
+            if [ -s stylelint-report.txt ]; then
+              head -n 100 stylelint-report.txt >> $GITHUB_STEP_SUMMARY
+            else
+              echo "No Stylelint output found." >> $GITHUB_STEP_SUMMARY
+            fi
             echo "```" >> $GITHUB_STEP_SUMMARY
             echo "</details>" >> $GITHUB_STEP_SUMMARY
 
- 
