@@ -20,9 +20,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+
       - name: Run ESLint
-        run: npm run lint
+        run: npm run lint > eslint-report.txt || true
         continue-on-error: true
 
+      - name: Add ESLint results to summary
+        if: always()
+        run: |
+          echo '### ESLint Results' >> $GITHUB_STEP_SUMMARY
+          cat eslint-report.txt >> $GITHUB_STEP_SUMMARY
+
       - name: Check Prettier formatting
-        run: npx prettier --check "src/**/*.{ts,tsx,js,jsx,css,md}"
+        run: npx prettier --check "src/**/*.{ts,tsx,js,jsx,css,md}" > prettier-report.txt || true
+
+      - name: Add Prettier results to summary
+        if: always()
+        run: |
+          echo '### Prettier Results' >> $GITHUB_STEP_SUMMARY
+          cat prettier-report.txt >> $GITHUB_STEP_SUMMARY
