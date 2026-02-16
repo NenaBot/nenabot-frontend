@@ -53,9 +53,16 @@
     "@types/node": "^20.10.0",
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",
+    "@typescript-eslint/eslint-plugin": "^8.56.0",
+    "@typescript-eslint/parser": "^8.56.0",
     "@vitejs/plugin-react-swc": "^3.10.2",
     "autoprefixer": "^10.4.17",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-react": "^7.37.5",
     "postcss": "^8.4.32",
+    "prettier": "^3.8.1",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.4.2",
     "vite": "^6.3.5"
@@ -64,6 +71,8 @@
     "dev": "vite",
     "build": "vite build",
     "test:ui": "playwright test",
-    "test:ui:debug": "playwright test --debug"
+    "test:ui:debug": "playwright test --debug",
+    "lint": "eslint src --ext .ts,.tsx",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,css,md}\""
   }
 }
