@@ -34,7 +34,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-(--md-sys-color-surface)">
+    <div className="min-h-screen bg-[var(--md-sys-color-surface)]">
       <Header />
       <main className="max-w-7xl mx-auto px-6 py-6">
         <StatusCards />

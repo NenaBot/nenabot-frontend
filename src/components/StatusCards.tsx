@@ -59,7 +59,7 @@ function getStatusColor(status: HardwareStatus) {
 }
 
 function getHardwareIcon(type: HardwareData['type']) {
-  const className = "text-xl text-(--md-sys-color-on-primary-container)";
+  const className = "text-xl text-[var(--md-sys-color-on-primary-container)]";
   
   switch (type) {
     case 'spectrometer':
@@ -75,20 +75,20 @@ function getHardwareIcon(type: HardwareData['type']) {
 
 function StatusCard({ data }: StatusCardProps) {
   return (
-    <div className="border border-(--md-sys-color-outline-variant) rounded-2xl p-5 bg-(--md-sys-color-surface-container-low) hover:shadow-md transition-all">
+    <div className="border border-[var(--md-sys-color-outline-variant)] rounded-2xl p-5 bg-[var(--md-sys-color-surface-container-low)] hover:shadow-md transition-all">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-start gap-3">
-          <div className=" w-10 h-10 flex items-center justify-center rounded-xl bg-(--md-sys-color-primary-container)">
+    <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-gradient-to-br from-[var(--md-sys-color-primary-container)] to-[var(--md-sys-color-surface-container-highest)]">
             {getHardwareIcon(data.type)}
           </div>
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="font-medium text-(--md-sys-color-on-surface)">
+              <span className="font-semibold text-lg text-[var(--md-sys-color-on-surface)]">
                 {data.title}
               </span>
               {getStatusIcon(data.status)}
             </div>
-            <div className="text-sm text-(--md-sys-color-on-surface-variant)">
+            <div className="text-xs text-[var(--md-sys-color-on-surface-variant)]">
               {getStatusText(data.status)}
             </div>
           </div>
@@ -98,10 +98,10 @@ function StatusCard({ data }: StatusCardProps) {
       <div className="space-y-2">
         {data.metrics.map((metric, index) => (
           <div key={index} className="flex items-center justify-between text-xs">
-            <span className="text-(--md-sys-color-on-surface-variant)">{metric.label}</span>
+            <span className="text-[var(--md-sys-color-on-surface-variant)]">{metric.label}</span>
             {metric.percentage !== undefined ? (
               <div className="flex items-center gap-2">
-                <div className="w-16 h-1.5 bg-(--md-sys-color-surface-variant) rounded-full overflow-hidden">
+                <div className="w-16 h-1.5 bg-[var(--md-sys-color-surface-variant)] rounded-full overflow-hidden">
                   <div 
                     className={`h-full rounded-full transition-all ${
                       metric.percentage >= 80 ? 'bg-green-600' : 
@@ -111,19 +111,19 @@ function StatusCard({ data }: StatusCardProps) {
                     style={{ width: `${metric.percentage}%` }}
                   />
                 </div>
-                <span className="text-(--md-sys-color-on-surface)">
+                <span className="text-[var(--md-sys-color-on-surface)]">
                   {metric.value}{metric.unit}
                 </span>
               </div>
             ) : (
-              <span className="text-(--md-sys-color-on-surface)">
+              <span className="text-[var(--md-sys-color-on-surface)]">
                 {metric.value}{metric.unit}
               </span>
             )}
           </div>
         ))}
-        <div className="flex items-center justify-between text-xs border-t border-(--md-sys-color-outline-variant) pt-2">
-          <span className="text-(--md-sys-color-on-surface-variant)">Device Status</span>
+        <div className="flex items-center justify-between text-xs border-t border-[var(--md-sys-color-outline-variant)] pt-2 mt-2">
+          <span className="text-[var(--md-sys-color-on-surface-variant)]">Device Status</span>
           <span className={`flex items-center gap-1 ${getStatusColor(data.status)}`}>
             <Activity className="w-3 h-3" />
             {getStatusText(data.status)}
