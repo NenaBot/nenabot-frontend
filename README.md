@@ -87,6 +87,7 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for:
 - Component development best practices
 - Troubleshooting
 - Architecture decisions
+- Testing instructions
 
 ## API Integration
 

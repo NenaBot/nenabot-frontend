@@ -95,12 +95,12 @@ export function CameraView({
   const showPlaceholder = streamStatus !== 'connected';
 
   return (
-    <div className="border border-(--md-sys-color-outline-variant) rounded-2xl overflow-hidden bg-(--md-sys-color-surface-container-lowest)">
+    <div className="border border-[var(--md-sys-color-outline-variant)] rounded-2xl overflow-hidden bg-[var(--md-sys-color-surface-container-lowest)]">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-(--md-sys-color-outline-variant) bg-(--md-sys-color-surface)">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface)]">
         <div className="flex items-center gap-2">
-          <Camera className="w-4 h-4 text-(--md-sys-color-on-surface-variant)" />
-          <h3 className="text-sm font-medium">{title}</h3>
+          <Camera className="w-4 h-4 text-[var(--md-sys-color-on-surface-variant)]" />
+          <h3 className="text-sm font-medium text-[var(--md-sys-color-on-surface)]">{title}</h3>
         </div>
         {showStatus && getStatusBadge()}
       </div>
@@ -130,9 +130,9 @@ export function CameraView({
                 {streamStatus === 'loading' ? 'Connecting to Camera' : 'Camera Unavailable'}
               </h4>
               <p className="text-xs text-(--md-sys-color-on-surface-variant)">
-                {streamStatus === 'loading' 
+                {streamStatus === 'loading'
                   ? 'Establishing connection to camera stream...'
-                  : retryInterval > 0 
+                  : retryInterval > 0
                     ? `Retrying connection every ${retryInterval / 1000}s`
                     : 'Unable to connect to camera stream'}
               </p>

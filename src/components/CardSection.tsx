@@ -14,14 +14,14 @@ export function CardSection({
   headerContent,
 }: CardSectionProps) {
   return (
-    <section className="border border-(--md-sys-color-outline-variant) rounded-2xl p-6 bg-(--md-sys-color-surface-container-lowest)">
+    <section className="border border-[var(--md-sys-color-outline-variant)] rounded-2xl p-6 bg-[var(--md-sys-color-surface-container-lowest)]">
       {(title || headerContent) && (
         <div className="flex items-start justify-between mb-5">
           {title && (
             <div>
-              <h3 className="text-lg mb-1">{title}</h3>
+              <h3 className="text-lg mb-1 text-[var(--md-sys-color-on-surface)]">{title}</h3>
               {description && (
-                <p className="text-sm text-(--md-sys-color-on-surface-variant)">
+                <p className="text-sm text-[var(--md-sys-color-on-surface-variant)]">
                   {description}
                 </p>
               )}

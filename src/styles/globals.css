@@ -29,6 +29,59 @@
   --md-sys-color-surface-container: #F3EDF7;
   --md-sys-color-surface-container-low: #F7F2FA;
   --md-sys-color-surface-container-lowest: #FFFFFF;
+
+  /* semantic colors used by components */
+  --md-sys-color-success: #0f9d58;
+  --md-sys-color-on-success: #FFFFFF;
+  --md-sys-color-warning: #f2a71b;
+  --md-sys-color-on-warning: #2b1600;
+  --md-sys-color-info: #1560ff;
+  --md-sys-color-on-info: #FFFFFF;
+  --status-success-bg: rgba(15,157,88,0.08);
+  --status-disabled-bg: rgba(60,60,67,0.05);
+}
+
+/* Dark theme tokens (applies when document.documentElement has class "dark") */
+.dark {
+  --md-sys-color-primary: #D0BCFF;
+  --md-sys-color-on-primary: #381E72;
+  --md-sys-color-primary-container: #4F378B;
+  --md-sys-color-on-primary-container: #EADDFF;
+  --md-sys-color-secondary: #CCC2DC;
+  --md-sys-color-on-secondary: #332D41;
+  --md-sys-color-secondary-container: #4A4458;
+  --md-sys-color-on-secondary-container: #E8DEF8;
+  --md-sys-color-tertiary: #EFB8C8;
+  --md-sys-color-on-tertiary: #370B1E;
+  --md-sys-color-tertiary-container: #54303A;
+  --md-sys-color-on-tertiary-container: #FFD8E4;
+  --md-sys-color-error: #F2B8B5;
+  --md-sys-color-on-error: #601410;
+  --md-sys-color-error-container: #8C1D18;
+  --md-sys-color-on-error-container: #F9DEDC;
+  --md-sys-color-background: #1C1B1F;
+  --md-sys-color-on-background: #E6E1E5;
+  --md-sys-color-surface: #1C1B1F;
+  --md-sys-color-on-surface: #E6E1E5;
+  --md-sys-color-surface-variant: #2B2A2E;
+  --md-sys-color-on-surface-variant: #CAC4D0;
+  --md-sys-color-outline: #939094;
+  --md-sys-color-outline-variant: #49454F;
+  --md-sys-color-surface-container-highest: #2A2A2D;
+  --md-sys-color-surface-container-high: #242427;
+  --md-sys-color-surface-container: #222224;
+  --md-sys-color-surface-container-low: #1F1F21;
+  --md-sys-color-surface-container-lowest: #121214;
+
+  /* semantic colors */
+  --md-sys-color-success: #57d28a;
+  --md-sys-color-on-success: #05270c;
+  --md-sys-color-warning: #FFD57A;
+  --md-sys-color-on-warning: #3a2a00;
+  --md-sys-color-info: #93C5FD;
+  --md-sys-color-on-info: #042A78;
+  --status-success-bg: rgba(87,210,138,0.12);
+  --status-disabled-bg: rgba(255,255,255,0.03);
 }
 
 /* Base Styles */
@@ -39,4 +92,12 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--md-sys-color-background);
+  color: var(--md-sys-color-on-background);
+  transition: background-color 200ms ease, color 200ms ease;
+}
+
+/* small helper for smooth theme transitions on larger UI changes */
+.theme-transition * {
+  transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }

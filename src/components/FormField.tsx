@@ -20,12 +20,12 @@ export function FormField({
 }: FormFieldProps) {
   return (
     <div>
-      <label className="flex items-center gap-1 text-sm mb-2 text-(--md-sys-color-on-surface)">
+  <label className="flex items-center gap-1 text-sm mb-2 text-[var(--md-sys-color-on-surface)]">
         {label}
-        {required && <span className="text-red-600">*</span>}
+        {required && <span className="text-[var(--md-sys-color-error)]">*</span>}
         {tooltip && (
           <div title={tooltip} className="cursor-help">
-            <Info className="w-3.5 h-3.5 text-(--md-sys-color-on-surface-variant)" />
+            <Info className="w-3.5 h-3.5 text-[var(--md-sys-color-on-surface-variant)]" />
           </div>
         )}
       </label>
@@ -33,7 +33,7 @@ export function FormField({
         {children}
       </div>
       {helpText && (
-        <p className="text-xs text-(--md-sys-color-on-surface-variant) mt-1">
+        <p className="text-xs text-[var(--md-sys-color-on-surface-variant)] mt-1">
           {helpText}
         </p>
       )}

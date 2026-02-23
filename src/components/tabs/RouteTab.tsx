@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Play, MapPin, Grid3x3, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { CardSection } from '../CardSection';
 import { FormField } from '../FormField';
@@ -20,7 +20,7 @@ export function RouteTab({ onNext }: RouteTabProps) {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl mb-1">Route Planning</h2>
-        <p className="text-sm text-(--md-sys-color-on-surface-variant)">
+        <p className="text-sm text-[var(--md-sys-color-on-surface-variant)]">
           Define the scan area and pattern
         </p>
       </div>
@@ -31,20 +31,20 @@ export function RouteTab({ onNext }: RouteTabProps) {
           <CardSection
             title="Scan Parameters"
             headerContent={
-              <MapPin className="w-5 h-5 text-(--md-sys-color-primary)" />
+              <MapPin className="w-5 h-5 text-[var(--md-sys-color-primary)]" />
             }
           >
           <div className="mb-5">
-            <label className="flex items-start gap-3 cursor-pointer p-3 rounded-lg hover:bg-(--md-sys-color-surface-variant) transition-colors">
+            <label className="flex items-start gap-3 cursor-pointer p-3 rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-colors">
               <input 
                 type="checkbox" 
                 checked={routeData.routeEnabled}
                 onChange={(e) => setRouteData(prev => ({ ...prev, routeEnabled: e.target.checked }))}
-                className="mt-1 w-5 h-5 rounded border-(--md-sys-color-outline) accent-(--md-sys-color-primary)"
+                className="mt-1 w-5 h-5 rounded border-[var(--md-sys-color-outline)] accent-[var(--md-sys-color-primary)]"
               />
               <div className="flex-1">
                 <div className="text-sm mb-0.5">Enable Automatic Route Planning</div>
-                <div className="text-xs text-(--md-sys-color-on-surface-variant)">
+                <div className="text-xs text-[var(--md-sys-color-on-surface-variant)]">
                   System will optimize scan path for efficiency
                 </div>
               </div>
@@ -60,7 +60,7 @@ export function RouteTab({ onNext }: RouteTabProps) {
               <select 
                 value={routeData.scanPattern}
                 onChange={(e) => setRouteData(prev => ({ ...prev, scanPattern: e.target.value }))}
-                className="w-full px-3 py-2.5 border border-(--md-sys-color-outline) rounded-lg bg-(--md-sys-color-surface) text-sm focus:outline-none focus:ring-2 focus:ring-(--md-sys-color-primary)"
+                className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)]"
                 disabled={!routeData.routeEnabled}
               >
                 <option value="grid">Grid Pattern</option>
@@ -79,7 +79,7 @@ export function RouteTab({ onNext }: RouteTabProps) {
                 type="number" 
                 value={routeData.resolution}
                 onChange={(e) => setRouteData(prev => ({ ...prev, resolution: e.target.value }))}
-                className="w-full px-3 py-2.5 border border-(--md-sys-color-outline) rounded-lg bg-(--md-sys-color-surface) text-sm focus:outline-none focus:ring-2 focus:ring-(--md-sys-color-primary)"
+                className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)]"
                 disabled={!routeData.routeEnabled}
                 min="10"
                 max="200"
@@ -96,7 +96,7 @@ export function RouteTab({ onNext }: RouteTabProps) {
                   type="number" 
                   value={routeData.areaWidth}
                   onChange={(e) => setRouteData(prev => ({ ...prev, areaWidth: e.target.value }))}
-                  className="w-full px-3 py-2.5 border border-(--md-sys-color-outline) rounded-lg bg-(--md-sys-color-surface) text-sm focus:outline-none focus:ring-2 focus:ring-(--md-sys-color-primary)"
+                  className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)]"
                   disabled={!routeData.routeEnabled}
                 />
               </FormField>
@@ -109,15 +109,15 @@ export function RouteTab({ onNext }: RouteTabProps) {
                   type="number" 
                   value={routeData.areaHeight}
                   onChange={(e) => setRouteData(prev => ({ ...prev, areaHeight: e.target.value }))}
-                  className="w-full px-3 py-2.5 border border-(--md-sys-color-outline) rounded-lg bg-(--md-sys-color-surface) text-sm focus:outline-none focus:ring-2 focus:ring-(--md-sys-color-primary)"
+                  className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)]"
                   disabled={!routeData.routeEnabled}
                 />
               </FormField>
             </div>
           </div>
 
-          <div className="mt-6 p-3 bg-(--md-sys-color-secondary-container) rounded-lg">
-            <div className="text-xs text-(--md-sys-color-on-secondary-container) space-y-1">
+            <div className="mt-6 p-3 bg-[var(--md-sys-color-secondary-container)] rounded-lg">
+            <div className="text-xs text-[var(--md-sys-color-on-secondary-container)] space-y-1">
               <div className="flex justify-between">
                 <span>Estimated Points:</span>
                 <span className="font-medium">2,500</span>
@@ -133,32 +133,32 @@ export function RouteTab({ onNext }: RouteTabProps) {
 
         {/* Right Panel - Map Visualization */}
         <div className="lg:col-span-2">
-          <div className="border border-(--md-sys-color-outline-variant) rounded-2xl overflow-hidden bg-(--md-sys-color-surface-container-lowest)">
-            <div className="flex items-center justify-between px-5 py-3 border-b border-(--md-sys-color-outline-variant) bg-(--md-sys-color-surface)">
+          <div className="border border-[var(--md-sys-color-outline-variant)] rounded-2xl overflow-hidden bg-[var(--md-sys-color-surface-container-lowest)]">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface)]">
               <div className="flex items-center gap-2">
-                <Grid3x3 className="w-4 h-4 text-(--md-sys-color-on-surface-variant)" />
+                <Grid3x3 className="w-4 h-4 text-[var(--md-sys-color-on-surface-variant)]" />
                 <h3 className="text-sm font-medium">Scan Area Preview</h3>
               </div>
               <div className="flex gap-1">
-                <button className="p-2 hover:bg-(--md-sys-color-surface-variant) rounded transition-colors" title="Zoom in">
+                <button className="p-2 hover:bg-[var(--md-sys-color-surface-variant)] rounded transition-colors" title="Zoom in">
                   <ZoomIn className="w-4 h-4" />
                 </button>
-                <button className="p-2 hover:bg-(--md-sys-color-surface-variant) rounded transition-colors" title="Zoom out">
+                <button className="p-2 hover:bg-[var(--md-sys-color-surface-variant)] rounded transition-colors" title="Zoom out">
                   <ZoomOut className="w-4 h-4" />
                 </button>
-                <button className="p-2 hover:bg-(--md-sys-color-surface-variant) rounded transition-colors" title="Fit to screen">
+                <button className="p-2 hover:bg-[var(--md-sys-color-surface-variant)] rounded transition-colors" title="Fit to screen">
                   <Maximize2 className="w-4 h-4" />
                 </button>
               </div>
             </div>
             
-            <div className="w-full aspect-video bg-(--md-sys-color-surface-variant) flex items-center justify-center relative">
+            <div className="w-full aspect-video bg-[var(--md-sys-color-surface-variant)] flex items-center justify-center relative">
               <div className="text-center p-6">
-                <div className="w-16 h-16 bg-(--md-sys-color-primary-container) rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Grid3x3 className="w-8 h-8 text-(--md-sys-color-on-primary-container)" />
+                <div className="w-16 h-16 bg-[var(--md-sys-color-primary-container)] rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Grid3x3 className="w-8 h-8 text-[var(--md-sys-color-on-primary-container)]" />
                 </div>
-                <h4 className="text-base font-medium text-(--md-sys-color-on-surface) mb-1">Map Preview</h4>
-                <p className="text-xs text-(--md-sys-color-on-surface-variant)">
+                <h4 className="text-base font-medium text-[var(--md-sys-color-on-surface)] mb-1">Map Preview</h4>
+                <p className="text-xs text-[var(--md-sys-color-on-surface-variant)]">
                   Configure scan parameters to preview the route
                 </p>
               </div>
@@ -173,8 +173,8 @@ export function RouteTab({ onNext }: RouteTabProps) {
         </div>
       </div>
 
-      <div className="flex items-center justify-end pt-4 border-t border-(--md-sys-color-outline-variant)">
-        <button onClick={onNext} className="px-6 py-3 bg-(--md-sys-color-primary) text-(--md-sys-color-on-primary) rounded-full flex items-center gap-2 hover:shadow-lg transition-all text-sm">
+      <div className="flex items-center justify-end pt-4 border-t border-[var(--md-sys-color-outline-variant)]">
+        <button onClick={onNext} className="px-6 py-3 bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)] rounded-full flex items-center gap-2 hover:shadow-lg transition-all text-sm">
           <Play className="w-4 h-4 fill-current" />
           Start Scan
         </button>

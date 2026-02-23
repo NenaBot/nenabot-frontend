@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { Square, Pause, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { CameraView } from '../CameraView';
 
@@ -22,7 +22,7 @@ export function ProgressTab({ onNext }: ProgressTabProps) {
     { id: 4, point: 'A-004', wavelength: '525nm', intensity: 0.85, status: 'processing' },
   ];
 
-  const scanProgress = 34; // TODO: Connect to actual scan progress from API
+  const scanProgress: number = 34; // TODO: Connect to actual scan progress from API
 
   useEffect(() => {
     // Auto-advance to results when scan completes
@@ -30,13 +30,14 @@ export function ProgressTab({ onNext }: ProgressTabProps) {
       const timer = setTimeout(onNext, 1000); // 1s delay for visual feedback
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [scanProgress, onNext]);
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl mb-1">Scan Progress</h2>
-        <p className="text-sm text-(--md-sys-color-on-surface-variant)">
+        <p className="text-sm text-[var(--md-sys-color-on-surface-variant)]">
           Monitor live status, events, and recent measurements during the scan
         </p>
       </div>
@@ -45,7 +46,7 @@ export function ProgressTab({ onNext }: ProgressTabProps) {
         {/* Left Panel - Status and Controls */}
         <div className="lg:col-span-1 space-y-6">
         {/* Current Status */}
-        <div className="border border-(--md-sys-color-outline-variant) rounded-2xl p-5 bg-(--md-sys-color-surface-container-lowest)">
+        <div className="border border-[var(--md-sys-color-outline-variant)] rounded-2xl p-5 bg-[var(--md-sys-color-surface-container-lowest)]">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg">Scan Status</h3>
             <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-800 rounded-full text-xs">
@@ -56,28 +57,28 @@ export function ProgressTab({ onNext }: ProgressTabProps) {
           
           <div className="space-y-3 mb-4">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-(--md-sys-color-on-surface-variant)">Progress</span>
-              <span className="text-(--md-sys-color-on-surface) font-medium">847 / 2500 points</span>
+              <span className="text-[var(--md-sys-color-on-surface-variant)]">Progress</span>
+              <span className="text-[var(--md-sys-color-on-surface)] font-medium">847 / 2500 points</span>
             </div>
-            <div className="w-full h-2 bg-(--md-sys-color-surface-variant) rounded-full overflow-hidden">
+            <div className="w-full h-2 bg-[var(--md-sys-color-surface-variant)] rounded-full overflow-hidden">
               <div 
-                className="h-full bg-(--md-sys-color-primary) rounded-full transition-all"
+                className="h-full bg-[var(--md-sys-color-primary)] rounded-full transition-all"
                 style={{ width: `${scanProgress}%` }}
               />
             </div>
-            <div className="text-xs text-(--md-sys-color-on-surface-variant)">{scanProgress}% complete</div>
+            <div className="text-xs text-[var(--md-sys-color-on-surface-variant)]">{scanProgress}% complete</div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="p-3 bg-(--md-sys-color-surface-variant) rounded-lg">
-              <div className="text-xs text-(--md-sys-color-on-surface-variant) mb-1">Elapsed</div>
+            <div className="p-3 bg-[var(--md-sys-color-surface-variant)] rounded-lg">
+              <div className="text-xs text-[var(--md-sys-color-on-surface-variant)] mb-1">Elapsed</div>
               <div className="flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5" />
                 <span className="text-sm font-medium">4m 12s</span>
               </div>
             </div>
-            <div className="p-3 bg-(--md-sys-color-surface-variant) rounded-lg">
-              <div className="text-xs text-(--md-sys-color-on-surface-variant) mb-1">Remaining</div>
+            <div className="p-3 bg-[var(--md-sys-color-surface-variant)] rounded-lg">
+              <div className="text-xs text-[var(--md-sys-color-on-surface-variant)] mb-1">Remaining</div>
               <div className="flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5" />
                 <span className="text-sm font-medium">~8m 15s</span>
@@ -86,11 +87,11 @@ export function ProgressTab({ onNext }: ProgressTabProps) {
           </div>
 
           <div className="flex gap-2">
-            <button className="flex-1 px-4 py-2.5 border border-(--md-sys-color-outline) rounded-lg flex items-center justify-center gap-2 hover:bg-(--md-sys-color-surface-variant) transition-all text-sm">
+            <button className="flex-1 px-4 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg flex items-center justify-center gap-2 hover:bg-[var(--md-sys-color-surface-variant)] transition-all text-sm">
               <Pause className="w-4 h-4" />
               Pause
             </button>
-            <button className="flex-1 px-4 py-2.5 bg-(--md-sys-color-error) text-(--md-sys-color-on-error) rounded-lg flex items-center justify-center gap-2 hover:shadow-lg transition-all text-sm">
+            <button className="flex-1 px-4 py-2.5 bg-[var(--md-sys-color-error)] text-[var(--md-sys-color-on-error)] rounded-lg flex items-center justify-center gap-2 hover:shadow-lg transition-all text-sm">
               <Square className="w-4 h-4 fill-current" />
               Abort
             </button>
@@ -98,8 +99,8 @@ export function ProgressTab({ onNext }: ProgressTabProps) {
         </div>
 
         {/* Event List */}
-        <section className="border border-(--md-sys-color-outline-variant) rounded-2xl overflow-hidden bg-(--md-sys-color-surface-container-lowest)">
-          <div className="px-5 py-3 border-b border-(--md-sys-color-outline-variant) bg-(--md-sys-color-surface)">
+        <section className="border border-[var(--md-sys-color-outline-variant)] rounded-2xl overflow-hidden bg-[var(--md-sys-color-surface-container-lowest)]">
+          <div className="px-5 py-3 border-b border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface)]">
             <h3 className="text-sm font-medium">Event Log</h3>
           </div>
           <div className="p-4 max-h-62.5 overflow-y-auto">
@@ -107,7 +108,7 @@ export function ProgressTab({ onNext }: ProgressTabProps) {
               {events.map((event) => (
                 <div 
                   key={event.id}
-                  className="flex items-start gap-3 p-2 rounded-lg hover:bg-(--md-sys-color-surface-variant) transition-colors"
+                  className="flex items-start gap-3 p-2 rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-colors"
                 >
                   {event.type === 'success' && (
                     <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
@@ -119,10 +120,10 @@ export function ProgressTab({ onNext }: ProgressTabProps) {
                     <AlertTriangle className="w-4 h-4 text-orange-600 mt-0.5 shrink-0" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs text-(--md-sys-color-on-surface-variant) mb-0.5">
+                    <div className="text-xs text-[var(--md-sys-color-on-surface-variant)] mb-0.5">
                       {event.time}
                     </div>
-                    <div className="text-sm text-(--md-sys-color-on-surface)">
+                    <div className="text-sm text-[var(--md-sys-color-on-surface)]">
                       {event.message}
                     </div>
                   </div>
@@ -133,8 +134,8 @@ export function ProgressTab({ onNext }: ProgressTabProps) {
         </section>
 
         {/* Measurements List */}
-        <section className="border border-(--md-sys-color-outline-variant) rounded-2xl overflow-hidden bg-(--md-sys-color-surface-container-lowest)">
-          <div className="px-5 py-3 border-b border-(--md-sys-color-outline-variant) bg-(--md-sys-color-surface)">
+        <section className="border border-[var(--md-sys-color-outline-variant)] rounded-2xl overflow-hidden bg-[var(--md-sys-color-surface-container-lowest)]">
+          <div className="px-5 py-3 border-b border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface)]">
             <h3 className="text-sm font-medium">Recent Measurements</h3>
           </div>
           <div className="p-4 max-h-62.5 overflow-y-auto">
@@ -142,7 +143,7 @@ export function ProgressTab({ onNext }: ProgressTabProps) {
               {measurements.map((measurement) => (
                 <div 
                   key={measurement.id}
-                  className="p-3 border border-(--md-sys-color-outline-variant) rounded-lg hover:bg-(--md-sys-color-surface-variant) transition-colors"
+                  className="p-3 border border-[var(--md-sys-color-outline-variant)] rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-colors"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium">{measurement.point}</span>
@@ -154,12 +155,12 @@ export function ProgressTab({ onNext }: ProgressTabProps) {
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
-                      <span className="text-(--md-sys-color-on-surface-variant)">λ: </span>
-                      <span className="text-(--md-sys-color-on-surface)">{measurement.wavelength}</span>
+                      <span className="text-[var(--md-sys-color-on-surface-variant)]">λ: </span>
+                      <span className="text-[var(--md-sys-color-on-surface)]">{measurement.wavelength}</span>
                     </div>
                     <div>
-                      <span className="text-(--md-sys-color-on-surface-variant)">I: </span>
-                      <span className="text-(--md-sys-color-on-surface)">{measurement.intensity}</span>
+                      <span className="text-[var(--md-sys-color-on-surface-variant)]">I: </span>
+                      <span className="text-[var(--md-sys-color-on-surface)]">{measurement.intensity}</span>
                     </div>
                   </div>
                 </div>

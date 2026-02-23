@@ -218,3 +218,25 @@ For issues specific to:
 - **Radix UI**: https://www.radix-ui.com/primitives/docs/overview/introduction
 - **Vite**: https://vitejs.dev/guide/
 - **React**: https://react.dev/
+
+## Running UI Tests
+
+This project uses Playwright for UI testing.
+
+### Setup
+
+Install Playwright and its dependencies:
+```bash
+npm install --save-dev @playwright/test
+npx playwright install
+```
+
+The tests are configured to automatically start the dev server and test against localhost.
+- `npm run test` - Run tests
+- `npm run test:debug` - Run tests with the UI visible
+- add filename e.g. `npm run test tests/example.spec.ts` to run specific file
+
+### Test Files
+
+Test files are located in the `tests-ui` directory with the `.spec.ts` extension.
+
