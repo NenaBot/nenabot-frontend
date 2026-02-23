@@ -102,4 +102,19 @@ export const apiClient = {
 
   delete: <T,>(endpoint: string, config?: RequestConfig) =>
     request<T>(endpoint, { ...config, method: 'DELETE' }),
+
+  /**
+   * Get the full URL for the video stream endpoint
+   * Used for MJPEG multipart streams that need direct src access
+   */
+  getVideoStreamUrl: (): string => {
+    return `${API_BASE_URL}/api/camera/stream`;
+  },
+
+  /**
+   * Get the base API URL (useful for debugging or direct access)
+   */
+  getBaseUrl: (): string => {
+    return API_BASE_URL;
+  },
 };
