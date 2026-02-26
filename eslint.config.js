@@ -30,6 +30,9 @@ export default [
       ...reactPlugin.configs.recommended.rules,
       ...prettierConfig.rules,
       "prettier/prettier": "error",
+      "react/react-in-jsx-scope": "off",
+      "react/jsx-uses-react": "off",
+      "no-undef": "off",
     },
     settings: {
       react: {

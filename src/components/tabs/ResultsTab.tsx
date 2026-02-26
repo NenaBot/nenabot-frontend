@@ -1,4 +1,3 @@
-
 import { BarChart3, Download, Share2, Filter, TrendingUp } from 'lucide-react';
 
 export function ResultsTab() {
@@ -13,15 +12,15 @@ export function ResultsTab() {
           </p>
         </div>
         <div className="flex gap-2">
-            <button className="px-4 py-2 border border-[var(--md-sys-color-outline)] rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-colors text-sm flex items-center gap-2">
+          <button className="px-4 py-2 border border-[var(--md-sys-color-outline)] rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-colors text-sm flex items-center gap-2">
             <Filter className="w-4 h-4" />
             Filter
           </button>
-            <button className="px-4 py-2 border border-[var(--md-sys-color-outline)] rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-colors text-sm flex items-center gap-2">
+          <button className="px-4 py-2 border border-[var(--md-sys-color-outline)] rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-colors text-sm flex items-center gap-2">
             <Share2 className="w-4 h-4" />
             Share
           </button>
-            <button className="px-4 py-2 bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)] rounded-lg hover:shadow-md transition-all text-sm flex items-center gap-2">
+          <button className="px-4 py-2 bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)] rounded-lg hover:shadow-md transition-all text-sm flex items-center gap-2">
             <Download className="w-4 h-4" />
             Export Data
           </button>
@@ -29,15 +28,15 @@ export function ResultsTab() {
       </div>
 
       {/* Empty State */}
-        <div className="border border-[var(--md-sys-color-outline-variant)] rounded-2xl p-12 bg-[var(--md-sys-color-surface-container-lowest)]">
+      <div className="border border-[var(--md-sys-color-outline-variant)] rounded-2xl p-12 bg-[var(--md-sys-color-surface-container-lowest)]">
         <div className="max-w-md mx-auto text-center">
           <div className="w-20 h-20 bg-[var(--md-sys-color-primary-container)] rounded-full flex items-center justify-center mx-auto mb-4">
             <BarChart3 className="w-10 h-10 text-[var(--md-sys-color-on-primary-container)]" />
           </div>
           <h3 className="text-xl mb-2">No Results Available</h3>
           <p className="text-sm text-[var(--md-sys-color-on-surface-variant)] mb-6">
-            Complete a scan to view detailed analysis, spectral data, and heat maps. 
-            Results will include wavelength distributions, intensity measurements, and statistical analysis.
+            Complete a scan to view detailed analysis, spectral data, and heat maps. Results will
+            include wavelength distributions, intensity measurements, and statistical analysis.
           </p>
           <div className="flex flex-col gap-3 max-w-xs mx-auto">
             <button className="px-6 py-3 bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)] rounded-full hover:shadow-lg transition-all text-sm">

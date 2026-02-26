@@ -1,7 +1,6 @@
 import React from 'react';
 
-interface MaterialSymbolProps
-  extends React.HTMLAttributes<HTMLSpanElement> {
+interface MaterialSymbolProps extends React.HTMLAttributes<HTMLSpanElement> {
   name: string;
   size?: 'small' | 'default' | 'large';
   weight?: 100 | 200 | 300 | 400 | 500 | 600 | 700;
@@ -9,10 +8,7 @@ interface MaterialSymbolProps
   grade?: -25 | 0 | 200;
 }
 
-export const MaterialSymbol = React.forwardRef<
-  HTMLSpanElement,
-  MaterialSymbolProps
->(
+export const MaterialSymbol = React.forwardRef<HTMLSpanElement, MaterialSymbolProps>(
   (
     {
       name,
@@ -24,15 +20,12 @@ export const MaterialSymbol = React.forwardRef<
       style = {},
       ...props
     },
-    ref
+    ref,
   ) => {
-    const sizeClass =
-      size === 'small' ? 'text-sm' : size === 'large' ? 'text-lg' : 'text-base';
+    const sizeClass = size === 'small' ? 'text-sm' : size === 'large' ? 'text-lg' : 'text-base';
 
     const symbolStyle: React.CSSProperties = {
-      fontVariationSettings: `'opsz' 24, 'wght' ${weight}, 'FILL' ${
-        fill ? 1 : 0
-      }, 'GRAD' ${grade}`,
+      fontVariationSettings: `'opsz' 24, 'wght' ${weight}, 'FILL' ${fill ? 1 : 0}, 'GRAD' ${grade}`,
       ...style,
     };
 
@@ -46,7 +39,7 @@ export const MaterialSymbol = React.forwardRef<
         {name}
       </span>
     );
-  }
+  },
 );
 
 MaterialSymbol.displayName = 'MaterialSymbol';

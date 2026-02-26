@@ -32,11 +32,15 @@ export function MeasurementLogCard({ measurements }: MeasurementLogCardProps) {
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
                   <span className="text-[var(--md-sys-color-on-surface-variant)]">λ: </span>
-                  <span className="text-[var(--md-sys-color-on-surface)]">{measurement.wavelength}</span>
+                  <span className="text-[var(--md-sys-color-on-surface)]">
+                    {measurement.wavelength}
+                  </span>
                 </div>
                 <div>
                   <span className="text-[var(--md-sys-color-on-surface-variant)]">I: </span>
-                  <span className="text-[var(--md-sys-color-on-surface)]">{measurement.intensity}</span>
+                  <span className="text-[var(--md-sys-color-on-surface)]">
+                    {measurement.intensity}
+                  </span>
                 </div>
               </div>
             </div>

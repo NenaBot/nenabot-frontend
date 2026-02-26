@@ -31,7 +31,9 @@ export function EventLogCard({ events }: EventLogCardProps) {
                 <AlertTriangle className="w-4 h-4 text-orange-600 mt-0.5 shrink-0" />
               )}
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-[var(--md-sys-color-on-surface-variant)] mb-0.5">{event.time}</div>
+                <div className="text-xs text-[var(--md-sys-color-on-surface-variant)] mb-0.5">
+                  {event.time}
+                </div>
                 <div className="text-sm text-[var(--md-sys-color-on-surface)]">{event.message}</div>
               </div>
             </div>

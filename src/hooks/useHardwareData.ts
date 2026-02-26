@@ -35,9 +35,8 @@ function normalizeHardwareData(data: HardwareAPIDataMap): HardwareDataMap {
 
     return {
       ...device,
-      lastUpdate: device.lastUpdate instanceof Date
-        ? device.lastUpdate
-        : new Date(device.lastUpdate),
+      lastUpdate:
+        device.lastUpdate instanceof Date ? device.lastUpdate : new Date(device.lastUpdate),
     } as HardwareData;
   };
 
@@ -51,7 +50,7 @@ function normalizeHardwareData(data: HardwareAPIDataMap): HardwareDataMap {
 /**
  * Hook for fetching hardware data from the backend API.
  * Automatically uses mock data in development if VITE_USE_MOCK_DATA=true
- * 
+ *
  * Usage:
  * ```tsx
  * const { spectrometer, camera, robotarm, isLoading, error } = useHardwareData();
@@ -61,7 +60,7 @@ export function useHardwareData(): UseHardwareDataReturn {
   const [data, setData] = useState<HardwareDataMap>({
     spectrometer: null,
     camera: null,
-    robotarm: null
+    robotarm: null,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -103,14 +102,14 @@ export function useHardwareData(): UseHardwareDataReturn {
 /**
  * Hook for fetching real-time hardware data with polling.
  * Automatically refreshes data at specified interval.
- * 
+ *
  * @param intervalMs - Polling interval in milliseconds (default: 1000)
  */
 export function useHardwareDataPolling(intervalMs: number = 1000): UseHardwareDataReturn {
   const [data, setData] = useState<HardwareDataMap>({
     spectrometer: null,
     camera: null,
-    robotarm: null
+    robotarm: null,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -122,7 +121,7 @@ export function useHardwareDataPolling(intervalMs: number = 1000): UseHardwareDa
         setData({
           spectrometer: { ...mockHardwareData.spectrometer, lastUpdate: new Date() },
           camera: { ...mockHardwareData.camera, lastUpdate: new Date() },
-          robotarm: { ...mockHardwareData.robotarm, lastUpdate: new Date() }
+          robotarm: { ...mockHardwareData.robotarm, lastUpdate: new Date() },
         });
         setLastUpdated(new Date());
       } else {

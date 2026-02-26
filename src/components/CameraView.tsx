@@ -12,10 +12,10 @@ type StreamStatus = 'loading' | 'connected' | 'disconnected' | 'error';
 
 const DEFAULT_RETRY_INTERVAL = 5000; // 5 seconds
 
-export function CameraView({ 
-  title = 'Live Camera Feed', 
+export function CameraView({
+  title = 'Live Camera Feed',
   showStatus = true,
-  height = 'standard'
+  height = 'standard',
 }: CameraViewProps) {
   const retryInterval = DEFAULT_RETRY_INTERVAL;
   const [streamStatus, setStreamStatus] = useState<StreamStatus>('loading');
@@ -26,7 +26,7 @@ export function CameraView({
   const heightMap = {
     compact: 'aspect-video',
     standard: 'aspect-video',
-    full: 'h-[600px]'
+    full: 'h-[600px]',
   };
 
   useEffect(() => {
@@ -41,7 +41,7 @@ export function CameraView({
 
     const handleError = () => {
       setStreamStatus('disconnected');
-      
+
       // Auto-retry if enabled
       if (retryInterval > 0) {
         retryTimeoutRef.current = window.setTimeout(() => {
@@ -119,7 +119,9 @@ export function CameraView({
         {showPlaceholder && (
           <div className="absolute inset-0 bg-(--md-sys-color-surface-variant) flex items-center justify-center">
             <div className="text-center p-6">
-              <div className={`w-16 h-16 ${streamStatus === 'loading' ? 'bg-(--md-sys-color-secondary-container)' : 'bg-(--md-sys-color-error-container)'} rounded-full flex items-center justify-center mx-auto mb-3`}>
+              <div
+                className={`w-16 h-16 ${streamStatus === 'loading' ? 'bg-(--md-sys-color-secondary-container)' : 'bg-(--md-sys-color-error-container)'} rounded-full flex items-center justify-center mx-auto mb-3`}
+              >
                 {streamStatus === 'loading' ? (
                   <Camera className="w-8 h-8 text-(--md-sys-color-on-secondary-container) animate-pulse" />
                 ) : (

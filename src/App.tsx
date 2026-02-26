@@ -19,7 +19,7 @@ export default function App() {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'setup':
-        return <SetupTab onNext={goToCamera}/>;
+        return <SetupTab onNext={goToCamera} />;
       case 'camera':
         return <CameraTab onNext={goToRoute} />;
       case 'route':
@@ -39,9 +39,7 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-6 py-6">
         <StatusCards />
         <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-        <div className="mt-6">
-          {renderTabContent()}
-        </div>
+        <div className="mt-6">{renderTabContent()}</div>
       </main>
     </div>
   );

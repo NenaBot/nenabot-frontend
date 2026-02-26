@@ -17,7 +17,9 @@ function useDarkMode() {
     root.classList.toggle('light', !dark);
     try {
       localStorage.setItem('nenabot-theme', dark ? 'dark' : 'light');
-    } catch (_) {}
+    } catch {
+      return;
+    }
   }, [dark]);
 
   useEffect(() => {
@@ -49,18 +51,20 @@ export function Header() {
           </div>
           <div>
             <h1 className="text-3xl text-[var(--md-sys-color-on-surface)]">{appConfig.name}</h1>
-            <p className="text-xs text-[var(--md-sys-color-on-surface-variant)]">{appConfig.description} v{appConfig.version}</p>
+            <p className="text-xs text-[var(--md-sys-color-on-surface-variant)]">
+              {appConfig.description} v{appConfig.version}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button 
+          <button
             className="p-2 rounded-full hover:bg-[var(--md-sys-color-surface-variant)] transition-colors"
             title="Help & Documentation"
           >
             <HelpCircle className="w-5 h-5 text-[var(--md-sys-color-on-surface-variant)]" />
           </button>
 
-          <button 
+          <button
             className="p-2 rounded-full hover:bg-[var(--md-sys-color-surface-variant)] transition-colors"
             title="System Settings"
           >
@@ -73,13 +77,17 @@ export function Header() {
             onClick={() => setDark((d) => !d)}
             aria-label="Toggle dark mode"
           >
-            {dark ? <Sun className="w-5 h-5 text-[var(--md-sys-color-on-surface-variant)]" /> : <Moon className="w-5 h-5 text-[var(--md-sys-color-on-surface-variant)]" />}
+            {dark ? (
+              <Sun className="w-5 h-5 text-[var(--md-sys-color-on-surface-variant)]" />
+            ) : (
+              <Moon className="w-5 h-5 text-[var(--md-sys-color-on-surface-variant)]" />
+            )}
           </button>
 
           {appConfig.repository.enabled && (
-            <a 
-              href={appConfig.repository.url} 
-              target="_blank" 
+            <a
+              href={appConfig.repository.url}
+              target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--md-sys-color-secondary-container)] text-[var(--md-sys-color-on-secondary-container)] hover:shadow-md transition-all text-sm"
               title="View on GitHub"

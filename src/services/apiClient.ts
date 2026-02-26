@@ -16,7 +16,7 @@ export class APIError extends Error {
   constructor(
     public status: number,
     public code: string,
-    message: string
+    message: string,
   ) {
     super(message);
     this.name = 'APIError';
@@ -31,10 +31,7 @@ interface RequestConfig {
   retries?: number;
 }
 
-async function request<T>(
-  endpoint: string,
-  config: RequestConfig = {}
-): Promise<T> {
+async function request<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
   const {
     method = 'GET',
     headers = {},
@@ -65,7 +62,7 @@ async function request<T>(
       throw new APIError(
         response.status,
         error.code || 'UNKNOWN_ERROR',
-        error.message || `HTTP ${response.status}`
+        error.message || `HTTP ${response.status}`,
       );
     }
 
@@ -79,7 +76,7 @@ async function request<T>(
       !(error instanceof APIError) &&
       !(error instanceof TypeError && error.message.includes('JSON'))
     ) {
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
       return request<T>(endpoint, { ...config, retries: retries - 1 });
     }
 
@@ -88,19 +85,19 @@ async function request<T>(
 }
 
 export const apiClient = {
-  get: <T,>(endpoint: string, config?: RequestConfig) =>
+  get: <T>(endpoint: string, config?: RequestConfig) =>
     request<T>(endpoint, { ...config, method: 'GET' }),
 
-  post: <T,>(endpoint: string, body?: unknown, config?: RequestConfig) =>
+  post: <T>(endpoint: string, body?: unknown, config?: RequestConfig) =>
     request<T>(endpoint, { ...config, method: 'POST', body }),
 
-  put: <T,>(endpoint: string, body?: unknown, config?: RequestConfig) =>
+  put: <T>(endpoint: string, body?: unknown, config?: RequestConfig) =>
     request<T>(endpoint, { ...config, method: 'PUT', body }),
 
-  patch: <T,>(endpoint: string, body?: unknown, config?: RequestConfig) =>
+  patch: <T>(endpoint: string, body?: unknown, config?: RequestConfig) =>
     request<T>(endpoint, { ...config, method: 'PATCH', body }),
 
-  delete: <T,>(endpoint: string, config?: RequestConfig) =>
+  delete: <T>(endpoint: string, config?: RequestConfig) =>
     request<T>(endpoint, { ...config, method: 'DELETE' }),
 
   /**

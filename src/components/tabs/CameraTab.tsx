@@ -25,12 +25,13 @@ export function CameraTab({ onNext }: CameraTabProps) {
         <div className="border border-[var(--md-sys-color-outline-variant)] rounded-2xl p-6 bg-[var(--md-sys-color-surface-container-lowest)]">
           <div className="flex items-start gap-3 mb-4">
             <div className="p-2 bg-[var(--md-sys-color-tertiary-container)] rounded-lg">
-                <CheckCircle className="w-5 h-5 text-[var(--md-sys-color-on-tertiary-container)]" />
+              <CheckCircle className="w-5 h-5 text-[var(--md-sys-color-on-tertiary-container)]" />
             </div>
             <h3 className="font-medium">Lighting Conditions</h3>
           </div>
           <p className="text-sm text-[var(--md-sys-color-on-surface-variant)]">
-            Ensure consistent, uniform lighting across the scan area. Avoid direct sunlight or harsh shadows that could affect spectral readings.
+            Ensure consistent, uniform lighting across the scan area. Avoid direct sunlight or harsh
+            shadows that could affect spectral readings.
           </p>
         </div>
 
@@ -43,7 +44,8 @@ export function CameraTab({ onNext }: CameraTabProps) {
             <h3 className="font-medium">Camera Focus & Position</h3>
           </div>
           <p className="text-sm text-[var(--md-sys-color-on-surface-variant)]">
-            Verify that the camera is properly focused and positioned to capture the entire battery scan area. Check that the frame is stable and aligned.
+            Verify that the camera is properly focused and positioned to capture the entire battery
+            scan area. Check that the frame is stable and aligned.
           </p>
         </div>
 
@@ -56,7 +58,8 @@ export function CameraTab({ onNext }: CameraTabProps) {
             <h3 className="font-medium">Battery Detection</h3>
           </div>
           <p className="text-sm text-[var(--md-sys-color-on-surface-variant)]">
-            Confirm that the battery detection algorithm correctly identifies battery positions. Verify that all expected batteries are detected and properly marked.
+            Confirm that the battery detection algorithm correctly identifies battery positions.
+            Verify that all expected batteries are detected and properly marked.
           </p>
         </div>
       </div>

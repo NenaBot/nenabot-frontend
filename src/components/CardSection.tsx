@@ -7,12 +7,7 @@ interface CardSectionProps {
   headerContent?: React.ReactNode;
 }
 
-export function CardSection({
-  title,
-  description,
-  children,
-  headerContent,
-}: CardSectionProps) {
+export function CardSection({ title, description, children, headerContent }: CardSectionProps) {
   return (
     <section className="border border-[var(--md-sys-color-outline-variant)] rounded-2xl p-6 bg-[var(--md-sys-color-surface-container-lowest)]">
       {(title || headerContent) && (

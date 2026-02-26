@@ -13,8 +13,8 @@ export const mockSpectrometerData: SpectrometerData = {
     { label: 'Last Reading', value: '2.1s ago' },
     { label: 'Signal Strength', value: 97, unit: '%', percentage: 97 },
     { label: 'Wavelength', value: 532, unit: 'nm' },
-    { label: 'Integration Time', value: 100, unit: 'ms' }
-  ]
+    { label: 'Integration Time', value: 100, unit: 'ms' },
+  ],
 };
 
 export const mockCameraData: CameraData = {
@@ -31,8 +31,8 @@ export const mockCameraData: CameraData = {
     { label: 'Last Frame', value: '0.5s ago' },
     { label: 'Frame Rate', value: 30, unit: 'fps', percentage: 100 },
     { label: 'Resolution', value: '1920x1080' },
-    { label: 'Exposure', value: 33.3, unit: 'ms' }
-  ]
+    { label: 'Exposure', value: 33.3, unit: 'ms' },
+  ],
 };
 
 export const mockRobotArmData: RobotArmData = {
@@ -49,12 +49,12 @@ export const mockRobotArmData: RobotArmData = {
     { label: 'Status', value: 'Ready' },
     { label: 'Position', value: 'X: 125.5, Y: 230.2, Z: 450.0', unit: 'mm' },
     { label: 'Gripper', value: 'Open' },
-    { label: 'Last Movement', value: '15s ago' }
-  ]
+    { label: 'Last Movement', value: '15s ago' },
+  ],
 };
 
 export const mockHardwareData = {
   spectrometer: mockSpectrometerData,
   camera: mockCameraData,
-  robotarm: mockRobotArmData
+  robotarm: mockRobotArmData,
 };

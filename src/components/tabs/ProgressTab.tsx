@@ -3,7 +3,11 @@ import { CameraView } from '../CameraView';
 import { CurrentScanStatusCard } from './progress/CurrentScanStatusCard';
 import { EventLogCard } from './progress/EventLogCard';
 import { MeasurementLogCard } from './progress/MeasurementLogCard';
-import { getScanProgressPercent, isTerminalScanState, ProgressTabState } from './progress/progress.model';
+import {
+  getScanProgressPercent,
+  isTerminalScanState,
+  ProgressTabState,
+} from './progress/progress.model';
 
 interface ProgressTabProps {
   onNext?: () => void;

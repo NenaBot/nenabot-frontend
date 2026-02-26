@@ -59,8 +59,8 @@ function getStatusColor(status: HardwareStatus) {
 }
 
 function getHardwareIcon(type: HardwareData['type']) {
-  const className = "text-xl text-(--md-sys-color-on-primary-container)";
-  
+  const className = 'text-xl text-(--md-sys-color-on-primary-container)';
+
   switch (type) {
     case 'spectrometer':
       return <MaterialSymbol name="lab_research" className={className} />;
@@ -78,7 +78,7 @@ function StatusCard({ data }: StatusCardProps) {
     <div className="border border-(--md-sys-color-outline-variant) rounded-2xl p-5 bg-(--md-sys-color-surface-container-low) hover:shadow-md transition-all">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-start gap-3">
-    <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-linear-to-br from-[var(--md-sys-color-primary-container)] to-[var(--md-sys-color-surface-container-highest)]">
+          <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-linear-to-br from-[var(--md-sys-color-primary-container)] to-[var(--md-sys-color-surface-container-highest)]">
             {getHardwareIcon(data.type)}
           </div>
           <div>
@@ -94,7 +94,7 @@ function StatusCard({ data }: StatusCardProps) {
           </div>
         </div>
       </div>
-      
+
       <div className="space-y-2">
         {data.metrics.map((metric, index) => (
           <div key={index} className="flex items-center justify-between text-xs">
@@ -102,22 +102,26 @@ function StatusCard({ data }: StatusCardProps) {
             {metric.percentage !== undefined ? (
               <div className="flex items-center gap-2">
                 <div className="w-16 h-1.5 bg-(--md-sys-color-surface-variant) rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className={`h-full rounded-full transition-all ${
-                      metric.percentage >= 80 ? 'bg-green-600' : 
-                      metric.percentage >= 50 ? 'bg-yellow-600' : 
-                      'bg-red-600'
+                      metric.percentage >= 80
+                        ? 'bg-green-600'
+                        : metric.percentage >= 50
+                          ? 'bg-yellow-600'
+                          : 'bg-red-600'
                     }`}
                     style={{ width: `${metric.percentage}%` }}
                   />
                 </div>
                 <span className="text-(--md-sys-color-on-surface)">
-                  {metric.value}{metric.unit}
+                  {metric.value}
+                  {metric.unit}
                 </span>
               </div>
             ) : (
               <span className="text-(--md-sys-color-on-surface)">
-                {metric.value}{metric.unit}
+                {metric.value}
+                {metric.unit}
               </span>
             )}
           </div>
@@ -153,7 +157,13 @@ function StatusCardSkeleton() {
   );
 }
 
-function StatusCardsError({ message, onRetry }: { message: string; onRetry: () => void | Promise<void> }) {
+function StatusCardsError({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void | Promise<void>;
+}) {
   return (
     <div className="border border-(--md-sys-color-error) rounded-2xl p-5 bg-(--md-sys-color-error-container)">
       <div className="flex items-start justify-between gap-4">

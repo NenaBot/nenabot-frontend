@@ -43,7 +43,9 @@ export function CurrentScanStatusCard({ scan }: CurrentScanStatusCardProps) {
             style={{ width: `${progress}%` }}
           />
         </div>
-        <div className="text-xs text-[var(--md-sys-color-on-surface-variant)]">{progress}% complete</div>
+        <div className="text-xs text-[var(--md-sys-color-on-surface-variant)]">
+          {progress}% complete
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-4">
@@ -55,10 +57,14 @@ export function CurrentScanStatusCard({ scan }: CurrentScanStatusCardProps) {
           </div>
         </div>
         <div className="p-3 bg-[var(--md-sys-color-surface-variant)] rounded-lg">
-          <div className="text-xs text-[var(--md-sys-color-on-surface-variant)] mb-1">Remaining</div>
+          <div className="text-xs text-[var(--md-sys-color-on-surface-variant)] mb-1">
+            Remaining
+          </div>
           <div className="flex items-center gap-1">
             <Clock className="w-3.5 h-3.5" />
-            <span className="text-sm font-medium">~{formatDuration(scan.estimatedRemainingSeconds)}</span>
+            <span className="text-sm font-medium">
+              ~{formatDuration(scan.estimatedRemainingSeconds)}
+            </span>
           </div>
         </div>
       </div>

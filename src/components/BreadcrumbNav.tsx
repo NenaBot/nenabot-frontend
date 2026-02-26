@@ -20,9 +20,7 @@ export function BreadcrumbNav({ activeTab }: BreadcrumbNavProps) {
       <ChevronRight className="w-4 h-4" />
       <span>NenäBot Control Panel</span>
       <ChevronRight className="w-4 h-4" />
-      <span className="text-[var(--md-sys-color-primary)]">
-        {tabNames[activeTab] || activeTab}
-      </span>
+      <span className="text-[var(--md-sys-color-primary)]">{tabNames[activeTab] || activeTab}</span>
     </nav>
   );
 }

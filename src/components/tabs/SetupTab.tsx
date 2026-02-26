@@ -22,7 +22,7 @@ export function SetupTab({ onNext }: SetupTabProps) {
   });
 
   const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -36,13 +36,13 @@ export function SetupTab({ onNext }: SetupTabProps) {
           </p>
         </div>
         <div className="flex gap-2">
-          <button 
+          <button
             className="p-2 border border-[var(--md-sys-color-outline)] rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-colors"
             title="Reset to defaults"
           >
             <RotateCcw className="w-4 h-4" />
           </button>
-          <button 
+          <button
             className="px-4 py-2 border border-[var(--md-sys-color-outline)] rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-colors text-sm flex items-center gap-2"
             title="Save configuration"
           >
@@ -58,15 +58,17 @@ export function SetupTab({ onNext }: SetupTabProps) {
         description="Basic scan parameters and operational mode"
         headerContent={
           <div className="flex items-center gap-2 px-3 py-1.5 bg-[var(--md-sys-color-surface-variant)] rounded-full text-xs">
-            <div className={`w-2 h-2 rounded-full ${formData.generalEnabled ? 'bg-green-600' : 'bg-gray-400'}`} />
+            <div
+              className={`w-2 h-2 rounded-full ${formData.generalEnabled ? 'bg-green-600' : 'bg-gray-400'}`}
+            />
             <span>{formData.generalEnabled ? 'Enabled' : 'Disabled'}</span>
           </div>
         }
       >
         <div className="mb-5">
           <label className="flex items-start gap-3 cursor-pointer p-3 rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-colors">
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               checked={formData.generalEnabled}
               onChange={(e) => handleInputChange('generalEnabled', e.target.checked)}
               className="mt-1 w-5 h-5 rounded border-[var(--md-sys-color-outline)] accent-[var(--md-sys-color-primary)]"
@@ -87,7 +89,7 @@ export function SetupTab({ onNext }: SetupTabProps) {
             helpText="Current: Continuous"
             disabled={!formData.generalEnabled}
           >
-            <select 
+            <select
               value={formData.scanMode}
               onChange={(e) => handleInputChange('scanMode', e.target.value)}
               className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)] transition-all"
@@ -105,8 +107,8 @@ export function SetupTab({ onNext }: SetupTabProps) {
             helpText="Range: 10-1000ms"
             disabled={!formData.generalEnabled}
           >
-            <input 
-              type="number" 
+            <input
+              type="number"
               value={formData.integrationTime}
               onChange={(e) => handleInputChange('integrationTime', e.target.value)}
               className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)] transition-all"
@@ -122,8 +124,8 @@ export function SetupTab({ onNext }: SetupTabProps) {
             helpText="Range: 1-100"
             disabled={!formData.generalEnabled}
           >
-            <input 
-              type="number" 
+            <input
+              type="number"
               value={formData.averageScans}
               onChange={(e) => handleInputChange('averageScans', e.target.value)}
               className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)] transition-all"
@@ -139,8 +141,8 @@ export function SetupTab({ onNext }: SetupTabProps) {
             helpText="Range: 1-10"
             disabled={!formData.generalEnabled}
           >
-            <input 
-              type="number" 
+            <input
+              type="number"
               value={formData.smoothingWindow}
               onChange={(e) => handleInputChange('smoothingWindow', e.target.value)}
               className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)] transition-all"
@@ -158,15 +160,17 @@ export function SetupTab({ onNext }: SetupTabProps) {
         description="Device-specific configuration for all connected spectrometers"
         headerContent={
           <div className="flex items-center gap-2 px-3 py-1.5 bg-[var(--md-sys-color-surface-variant)] rounded-full text-xs">
-            <div className={`w-2 h-2 rounded-full ${formData.spectrometerEnabled ? 'bg-green-600' : 'bg-gray-400'}`} />
+            <div
+              className={`w-2 h-2 rounded-full ${formData.spectrometerEnabled ? 'bg-green-600' : 'bg-gray-400'}`}
+            />
             <span>{formData.spectrometerEnabled ? 'Enabled' : 'Disabled'}</span>
           </div>
         }
       >
         <div className="mb-5">
           <label className="flex items-start gap-3 cursor-pointer p-3 rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-colors">
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               checked={formData.spectrometerEnabled}
               onChange={(e) => handleInputChange('spectrometerEnabled', e.target.checked)}
               className="mt-1 w-5 h-5 rounded border-[var(--md-sys-color-outline)] accent-[var(--md-sys-color-primary)]"
@@ -187,7 +191,7 @@ export function SetupTab({ onNext }: SetupTabProps) {
             helpText="Current: Auto"
             disabled={!formData.spectrometerEnabled}
           >
-            <select 
+            <select
               value={formData.detectionMode}
               onChange={(e) => handleInputChange('detectionMode', e.target.value)}
               className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)] transition-all"
@@ -205,8 +209,8 @@ export function SetupTab({ onNext }: SetupTabProps) {
             helpText="Range: 1-500ms"
             disabled={!formData.spectrometerEnabled}
           >
-            <input 
-              type="number" 
+            <input
+              type="number"
               value={formData.exposureTime}
               onChange={(e) => handleInputChange('exposureTime', e.target.value)}
               className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)] transition-all"
@@ -222,8 +226,8 @@ export function SetupTab({ onNext }: SetupTabProps) {
             helpText="Range: 1-10"
             disabled={!formData.spectrometerEnabled}
           >
-            <input 
-              type="number" 
+            <input
+              type="number"
               value={formData.gainLevel}
               onChange={(e) => handleInputChange('gainLevel', e.target.value)}
               className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)] transition-all"
@@ -239,8 +243,8 @@ export function SetupTab({ onNext }: SetupTabProps) {
             helpText="Format: min-max"
             disabled={!formData.spectrometerEnabled}
           >
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={formData.wavelengthRange}
               onChange={(e) => handleInputChange('wavelengthRange', e.target.value)}
               className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)] transition-all"
@@ -254,14 +258,23 @@ export function SetupTab({ onNext }: SetupTabProps) {
       {/* Action Buttons */}
       <div className="flex items-center justify-between pt-4 border-t border-[var(--md-sys-color-outline-variant)]">
         <div className="flex gap-3">
-          <button className="p-2.5 border border-[var(--md-sys-color-outline)] rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-all" title="Import configuration">
+          <button
+            className="p-2.5 border border-[var(--md-sys-color-outline)] rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-all"
+            title="Import configuration"
+          >
             <Upload className="w-4 h-4" />
           </button>
-          <button className="p-2.5 border border-[var(--md-sys-color-outline)] rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-all" title="Export configuration">
+          <button
+            className="p-2.5 border border-[var(--md-sys-color-outline)] rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-all"
+            title="Export configuration"
+          >
             <Download className="w-4 h-4" />
           </button>
         </div>
-        <button onClick={onNext} className="px-6 py-3 bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)] rounded-full flex items-center gap-2 hover:shadow-lg transition-all text-sm">
+        <button
+          onClick={onNext}
+          className="px-6 py-3 bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)] rounded-full flex items-center gap-2 hover:shadow-lg transition-all text-sm"
+        >
           Continue to Camera
           <ChevronRight className="w-4 h-4" />
         </button>
