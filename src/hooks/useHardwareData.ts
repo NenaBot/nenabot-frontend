@@ -3,15 +3,50 @@ import { HardwareData } from '../types/hardware.types';
 import { mockHardwareData } from '../mocks/hardwareMocks';
 import { apiClient } from '../services/apiClient';
 
+type HardwareDataMap = {
+  spectrometer: HardwareData | null;
+  camera: HardwareData | null;
+  robotarm: HardwareData | null;
+};
+
+type HardwareAPIDataMap = {
+  spectrometer: (Omit<HardwareData, 'lastUpdate'> & { lastUpdate: string | Date }) | null;
+  camera: (Omit<HardwareData, 'lastUpdate'> & { lastUpdate: string | Date }) | null;
+  robotarm: (Omit<HardwareData, 'lastUpdate'> & { lastUpdate: string | Date }) | null;
+};
+
 interface UseHardwareDataReturn {
   spectrometer: HardwareData | null;
   camera: HardwareData | null;
   robotarm: HardwareData | null;
   isLoading: boolean;
   error: Error | null;
+  lastUpdated: Date | null;
+  refetch: () => Promise<void>;
 }
 
 const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === 'true';
+
+function normalizeHardwareData(data: HardwareAPIDataMap): HardwareDataMap {
+  const normalizeDevice = (device: HardwareAPIDataMap[keyof HardwareAPIDataMap]) => {
+    if (!device) {
+      return null;
+    }
+
+    return {
+      ...device,
+      lastUpdate: device.lastUpdate instanceof Date
+        ? device.lastUpdate
+        : new Date(device.lastUpdate),
+    } as HardwareData;
+  };
+
+  return {
+    spectrometer: normalizeDevice(data.spectrometer),
+    camera: normalizeDevice(data.camera),
+    robotarm: normalizeDevice(data.robotarm),
+  };
+}
 
 /**
  * Hook for fetching hardware data from the backend API.
@@ -23,52 +58,45 @@ const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === 'true';
  * ```
  */
 export function useHardwareData(): UseHardwareDataReturn {
-  const [data, setData] = useState<{
-    spectrometer: HardwareData | null;
-    camera: HardwareData | null;
-    robotarm: HardwareData | null;
-  }>({
+  const [data, setData] = useState<HardwareDataMap>({
     spectrometer: null,
     camera: null,
     robotarm: null
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  const fetchData = async () => {
+    try {
+      if (USE_MOCK_DATA) {
+        setData(mockHardwareData);
+        setLastUpdated(new Date());
+      } else {
+        const response = await apiClient.get<HardwareAPIDataMap>('/api/hardware/status');
+        setData(normalizeHardwareData(response));
+        setLastUpdated(new Date());
+      }
+      setError(null);
+    } catch (err) {
+      const fetchError = err instanceof Error ? err : new Error('Unknown error');
+      console.error('Failed to fetch hardware data:', fetchError);
+      setError(fetchError);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        if (USE_MOCK_DATA) {
-          // Use mock data for development
-          setData(mockHardwareData);
-        } else {
-          // Fetch real data from API
-          const response = await apiClient.get<{
-            spectrometer: HardwareData;
-            camera: HardwareData;
-            robotarm: HardwareData;
-          }>('/api/hardware/status');
-          setData(response);
-        }
-        setError(null);
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error('Unknown error');
-        console.error('Failed to fetch hardware data:', error);
-        setError(error);
-        // Fall back to mock data on error
-        setData(mockHardwareData);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
 
   return {
     ...data,
     isLoading,
-    error
+    error,
+    lastUpdated,
+    refetch: fetchData,
   };
 }
 
@@ -79,47 +107,40 @@ export function useHardwareData(): UseHardwareDataReturn {
  * @param intervalMs - Polling interval in milliseconds (default: 1000)
  */
 export function useHardwareDataPolling(intervalMs: number = 1000): UseHardwareDataReturn {
-  const [data, setData] = useState<{
-    spectrometer: HardwareData | null;
-    camera: HardwareData | null;
-    robotarm: HardwareData | null;
-  }>({
+  const [data, setData] = useState<HardwareDataMap>({
     spectrometer: null,
     camera: null,
     robotarm: null
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  const fetchData = async () => {
+    try {
+      if (USE_MOCK_DATA) {
+        setData({
+          spectrometer: { ...mockHardwareData.spectrometer, lastUpdate: new Date() },
+          camera: { ...mockHardwareData.camera, lastUpdate: new Date() },
+          robotarm: { ...mockHardwareData.robotarm, lastUpdate: new Date() }
+        });
+        setLastUpdated(new Date());
+      } else {
+        const response = await apiClient.get<HardwareAPIDataMap>('/api/hardware/status');
+        setData(normalizeHardwareData(response));
+        setLastUpdated(new Date());
+      }
+      setError(null);
+    } catch (err) {
+      const fetchError = err instanceof Error ? err : new Error('Unknown error');
+      console.error('Failed to fetch hardware data:', fetchError);
+      setError(fetchError);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        if (USE_MOCK_DATA) {
-          // Update mock data with current timestamp
-          setData({
-            spectrometer: { ...mockHardwareData.spectrometer, lastUpdate: new Date() },
-            camera: { ...mockHardwareData.camera, lastUpdate: new Date() },
-            robotarm: { ...mockHardwareData.robotarm, lastUpdate: new Date() }
-          });
-        } else {
-          // Fetch real data from API
-          const response = await apiClient.get<{
-            spectrometer: HardwareData;
-            camera: HardwareData;
-            robotarm: HardwareData;
-          }>('/api/hardware/status');
-          setData(response);
-        }
-        setError(null);
-      } catch (err) {
-        const error = err instanceof Error ? err : new Error('Unknown error');
-        console.error('Failed to fetch hardware data:', error);
-        setError(error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchData();
     const interval = setInterval(fetchData, intervalMs);
 
@@ -129,6 +150,8 @@ export function useHardwareDataPolling(intervalMs: number = 1000): UseHardwareDa
   return {
     ...data,
     isLoading,
-    error
+    error,
+    lastUpdated,
+    refetch: fetchData,
   };
 }

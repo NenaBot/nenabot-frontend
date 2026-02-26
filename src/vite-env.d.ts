@@ -3,6 +3,7 @@
 interface ImportMetaEnv {
   readonly VITE_API_URL: string;
   readonly VITE_API_TIMEOUT: string;
+  readonly VITE_USE_MOCK_DATA: string;
 }
 
 interface ImportMeta {
