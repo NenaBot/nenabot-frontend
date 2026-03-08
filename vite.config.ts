@@ -19,13 +19,4 @@ export default defineConfig({
     port: 3000,
     open: true,
   },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./src/test/setup.ts'],
-    include: ['src/components/__tests__/**/*.{test,spec}.{ts,tsx}'],
-    deps: {
-      inline: ['html-encoding-sniffer'],
-    },
-  },
 });

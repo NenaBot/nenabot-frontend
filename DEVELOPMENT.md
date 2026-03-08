@@ -124,10 +124,10 @@ Enabled in `tsconfig.json`:
 ```typescript
 export function MyComponent() {
   const { spectrometer, isLoading, error } = useHardwareData();
-  
+
   if (error) return <ErrorBoundary error={error} />;
   if (isLoading) return <Skeleton />;
-  
+
   return <div>{spectrometer?.title}</div>;
 }
 ```
@@ -206,11 +206,6 @@ export function MyComponent({ title, status, onUpdate }: ComponentProps) {
    - Split large components into smaller ones
    - Use `React.memo()` for expensive renders
    - Implement code-splitting for routes
-
-5. **Testing**
-   - Add Vitest + React Testing Library
-   - Write tests for API client
-   - Test component rendering with mocks
 
 ## Support
 For issues specific to:

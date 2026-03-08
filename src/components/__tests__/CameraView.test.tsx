@@ -1,17 +1,16 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { vi, describe, test, expect, beforeEach } from 'vitest';
 import { CameraView } from '../CameraView';
 
 // Mock the apiClient
-vi.mock('../../services/apiClient', () => ({
+jest.mock('../../services/apiClient', () => ({
   apiClient: {
-    getVideoStreamUrl: vi.fn(() => 'http://localhost:8000/api/camera/stream'),
+    getVideoStreamUrl: jest.fn(() => 'http://localhost:8000/api/camera/stream'),
   },
 }));
 
 describe('CameraView', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   test('renders with default props', () => {
