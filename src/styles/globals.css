@@ -1,103 +1,109 @@
 /* Material Design 3 Color System */
 :root {
-  --md-sys-color-primary: #6750A4;
-  --md-sys-color-on-primary: #FFFFFF;
-  --md-sys-color-primary-container: #EADDFF;
-  --md-sys-color-on-primary-container: #21005D;
-  --md-sys-color-secondary: #625B71;
-  --md-sys-color-on-secondary: #FFFFFF;
-  --md-sys-color-secondary-container: #E8DEF8;
-  --md-sys-color-on-secondary-container: #1D192B;
-  --md-sys-color-tertiary: #7D5260;
-  --md-sys-color-on-tertiary: #FFFFFF;
-  --md-sys-color-tertiary-container: #FFD8E4;
-  --md-sys-color-on-tertiary-container: #31111D;
-  --md-sys-color-error: #B3261E;
-  --md-sys-color-on-error: #FFFFFF;
-  --md-sys-color-error-container: #F9DEDC;
-  --md-sys-color-on-error-container: #410E0B;
-  --md-sys-color-background: #FFFBFE;
-  --md-sys-color-on-background: #1C1B1F;
-  --md-sys-color-surface: #FFFBFE;
-  --md-sys-color-on-surface: #1C1B1F;
-  --md-sys-color-surface-variant: #E7E0EC;
-  --md-sys-color-on-surface-variant: #49454F;
-  --md-sys-color-outline: #79747E;
-  --md-sys-color-outline-variant: #CAC4D0;
-  --md-sys-color-surface-container-highest: #E6E1E5;
-  --md-sys-color-surface-container-high: #ECE6F0;
-  --md-sys-color-surface-container: #F3EDF7;
-  --md-sys-color-surface-container-low: #F7F2FA;
-  --md-sys-color-surface-container-lowest: #FFFFFF;
+  --md-sys-color-primary: #6750a4;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #eaddff;
+  --md-sys-color-on-primary-container: #21005d;
+  --md-sys-color-secondary: #625b71;
+  --md-sys-color-on-secondary: #ffffff;
+  --md-sys-color-secondary-container: #e8def8;
+  --md-sys-color-on-secondary-container: #1d192b;
+  --md-sys-color-tertiary: #7d5260;
+  --md-sys-color-on-tertiary: #ffffff;
+  --md-sys-color-tertiary-container: #ffd8e4;
+  --md-sys-color-on-tertiary-container: #31111d;
+  --md-sys-color-error: #b3261e;
+  --md-sys-color-on-error: #ffffff;
+  --md-sys-color-error-container: #f9dedc;
+  --md-sys-color-on-error-container: #410e0b;
+  --md-sys-color-background: #fffbfe;
+  --md-sys-color-on-background: #1c1b1f;
+  --md-sys-color-surface: #fffbfe;
+  --md-sys-color-on-surface: #1c1b1f;
+  --md-sys-color-surface-variant: #e7e0ec;
+  --md-sys-color-on-surface-variant: #49454f;
+  --md-sys-color-outline: #79747e;
+  --md-sys-color-outline-variant: #cac4d0;
+  --md-sys-color-surface-container-highest: #e6e1e5;
+  --md-sys-color-surface-container-high: #ece6f0;
+  --md-sys-color-surface-container: #f3edf7;
+  --md-sys-color-surface-container-low: #f7f2fa;
+  --md-sys-color-surface-container-lowest: #ffffff;
 
   /* semantic colors used by components */
   --md-sys-color-success: #0f9d58;
-  --md-sys-color-on-success: #FFFFFF;
+  --md-sys-color-on-success: #ffffff;
   --md-sys-color-warning: #f2a71b;
   --md-sys-color-on-warning: #2b1600;
   --md-sys-color-info: #1560ff;
-  --md-sys-color-on-info: #FFFFFF;
-  --status-success-bg: rgba(15,157,88,0.08);
-  --status-disabled-bg: rgba(60,60,67,0.05);
+  --md-sys-color-on-info: #ffffff;
+  --status-success-bg: rgba(15, 157, 88, 0.08);
+  --status-disabled-bg: rgba(60, 60, 67, 0.05);
 }
 
 /* Dark theme tokens (applies when document.documentElement has class "dark") */
 .dark {
-  --md-sys-color-primary: #D0BCFF;
-  --md-sys-color-on-primary: #381E72;
-  --md-sys-color-primary-container: #4F378B;
-  --md-sys-color-on-primary-container: #EADDFF;
-  --md-sys-color-secondary: #CCC2DC;
-  --md-sys-color-on-secondary: #332D41;
-  --md-sys-color-secondary-container: #4A4458;
-  --md-sys-color-on-secondary-container: #E8DEF8;
-  --md-sys-color-tertiary: #EFB8C8;
-  --md-sys-color-on-tertiary: #370B1E;
-  --md-sys-color-tertiary-container: #54303A;
-  --md-sys-color-on-tertiary-container: #FFD8E4;
-  --md-sys-color-error: #F2B8B5;
+  --md-sys-color-primary: #d0bcff;
+  --md-sys-color-on-primary: #381e72;
+  --md-sys-color-primary-container: #4f378b;
+  --md-sys-color-on-primary-container: #eaddff;
+  --md-sys-color-secondary: #ccc2dc;
+  --md-sys-color-on-secondary: #332d41;
+  --md-sys-color-secondary-container: #4a4458;
+  --md-sys-color-on-secondary-container: #e8def8;
+  --md-sys-color-tertiary: #efb8c8;
+  --md-sys-color-on-tertiary: #370b1e;
+  --md-sys-color-tertiary-container: #54303a;
+  --md-sys-color-on-tertiary-container: #ffd8e4;
+  --md-sys-color-error: #f2b8b5;
   --md-sys-color-on-error: #601410;
-  --md-sys-color-error-container: #8C1D18;
-  --md-sys-color-on-error-container: #F9DEDC;
-  --md-sys-color-background: #1C1B1F;
-  --md-sys-color-on-background: #E6E1E5;
-  --md-sys-color-surface: #1C1B1F;
-  --md-sys-color-on-surface: #E6E1E5;
-  --md-sys-color-surface-variant: #2B2A2E;
-  --md-sys-color-on-surface-variant: #CAC4D0;
+  --md-sys-color-error-container: #8c1d18;
+  --md-sys-color-on-error-container: #f9dedc;
+  --md-sys-color-background: #1c1b1f;
+  --md-sys-color-on-background: #e6e1e5;
+  --md-sys-color-surface: #1c1b1f;
+  --md-sys-color-on-surface: #e6e1e5;
+  --md-sys-color-surface-variant: #2b2a2e;
+  --md-sys-color-on-surface-variant: #cac4d0;
   --md-sys-color-outline: #939094;
-  --md-sys-color-outline-variant: #49454F;
-  --md-sys-color-surface-container-highest: #2A2A2D;
+  --md-sys-color-outline-variant: #49454f;
+  --md-sys-color-surface-container-highest: #2a2a2d;
   --md-sys-color-surface-container-high: #242427;
   --md-sys-color-surface-container: #222224;
-  --md-sys-color-surface-container-low: #1F1F21;
+  --md-sys-color-surface-container-low: #1f1f21;
   --md-sys-color-surface-container-lowest: #121214;
 
   /* semantic colors */
   --md-sys-color-success: #57d28a;
   --md-sys-color-on-success: #05270c;
-  --md-sys-color-warning: #FFD57A;
+  --md-sys-color-warning: #ffd57a;
   --md-sys-color-on-warning: #3a2a00;
-  --md-sys-color-info: #93C5FD;
-  --md-sys-color-on-info: #042A78;
-  --status-success-bg: rgba(87,210,138,0.12);
-  --status-disabled-bg: rgba(255,255,255,0.03);
+  --md-sys-color-info: #93c5fd;
+  --md-sys-color-on-info: #042a78;
+  --status-success-bg: rgba(87, 210, 138, 0.12);
+  --status-disabled-bg: rgba(255, 255, 255, 0.03);
 }
 
 /* Base Styles */
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--md-sys-color-background);
   color: var(--md-sys-color-on-background);
-  transition: background-color 200ms ease, color 200ms ease;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
 }
 
 /* small helper for smooth theme transitions on larger UI changes */
 .theme-transition * {
-  transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+  transition:
+    color 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
 }
