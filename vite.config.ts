@@ -24,5 +24,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/components/__tests__/**/*.{test,spec}.{ts,tsx}'],
+    deps: {
+      inline: ['html-encoding-sniffer'],
+    },
   },
 });
