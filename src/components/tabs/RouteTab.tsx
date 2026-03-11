@@ -4,7 +4,7 @@ import {
   RoutePreviewCoordinate,
   RoutePreviewPanel,
   RoutePreviewPoint,
-} from './route/RoutePreviewPanel';
+} from '../shared/RoutePreviewPanel';
 import { RouteSettingsCard } from './route/RouteSettingsCard';
 import { getDefaultRoutePlan } from './route/route.api';
 import {

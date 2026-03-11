@@ -46,6 +46,7 @@ export function RoutePreviewPanel({
 }: RoutePreviewPanelProps) {
   const [zoomLevel, setZoomLevel] = useState(1);
   const hasOverlayData = routePath.length > 0 || measurementPoints.length > 0;
+  const showGridOverlay = !imageUrl;
 
   const polyline = useMemo(() => createPathPolyline(routePath), [routePath]);
 
@@ -111,7 +112,7 @@ export function RoutePreviewPanel({
 
           <svg
             viewBox="0 0 100 100"
-            preserveAspectRatio="none"
+            preserveAspectRatio="xMidYMid meet"
             className="absolute inset-0 w-full h-full"
           >
             {polyline.length > 0 && (
@@ -122,6 +123,7 @@ export function RoutePreviewPanel({
                 strokeWidth="1.2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
               />
             )}
 
@@ -144,6 +146,7 @@ export function RoutePreviewPanel({
                     }
                     stroke="var(--md-sys-color-on-surface)"
                     strokeWidth="0.35"
+                    vectorEffect="non-scaling-stroke"
                     className={disablePointSelection ? '' : 'cursor-pointer'}
                     onClick={() => {
                       if (!disablePointSelection && onSelectPoint) {
@@ -156,14 +159,16 @@ export function RoutePreviewPanel({
             })}
           </svg>
 
-          <div
-            className="absolute inset-0 opacity-15 pointer-events-none"
-            style={{
-              backgroundImage:
-                'linear-gradient(var(--md-sys-color-on-surface) 1px, transparent 1px), linear-gradient(90deg, var(--md-sys-color-on-surface) 1px, transparent 1px)',
-              backgroundSize: '50px 50px',
-            }}
-          />
+          {showGridOverlay && (
+            <div
+              className="absolute inset-0 opacity-8 pointer-events-none"
+              style={{
+                backgroundImage:
+                  'linear-gradient(var(--md-sys-color-on-surface) 1px, transparent 1px), linear-gradient(90deg, var(--md-sys-color-on-surface) 1px, transparent 1px)',
+                backgroundSize: '56px 56px',
+              }}
+            />
+          )}
         </div>
 
         {!hasOverlayData && !imageUrl && (

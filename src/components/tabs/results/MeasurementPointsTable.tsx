@@ -13,7 +13,7 @@ interface MeasurementPointsTableProps {
   onSelectPoint: (pointId: string) => void;
 }
 
-type SortField = 'id' | 'timestamp' | 'measuredValue' | 'x' | 'y';
+type SortField = 'label' | 'waypointIndex' | 'timestamp' | 'measuredValue' | 'x' | 'y';
 type SortDirection = 'asc' | 'desc';
 
 export function MeasurementPointsTable({
@@ -27,7 +27,7 @@ export function MeasurementPointsTable({
   const [searchQuery, setSearchQuery] = useState('');
   const [criticalOnly, setCriticalOnly] = useState(false);
   const [sortField, setSortField] = useState<SortField>('timestamp');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   const filteredAndSortedPoints = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -52,8 +52,11 @@ export function MeasurementPointsTable({
       let result = 0;
 
       switch (sortField) {
-        case 'id':
+        case 'label':
           result = a.label.localeCompare(b.label);
+          break;
+        case 'waypointIndex':
+          result = a.waypointIndex - b.waypointIndex;
           break;
         case 'measuredValue':
           result = a.measuredValue - b.measuredValue;
@@ -104,10 +107,8 @@ export function MeasurementPointsTable({
     }
 
     const selectedPage = Math.floor(selectedIndex / rowsPerPage) + 1;
-    if (selectedPage !== currentPage) {
-      setCurrentPage(selectedPage);
-    }
-  }, [currentPage, filteredAndSortedPoints, rowsPerPage, selectedPointId]);
+    setCurrentPage((prev) => (prev === selectedPage ? prev : selectedPage));
+  }, [filteredAndSortedPoints, rowsPerPage, selectedPointId]);
 
   const firstItemIndex =
     filteredAndSortedPoints.length === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
@@ -116,11 +117,27 @@ export function MeasurementPointsTable({
   const handleSortChange = (field: SortField) => {
     if (sortField === field) {
       setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+      setCurrentPage(1);
       return;
     }
 
     setSortField(field);
     setSortDirection('asc');
+    setCurrentPage(1);
+  };
+
+  const sortIndicator = (field: SortField) => {
+    if (sortField !== field) {
+      return '';
+    }
+
+    return sortDirection === 'asc' ? ' ^' : ' v';
+  };
+
+  const sortAriaLabel = (field: SortField, label: string) => {
+    const nextDirection =
+      sortField === field && sortDirection === 'asc' ? 'descending' : 'ascending';
+    return `Sort by ${label} (${nextDirection})`;
   };
 
   return (
@@ -170,27 +187,7 @@ export function MeasurementPointsTable({
             Show critical only
           </label>
 
-          <div className="flex items-center gap-2">
-            <select
-              value={sortField}
-              onChange={(event) => handleSortChange(event.target.value as SortField)}
-              className="w-full px-3 py-2 border border-[var(--md-sys-color-outline)] rounded bg-[var(--md-sys-color-surface)] text-sm"
-            >
-              <option value="timestamp">Sort by timestamp</option>
-              <option value="id">Sort by point id</option>
-              <option value="measuredValue">Sort by measured value</option>
-              <option value="x">Sort by X position</option>
-              <option value="y">Sort by Y position</option>
-            </select>
-
-            <button
-              onClick={() => setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
-              className="px-3 py-2 border border-[var(--md-sys-color-outline)] rounded text-sm"
-              title="Toggle sort direction"
-            >
-              {sortDirection === 'asc' ? 'Asc' : 'Desc'}
-            </button>
-          </div>
+          <div className="hidden md:block" />
         </div>
       </div>
 
@@ -198,13 +195,68 @@ export function MeasurementPointsTable({
         <table className="w-full text-sm">
           <thead className="bg-[var(--md-sys-color-surface-container-low)] text-[var(--md-sys-color-on-surface-variant)]">
             <tr>
-              <th className="text-left px-4 py-3 font-medium">Point</th>
-              <th className="text-left px-4 py-3 font-medium">Waypoint</th>
-              <th className="text-left px-4 py-3 font-medium">Position</th>
-              <th className="text-left px-4 py-3 font-medium">Measured Value</th>
+              <th className="text-left px-4 py-3 font-medium">
+                <button
+                  type="button"
+                  onClick={() => handleSortChange('label')}
+                  className="inline-flex items-center gap-1 hover:underline"
+                  aria-label={sortAriaLabel('label', 'point')}
+                >
+                  Point{sortIndicator('label')}
+                </button>
+              </th>
+              <th className="text-left px-4 py-3 font-medium">
+                <button
+                  type="button"
+                  onClick={() => handleSortChange('waypointIndex')}
+                  className="inline-flex items-center gap-1 hover:underline"
+                  aria-label={sortAriaLabel('waypointIndex', 'waypoint')}
+                >
+                  Waypoint{sortIndicator('waypointIndex')}
+                </button>
+              </th>
+              <th className="text-left px-4 py-3 font-medium">
+                <button
+                  type="button"
+                  onClick={() => handleSortChange('x')}
+                  className="inline-flex items-center gap-1 hover:underline"
+                  aria-label={sortAriaLabel('x', 'X position')}
+                >
+                  X{sortIndicator('x')}
+                </button>
+              </th>
+              <th className="text-left px-4 py-3 font-medium">
+                <button
+                  type="button"
+                  onClick={() => handleSortChange('y')}
+                  className="inline-flex items-center gap-1 hover:underline"
+                  aria-label={sortAriaLabel('y', 'Y position')}
+                >
+                  Y{sortIndicator('y')}
+                </button>
+              </th>
+              <th className="text-left px-4 py-3 font-medium">
+                <button
+                  type="button"
+                  onClick={() => handleSortChange('measuredValue')}
+                  className="inline-flex items-center gap-1 hover:underline"
+                  aria-label={sortAriaLabel('measuredValue', 'measured value')}
+                >
+                  Measured Value{sortIndicator('measuredValue')}
+                </button>
+              </th>
               <th className="text-left px-4 py-3 font-medium">Comment</th>
               <th className="text-left px-4 py-3 font-medium">Status</th>
-              <th className="text-left px-4 py-3 font-medium">Timestamp</th>
+              <th className="text-left px-4 py-3 font-medium">
+                <button
+                  type="button"
+                  onClick={() => handleSortChange('timestamp')}
+                  className="inline-flex items-center gap-1 hover:underline"
+                  aria-label={sortAriaLabel('timestamp', 'timestamp')}
+                >
+                  Timestamp{sortIndicator('timestamp')}
+                </button>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -226,9 +278,8 @@ export function MeasurementPointsTable({
                 >
                   <td className="px-4 py-3 font-medium">{point.label}</td>
                   <td className="px-4 py-3">#{point.waypointIndex}</td>
-                  <td className="px-4 py-3">
-                    ({point.x.toFixed(3)}, {point.y.toFixed(3)})
-                  </td>
+                  <td className="px-4 py-3">{point.x.toFixed(3)}</td>
+                  <td className="px-4 py-3">{point.y.toFixed(3)}</td>
                   <td className={`px-4 py-3 ${isCritical ? 'font-semibold text-red-700' : ''}`}>
                     {formatMeasuredValue(point.measuredValue)}
                   </td>

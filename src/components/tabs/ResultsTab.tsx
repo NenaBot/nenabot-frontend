@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BarChart3, Download, RefreshCcw } from 'lucide-react';
-import { RoutePreviewPanel } from './route/RoutePreviewPanel';
+import { RoutePreviewPanel } from '../shared/RoutePreviewPanel';
 import {
   exportScanResult,
   getAvailableScanResultSummaries,
