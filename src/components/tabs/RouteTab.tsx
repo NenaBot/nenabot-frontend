@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Play } from 'lucide-react';
-import { RoutePreviewPanel } from './route/RoutePreviewPanel';
+import {
+  RoutePreviewCoordinate,
+  RoutePreviewPanel,
+  RoutePreviewPoint,
+} from './route/RoutePreviewPanel';
 import { RouteSettingsCard } from './route/RouteSettingsCard';
 import { getDefaultRoutePlan } from './route/route.api';
 import {
@@ -12,6 +16,41 @@ import {
 
 interface RouteTabProps {
   onNext?: () => void;
+}
+
+function createPreviewRoute(measurementPoints: number): {
+  routePath: RoutePreviewCoordinate[];
+  waypoints: RoutePreviewPoint[];
+} {
+  const columns = 8;
+  const rows = Math.max(2, Math.ceil(Math.max(8, Math.min(64, measurementPoints)) / columns));
+  const routePath: RoutePreviewCoordinate[] = [];
+  const waypoints: RoutePreviewPoint[] = [];
+
+  for (let row = 0; row < rows; row += 1) {
+    const normalizedY = rows === 1 ? 0.5 : row / (rows - 1);
+    const isEvenRow = row % 2 === 0;
+    const rowStart = isEvenRow ? 0 : columns - 1;
+    const rowEnd = isEvenRow ? columns : -1;
+    const rowStep = isEvenRow ? 1 : -1;
+
+    for (let column = rowStart; column !== rowEnd; column += rowStep) {
+      const normalizedX = columns === 1 ? 0.5 : column / (columns - 1);
+      routePath.push({ x: normalizedX, y: normalizedY });
+    }
+
+    const rowStartX = isEvenRow ? 0 : 1;
+    const rowEndX = isEvenRow ? 1 : 0;
+    waypoints.push({
+      id: `wp-${row}-start`,
+      label: `W${row * 2 + 1}`,
+      x: rowStartX,
+      y: normalizedY,
+    });
+    waypoints.push({ id: `wp-${row}-end`, label: `W${row * 2 + 2}`, x: rowEndX, y: normalizedY });
+  }
+
+  return { routePath, waypoints };
 }
 
 export function RouteTab({ onNext }: RouteTabProps) {
@@ -114,6 +153,7 @@ export function RouteTab({ onNext }: RouteTabProps) {
   };
 
   const isFormValid = routeState.pointsPerCmError === null;
+  const preview = createPreviewRoute(routeState.plan.estimate.measurementPoints);
 
   return (
     <div className="space-y-6">
@@ -141,7 +181,12 @@ export function RouteTab({ onNext }: RouteTabProps) {
 
         {/* Right Panel - Map Visualization */}
         <div className="lg:col-span-2">
-          <RoutePreviewPanel />
+          <RoutePreviewPanel
+            title="Planned Scan Route"
+            routePath={preview.routePath}
+            measurementPoints={preview.waypoints}
+            disablePointSelection={true}
+          />
         </div>
       </div>
 
