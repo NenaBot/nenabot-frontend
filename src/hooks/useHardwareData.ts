@@ -1,18 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { HardwareData } from '../types/hardware.types';
 import { mockHardwareData } from '../mocks/hardwareMocks';
-import { apiClient } from '../services/apiClient';
+import { fetchHardwareStatus, HardwareStatusApiResponse } from '../services/apiCalls';
 
 type HardwareDataMap = {
   spectrometer: HardwareData | null;
   camera: HardwareData | null;
   robotarm: HardwareData | null;
-};
-
-type HardwareAPIDataMap = {
-  spectrometer: (Omit<HardwareData, 'lastUpdate'> & { lastUpdate: string | Date }) | null;
-  camera: (Omit<HardwareData, 'lastUpdate'> & { lastUpdate: string | Date }) | null;
-  robotarm: (Omit<HardwareData, 'lastUpdate'> & { lastUpdate: string | Date }) | null;
 };
 
 interface UseHardwareDataReturn {
@@ -27,8 +21,8 @@ interface UseHardwareDataReturn {
 
 const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === 'true';
 
-function normalizeHardwareData(data: HardwareAPIDataMap): HardwareDataMap {
-  const normalizeDevice = (device: HardwareAPIDataMap[keyof HardwareAPIDataMap]) => {
+function normalizeHardwareData(data: HardwareStatusApiResponse): HardwareDataMap {
+  const normalizeDevice = (device: HardwareStatusApiResponse[keyof HardwareStatusApiResponse]) => {
     if (!device) {
       return null;
     }
@@ -65,30 +59,55 @@ export function useHardwareData(): UseHardwareDataReturn {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const isMountedRef = useRef(true);
+  const requestIdRef = useRef(0);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
+    setIsLoading(true);
+
     try {
       if (USE_MOCK_DATA) {
+        if (!isMountedRef.current || requestId !== requestIdRef.current) {
+          return;
+        }
+
         setData(mockHardwareData);
         setLastUpdated(new Date());
       } else {
-        const response = await apiClient.get<HardwareAPIDataMap>('/api/hardware/status');
+        const response = await fetchHardwareStatus();
+
+        if (!isMountedRef.current || requestId !== requestIdRef.current) {
+          return;
+        }
+
         setData(normalizeHardwareData(response));
         setLastUpdated(new Date());
       }
       setError(null);
     } catch (err) {
+      if (!isMountedRef.current || requestId !== requestIdRef.current) {
+        return;
+      }
+
       const fetchError = err instanceof Error ? err : new Error('Unknown error');
       console.error('Failed to fetch hardware data:', fetchError);
       setError(fetchError);
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current && requestId === requestIdRef.current) {
+        setIsLoading(false);
+      }
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    isMountedRef.current = true;
+    void fetchData();
+
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [fetchData]);
 
   return {
     ...data,
@@ -114,10 +133,25 @@ export function useHardwareDataPolling(intervalMs: number = 1000): UseHardwareDa
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const isMountedRef = useRef(true);
+  const requestIdRef = useRef(0);
+  const inFlightRef = useRef(false);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    if (inFlightRef.current) {
+      return;
+    }
+
+    inFlightRef.current = true;
+    const requestId = ++requestIdRef.current;
+    setIsLoading(true);
+
     try {
       if (USE_MOCK_DATA) {
+        if (!isMountedRef.current || requestId !== requestIdRef.current) {
+          return;
+        }
+
         setData({
           spectrometer: { ...mockHardwareData.spectrometer, lastUpdate: new Date() },
           camera: { ...mockHardwareData.camera, lastUpdate: new Date() },
@@ -125,26 +159,43 @@ export function useHardwareDataPolling(intervalMs: number = 1000): UseHardwareDa
         });
         setLastUpdated(new Date());
       } else {
-        const response = await apiClient.get<HardwareAPIDataMap>('/api/hardware/status');
+        const response = await fetchHardwareStatus();
+
+        if (!isMountedRef.current || requestId !== requestIdRef.current) {
+          return;
+        }
+
         setData(normalizeHardwareData(response));
         setLastUpdated(new Date());
       }
       setError(null);
     } catch (err) {
+      if (!isMountedRef.current || requestId !== requestIdRef.current) {
+        return;
+      }
+
       const fetchError = err instanceof Error ? err : new Error('Unknown error');
       console.error('Failed to fetch hardware data:', fetchError);
       setError(fetchError);
     } finally {
-      setIsLoading(false);
+      inFlightRef.current = false;
+
+      if (isMountedRef.current && requestId === requestIdRef.current) {
+        setIsLoading(false);
+      }
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchData();
+    isMountedRef.current = true;
+    void fetchData();
     const interval = setInterval(fetchData, intervalMs);
 
-    return () => clearInterval(interval);
-  }, [intervalMs]);
+    return () => {
+      isMountedRef.current = false;
+      clearInterval(interval);
+    };
+  }, [fetchData, intervalMs]);
 
   return {
     ...data,

@@ -1,204 +1,154 @@
-import { useState } from 'react';
-import { Play, MapPin, Grid3x3, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
-import { CardSection } from '../CardSection';
-import { FormField } from '../FormField';
+import { useEffect, useState } from 'react';
+import { Play } from 'lucide-react';
+import { RoutePreviewPanel } from './route/RoutePreviewPanel';
+import { RouteSettingsCard } from './route/RouteSettingsCard';
+import { getDefaultRoutePlan } from './route/route.api';
+import {
+  createRouteTabInitialState,
+  deriveEstimateFromBasis,
+  getPointsPerCmValidationError,
+  parsePointsPerCm,
+} from './route/route.model';
 
 interface RouteTabProps {
   onNext?: () => void;
 }
 
 export function RouteTab({ onNext }: RouteTabProps) {
-  const [routeData, setRouteData] = useState({
-    routeEnabled: true,
-    scanPattern: 'grid',
-    resolution: '50',
-    areaWidth: '100',
-    areaHeight: '100',
-  });
+  const [routeState, setRouteState] = useState(createRouteTabInitialState);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const loadDefaultRoutePlan = async () => {
+      setRouteState((prev) => ({
+        ...prev,
+        isLoadingDefaultPlan: true,
+        loadError: null,
+      }));
+
+      try {
+        const defaultPlan = await getDefaultRoutePlan();
+        const validationError = getPointsPerCmValidationError(
+          defaultPlan.settings.pointsPerCm.toString(),
+        );
+
+        if (!isActive) {
+          return;
+        }
+
+        setRouteState((prev) => ({
+          ...prev,
+          isLoadingDefaultPlan: false,
+          loadError: null,
+          pointsPerCmInput: defaultPlan.settings.pointsPerCm.toString(),
+          pointsPerCmError: validationError,
+          plan: defaultPlan,
+          estimateBasis: {
+            pointsPerCm: defaultPlan.settings.pointsPerCm,
+            estimate: defaultPlan.estimate,
+          },
+        }));
+      } catch (error) {
+        console.error('Failed to fetch default route plan:', error);
+
+        if (!isActive) {
+          return;
+        }
+
+        setRouteState((prev) => ({
+          ...prev,
+          isLoadingDefaultPlan: false,
+          loadError: 'Failed to load default route from backend. Using fallback values.',
+        }));
+      }
+    };
+
+    void loadDefaultRoutePlan();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const handleAlwaysScanOnWaypointsChange = (checked: boolean) => {
+    setRouteState((prev) => ({
+      ...prev,
+      plan: {
+        ...prev.plan,
+        settings: {
+          ...prev.plan.settings,
+          alwaysScanOnWaypoints: checked,
+        },
+      },
+    }));
+  };
+
+  const handlePointsPerCmInputChange = (value: string) => {
+    setRouteState((prev) => {
+      const pointsPerCmError = getPointsPerCmValidationError(value);
+      const parsedValue = parsePointsPerCm(value);
+
+      if (parsedValue === null || pointsPerCmError !== null) {
+        return {
+          ...prev,
+          pointsPerCmInput: value,
+          pointsPerCmError,
+        };
+      }
+
+      return {
+        ...prev,
+        pointsPerCmInput: value,
+        pointsPerCmError: null,
+        plan: {
+          ...prev.plan,
+          settings: {
+            ...prev.plan.settings,
+            pointsPerCm: parsedValue,
+          },
+          estimate: deriveEstimateFromBasis(parsedValue, prev.estimateBasis),
+        },
+      };
+    });
+  };
+
+  const isFormValid = routeState.pointsPerCmError === null;
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl mb-1">Route Planning</h2>
         <p className="text-sm text-[var(--md-sys-color-on-surface-variant)]">
-          Define the scan area and pattern
+          Define waypoint scanning settings and review the proposed route
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Panel - Route Settings */}
         <div className="lg:col-span-1 space-y-6">
-          <CardSection
-            title="Scan Parameters"
-            headerContent={<MapPin className="w-5 h-5 text-[var(--md-sys-color-primary)]" />}
-          >
-            <div className="mb-5">
-              <label className="flex items-start gap-3 cursor-pointer p-3 rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-colors">
-                <input
-                  type="checkbox"
-                  checked={routeData.routeEnabled}
-                  onChange={(e) =>
-                    setRouteData((prev) => ({ ...prev, routeEnabled: e.target.checked }))
-                  }
-                  className="mt-1 w-5 h-5 rounded border-[var(--md-sys-color-outline)] accent-[var(--md-sys-color-primary)]"
-                />
-                <div className="flex-1">
-                  <div className="text-sm mb-0.5">Enable Automatic Route Planning</div>
-                  <div className="text-xs text-[var(--md-sys-color-on-surface-variant)]">
-                    System will optimize scan path for efficiency
-                  </div>
-                </div>
-              </label>
-            </div>
-
-            <div className="space-y-4">
-              <FormField
-                label="Scan Pattern"
-                tooltip="Pattern for area coverage"
-                disabled={!routeData.routeEnabled}
-              >
-                <select
-                  value={routeData.scanPattern}
-                  onChange={(e) =>
-                    setRouteData((prev) => ({ ...prev, scanPattern: e.target.value }))
-                  }
-                  className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)]"
-                  disabled={!routeData.routeEnabled}
-                >
-                  <option value="grid">Grid Pattern</option>
-                  <option value="spiral">Spiral Pattern</option>
-                  <option value="random">Random Sampling</option>
-                </select>
-              </FormField>
-
-              <FormField
-                label="Resolution (points/cm)"
-                tooltip="Measurement density"
-                helpText="Higher = More detailed"
-                disabled={!routeData.routeEnabled}
-              >
-                <input
-                  type="number"
-                  value={routeData.resolution}
-                  onChange={(e) =>
-                    setRouteData((prev) => ({ ...prev, resolution: e.target.value }))
-                  }
-                  className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)]"
-                  disabled={!routeData.routeEnabled}
-                  min="10"
-                  max="200"
-                />
-              </FormField>
-
-              <div className="grid grid-cols-2 gap-3">
-                <FormField
-                  label="Width (cm)"
-                  tooltip="Scan area width"
-                  disabled={!routeData.routeEnabled}
-                >
-                  <input
-                    type="number"
-                    value={routeData.areaWidth}
-                    onChange={(e) =>
-                      setRouteData((prev) => ({ ...prev, areaWidth: e.target.value }))
-                    }
-                    className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)]"
-                    disabled={!routeData.routeEnabled}
-                  />
-                </FormField>
-                <FormField
-                  label="Height (cm)"
-                  tooltip="Scan area height"
-                  disabled={!routeData.routeEnabled}
-                >
-                  <input
-                    type="number"
-                    value={routeData.areaHeight}
-                    onChange={(e) =>
-                      setRouteData((prev) => ({ ...prev, areaHeight: e.target.value }))
-                    }
-                    className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)]"
-                    disabled={!routeData.routeEnabled}
-                  />
-                </FormField>
-              </div>
-            </div>
-
-            <div className="mt-6 p-3 bg-[var(--md-sys-color-secondary-container)] rounded-lg">
-              <div className="text-xs text-[var(--md-sys-color-on-secondary-container)] space-y-1">
-                <div className="flex justify-between">
-                  <span>Estimated Points:</span>
-                  <span className="font-medium">2,500</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Estimated Time:</span>
-                  <span className="font-medium">~12 minutes</span>
-                </div>
-              </div>
-            </div>
-          </CardSection>
+          <RouteSettingsCard
+            settings={routeState.plan.settings}
+            estimate={routeState.plan.estimate}
+            pointsPerCmInput={routeState.pointsPerCmInput}
+            pointsPerCmError={routeState.pointsPerCmError}
+            isLoading={routeState.isLoadingDefaultPlan}
+            loadError={routeState.loadError}
+            onAlwaysScanOnWaypointsChange={handleAlwaysScanOnWaypointsChange}
+            onPointsPerCmInputChange={handlePointsPerCmInputChange}
+          />
         </div>
 
         {/* Right Panel - Map Visualization */}
         <div className="lg:col-span-2">
-          <div className="border border-[var(--md-sys-color-outline-variant)] rounded-2xl overflow-hidden bg-[var(--md-sys-color-surface-container-lowest)]">
-            <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface)]">
-              <div className="flex items-center gap-2">
-                <Grid3x3 className="w-4 h-4 text-[var(--md-sys-color-on-surface-variant)]" />
-                <h3 className="text-sm font-medium">Scan Area Preview</h3>
-              </div>
-              <div className="flex gap-1">
-                <button
-                  className="p-2 hover:bg-[var(--md-sys-color-surface-variant)] rounded transition-colors"
-                  title="Zoom in"
-                >
-                  <ZoomIn className="w-4 h-4" />
-                </button>
-                <button
-                  className="p-2 hover:bg-[var(--md-sys-color-surface-variant)] rounded transition-colors"
-                  title="Zoom out"
-                >
-                  <ZoomOut className="w-4 h-4" />
-                </button>
-                <button
-                  className="p-2 hover:bg-[var(--md-sys-color-surface-variant)] rounded transition-colors"
-                  title="Fit to screen"
-                >
-                  <Maximize2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            <div className="w-full aspect-video bg-[var(--md-sys-color-surface-variant)] flex items-center justify-center relative">
-              <div className="text-center p-6">
-                <div className="w-16 h-16 bg-[var(--md-sys-color-primary-container)] rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Grid3x3 className="w-8 h-8 text-[var(--md-sys-color-on-primary-container)]" />
-                </div>
-                <h4 className="text-base font-medium text-[var(--md-sys-color-on-surface)] mb-1">
-                  Map Preview
-                </h4>
-                <p className="text-xs text-[var(--md-sys-color-on-surface-variant)]">
-                  Configure scan parameters to preview the route
-                </p>
-              </div>
-
-              {/* Grid overlay */}
-              <div
-                className="absolute inset-0 opacity-10"
-                style={{
-                  backgroundImage:
-                    'linear-gradient(var(--md-sys-color-on-surface) 1px, transparent 1px), linear-gradient(90deg, var(--md-sys-color-on-surface) 1px, transparent 1px)',
-                  backgroundSize: '50px 50px',
-                }}
-              />
-            </div>
-          </div>
+          <RoutePreviewPanel />
         </div>
       </div>
 
       <div className="flex items-center justify-end pt-4 border-t border-[var(--md-sys-color-outline-variant)]">
         <button
           onClick={onNext}
+          disabled={!isFormValid || routeState.isLoadingDefaultPlan}
           className="px-6 py-3 bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)] rounded-full flex items-center gap-2 hover:shadow-lg transition-all text-sm"
         >
           <Play className="w-4 h-4 fill-current" />

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Camera, AlertCircle } from 'lucide-react';
-import { apiClient } from '../services/apiClient';
+import { getCameraStreamUrl } from '../services/apiCalls';
 
 interface CameraViewProps {
   title?: string;
@@ -19,7 +19,7 @@ export function CameraView({
 }: CameraViewProps) {
   const retryInterval = DEFAULT_RETRY_INTERVAL;
   const [streamStatus, setStreamStatus] = useState<StreamStatus>('loading');
-  const [streamUrl] = useState(() => apiClient.getVideoStreamUrl());
+  const [streamUrl] = useState(() => getCameraStreamUrl());
   const imgRef = useRef<HTMLImageElement>(null);
   const retryTimeoutRef = useRef<number | undefined>(undefined);
 
