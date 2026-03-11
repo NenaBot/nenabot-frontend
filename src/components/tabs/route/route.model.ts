@@ -29,6 +29,8 @@ export interface RouteTabState {
 
 export const POINTS_PER_CM_MIN_EXCLUSIVE = 0;
 export const POINTS_PER_CM_MAX_EXCLUSIVE = 100;
+export const POINTS_PER_CM_INPUT_MIN = POINTS_PER_CM_MIN_EXCLUSIVE;
+export const POINTS_PER_CM_INPUT_MAX = POINTS_PER_CM_MAX_EXCLUSIVE;
 
 const DEFAULT_POINTS_PER_CM = 25;
 const DEFAULT_ESTIMATE_SECONDS = 12 * 60;
@@ -74,8 +76,8 @@ export function getPointsPerCmValidationError(value: string): string | null {
     return 'Points per cm must be a number.';
   }
 
-  if (parsed <= POINTS_PER_CM_MIN_EXCLUSIVE || parsed >= POINTS_PER_CM_MAX_EXCLUSIVE) {
-    return 'Enter a number greater than 0 and less than 100.';
+  if (parsed < POINTS_PER_CM_MIN_EXCLUSIVE || parsed >= POINTS_PER_CM_MAX_EXCLUSIVE) {
+    return 'Enter 0 or a positive number less than 100.';
   }
 
   return null;

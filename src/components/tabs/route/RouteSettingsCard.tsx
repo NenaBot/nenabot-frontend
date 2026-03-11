@@ -2,7 +2,12 @@ import { MapPin } from 'lucide-react';
 import { CardSection } from '../../CardSection';
 import { FormField } from '../../FormField';
 import { RouteEstimateSummary } from './RouteEstimateSummary';
-import { RouteEstimate, RouteSettings } from './route.model';
+import {
+  POINTS_PER_CM_INPUT_MAX,
+  POINTS_PER_CM_INPUT_MIN,
+  RouteEstimate,
+  RouteSettings,
+} from './route.model';
 
 interface RouteSettingsCardProps {
   settings: RouteSettings;
@@ -56,16 +61,15 @@ export function RouteSettingsCard({
 
       <FormField
         label="Points per cm"
-        tooltip="Measurement density"
-        helpText="Required range: 0 < x < 100"
+        tooltip="Measurement density. Evenly creates new measurement points along the route. Set to 0 to scan only waypoints (no additional measurements). Higher values result in more detailed scans but take longer to complete."
       >
         <input
           type="number"
           value={pointsPerCmInput}
           onChange={(e) => onPointsPerCmInputChange(e.target.value)}
           className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)]"
-          min="0"
-          max="100"
+          min={POINTS_PER_CM_INPUT_MIN}
+          max={POINTS_PER_CM_INPUT_MAX}
           step="0.1"
           disabled={isLoading}
           aria-invalid={pointsPerCmError ? 'true' : 'false'}
