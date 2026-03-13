@@ -22,7 +22,7 @@ function createPreviewRoute(measurementPoints: number): {
   routePath: RoutePreviewCoordinate[];
   waypoints: RoutePreviewPoint[];
 } {
-  const columns = 8;
+  const columns: number = 8;
   const rows = Math.max(2, Math.ceil(Math.max(8, Math.min(64, measurementPoints)) / columns));
   const routePath: RoutePreviewCoordinate[] = [];
   const waypoints: RoutePreviewPoint[] = [];
