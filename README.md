@@ -1,107 +1,131 @@
-# NenäBot UI
+# NenaBot UI
 
-Battery Inspection System - Web Interface
-
-## Project Overview
-
-NenäBot is a sophisticated battery inspection system that combines hardware (spectrometer, camera, robot arm) with a modern React-based web interface. This UI provides real-time monitoring, scan configuration, route planning, and data visualization for automated battery inspection workflows.
+Web interface for the NenaBot battery inspection workflow.
 
 ## Tech Stack
 
-- **React 18** with TypeScript (strict mode)
-- **Vite 6** - Fast build tooling with SWC
-- **Tailwind CSS v4** - Utility-first styling with Material Design 3 tokens
-- **Lucide React** - Icon library
-- **Recharts** - Data visualization
+- React 18 + TypeScript
+- Vite
+- Tailwind CSS
+- Jest + Testing Library
+- Playwright (UI tests)
 
-## Quick Start
+## Project Structure
 
-### Installation
+Small ASCII tree (main parts):
+
+```text
+nenabot-ui/
+|-- src/
+|   |-- components/
+|   |   |-- tabs/
+|   |   |   |-- SetupTab.tsx
+|   |   |   |-- CameraTab.tsx
+|   |   |   |-- RouteTab.tsx
+|   |   |   |-- ProgressTab.tsx
+|   |   |   `-- ResultsTab.tsx
+|   |   |-- shared/
+|   |   `-- __tests__/
+|   |-- hooks/
+|   |-- services/
+|   |-- mocks/
+|   |-- config/
+|   |-- styles/
+|   `-- types/
+|-- tests-ui/
+|-- build/
+|-- DEVELOPMENT.md
+`-- package.json
+```
+
+## Basic Structure Principles
+
+- Feature-first UI organization: tab-specific logic lives under `src/components/tabs/`.
+- Shared UI stays reusable: common elements are in `src/components/` and `src/components/shared/`.
+- Separation of concerns:
+    - UI rendering in `components/`
+    - Data access in `services/`
+    - App/runtime settings in `config/`
+    - Domain types in `types/`
+    - Development fallback data in `mocks/`
+- Keep side effects in hooks: data polling/fetching behavior belongs in custom hooks (for example `useHardwareData`).
+- Tests near behavior:
+    - Component/unit tests in `src/**/__tests__/`
+    - End-to-end flows in `tests-ui/`
+
+## Setup And Run Instructions
+
+### 1. Requirements
+
+- Node.js 18+
+- npm 9+
+
+### 2. Install dependencies
 
 ```bash
 npm install
 ```
 
-### Development
+### 3. Configure environment
+
+The repository includes:
+
+- `.env.example`
+- `.env.development`
+- `.env.production`
+
+If needed, copy and edit values based on your backend:
+
+```bash
+cp .env.example .env.development
+```
+
+Common variables:
+
+- `VITE_API_URL` (backend base URL)
+- `VITE_API_TIMEOUT` (request timeout in ms)
+- `VITE_USE_MOCK_DATA` (`true` for local mock mode)
+
+### 4. Start development server
 
 ```bash
 npm run dev
 ```
 
-Runs at `http://localhost:3000`
+By default Vite serves locally and prints the exact URL in terminal.
 
-### Production Build
+### 5. Build for production
 
 ```bash
 npm run build
 ```
 
-Output: `build/` directory
+Output is generated in `build/`.
 
-## Configuration
-
-Copy `.env.example` to `.env.development` and configure:
+### 6. Run checks and tests
 
 ```bash
-VITE_API_URL=http://localhost:8000        # Backend API endpoint
-VITE_API_TIMEOUT=30000                    # Request timeout (ms)
-VITE_USE_MOCK_DATA=true                   # Use mock data for development
+npm run lint
+npm run test
+npm run test:ui
 ```
 
-## Project Structure
+Optional Playwright debug mode:
 
-```
-src/
-├── components/          # React components
-│   ├── Header.tsx      # App header with navigation
-│   ├── StatusCards.tsx # Hardware status cards
-│   ├── TabNavigation.tsx
-│   └── ...             # Feature-specific components
-├── hooks/              # Custom React hooks
-│   └── useHardwareData.ts
-├── services/           # API client and business logic
-│   └── apiClient.ts    # HTTP client with retry logic
-├── types/              # TypeScript type definitions
-│   └── hardware.types.ts
-├── config/             # App configuration
-│   └── app.config.ts
-├── mocks/              # Mock data for development
-│   └── hardwareMocks.ts
-└── styles/             # Global styles and design tokens
-    └── globals.css
+```bash
+npm run test:ui:debug
 ```
 
-## Key Features
+## Useful Scripts
 
-- **Real-time Hardware Monitoring** - Live status of spectrometer, camera, and robot arm
-- **Scan Configuration** - Flexible parameter setup for inspection workflows
-- **Route Planning** - Interactive scan pattern configuration
-- **Progress Tracking** - Real-time measurement monitoring
-- **Results Visualization** - Data analysis and export
+- `npm run dev` - Start local dev server
+- `npm run build` - Production build
+- `npm run lint` - ESLint checks for `src/`
+- `npm run test` - Jest tests
+- `npm run test:ui` - Playwright UI tests
+- `npm run test:ui:debug` - Playwright debug run
+- `npm run format` - Prettier formatting for source files
 
-## Development Guide
+## Additional Documentation
 
-See [DEVELOPMENT.md](DEVELOPMENT.md) for:
-- Complete setup instructions
-- API integration guide
-- Component development best practices
-- Troubleshooting
-- Architecture decisions
-- Testing instructions
-
-## API Integration
-
-The UI communicates with a backend API for hardware control and data management. Set `VITE_USE_MOCK_DATA=false` when connecting to a real backend.
-
-Expected backend endpoint: `GET /api/hardware/status`
-
-See [DEVELOPMENT.md](DEVELOPMENT.md) for full API documentation.
-
-## License
-
-MIT
-
-## Attributions
-License
-
-MIT
+See `DEVELOPMENT.md` for deeper implementation notes, API integration details, and troubleshooting.
