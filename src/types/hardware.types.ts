@@ -1,43 +1,19 @@
 export type HardwareStatus = 'online' | 'offline' | 'error' | 'warning' | 'idle';
 
-export interface BaseHardwareData {
+export type HardwareDeviceType = 'dms' | 'camera' | 'robot';
+
+export interface HardwareMetric {
+  label: string;
+  value: string | number;
+  unit?: string;
+  percentage?: number;
+}
+
+export interface HardwareData {
   id: string;
+  type: HardwareDeviceType;
   title: string;
   status: HardwareStatus;
   lastUpdate: Date;
-  metrics: {
-    label: string;
-    value: string | number;
-    unit?: string;
-    percentage?: number; // For progress bars
-  }[];
+  metrics: HardwareMetric[];
 }
-
-export interface SpectrometerData extends BaseHardwareData {
-  type: 'spectrometer';
-  wavelength?: number;
-  signalStrength?: number;
-  integrationTime?: number;
-}
-
-export interface CameraData extends BaseHardwareData {
-  type: 'camera';
-  resolution?: string;
-  fps?: number;
-  exposure?: number;
-  captureMode?: 'continuous' | 'triggered' | 'idle';
-}
-
-export interface RobotArmData extends BaseHardwareData {
-  type: 'robotarm';
-  position?: {
-    x: number;
-    y: number;
-    z: number;
-  };
-  jointAngles?: number[];
-  gripperStatus?: 'open' | 'closed' | 'moving';
-  operational?: boolean;
-}
-
-export type HardwareData = SpectrometerData | CameraData | RobotArmData;

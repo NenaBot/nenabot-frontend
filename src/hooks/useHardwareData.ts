@@ -1,43 +1,91 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { HardwareData } from '../types/hardware.types';
 import { mockHardwareData } from '../mocks/hardwareMocks';
-import { fetchHardwareStatus, HardwareStatusApiResponse } from '../services/apiCalls';
+import { fetchHealthStatus, HealthApiResponse } from '../services/apiCalls';
+import { isMockModeEnabled } from '../state/mockMode';
 
 type HardwareDataMap = {
-  spectrometer: HardwareData | null;
+  dms: HardwareData | null;
   camera: HardwareData | null;
-  robotarm: HardwareData | null;
+  robot: HardwareData | null;
 };
 
 interface UseHardwareDataReturn {
-  spectrometer: HardwareData | null;
+  dms: HardwareData | null;
   camera: HardwareData | null;
-  robotarm: HardwareData | null;
+  robot: HardwareData | null;
   isLoading: boolean;
   error: Error | null;
   lastUpdated: Date | null;
   refetch: () => Promise<void>;
 }
 
-const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === 'true';
+function normalizeHealthStatus(status: string): HardwareData['status'] {
+  const normalized = status.trim().toLowerCase();
 
-function normalizeHardwareData(data: HardwareStatusApiResponse): HardwareDataMap {
-  const normalizeDevice = (device: HardwareStatusApiResponse[keyof HardwareStatusApiResponse]) => {
-    if (!device) {
-      return null;
-    }
+  if (normalized === 'ok' || normalized === 'online' || normalized === 'healthy') {
+    return 'online';
+  }
 
-    return {
-      ...device,
-      lastUpdate:
-        device.lastUpdate instanceof Date ? device.lastUpdate : new Date(device.lastUpdate),
-    } as HardwareData;
-  };
+  if (normalized === 'warning' || normalized === 'degraded') {
+    return 'warning';
+  }
+
+  if (normalized === 'error' || normalized === 'failed') {
+    return 'error';
+  }
+
+  if (normalized === 'idle') {
+    return 'idle';
+  }
+
+  return 'offline';
+}
+
+function normalizeHardwareData(data: HealthApiResponse): HardwareDataMap {
+  const now = new Date();
+  const uptime =
+    typeof data.uptimeSeconds === 'number' && Number.isFinite(data.uptimeSeconds)
+      ? Math.max(0, Math.round(data.uptimeSeconds))
+      : 0;
 
   return {
-    spectrometer: normalizeDevice(data.spectrometer),
-    camera: normalizeDevice(data.camera),
-    robotarm: normalizeDevice(data.robotarm),
+    dms: {
+      id: 'dms',
+      type: 'dms',
+      title: 'DMS',
+      status: normalizeHealthStatus(data.dms.status),
+      lastUpdate: now,
+      metrics: [
+        { label: 'Service', value: data.dms.status },
+        { label: 'Uptime', value: uptime, unit: 's' },
+        { label: 'Error', value: data.dms.error ? data.dms.error : 'None' },
+      ],
+    },
+    camera: {
+      id: 'camera',
+      type: 'camera',
+      title: 'Camera',
+      status: normalizeHealthStatus(data.camera.status),
+      lastUpdate: now,
+      metrics: [
+        { label: 'Service', value: data.camera.status },
+        { label: 'Uptime', value: uptime, unit: 's' },
+        { label: 'Error', value: data.camera.error ? data.camera.error : 'None' },
+      ],
+    },
+    robot: {
+      id: 'robot',
+      type: 'robot',
+      title: 'Robot Arm',
+      status: normalizeHealthStatus(data.robot.status),
+      lastUpdate: now,
+      metrics: [
+        { label: 'Service', value: data.robot.status },
+        { label: 'Uptime', value: uptime, unit: 's' },
+        { label: 'Error', value: data.robot.error ? data.robot.error : 'None' },
+      ],
+    },
   };
 }
 
@@ -52,9 +100,9 @@ function normalizeHardwareData(data: HardwareStatusApiResponse): HardwareDataMap
  */
 export function useHardwareData(): UseHardwareDataReturn {
   const [data, setData] = useState<HardwareDataMap>({
-    spectrometer: null,
+    dms: null,
     camera: null,
-    robotarm: null,
+    robot: null,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -67,7 +115,7 @@ export function useHardwareData(): UseHardwareDataReturn {
     setIsLoading(true);
 
     try {
-      if (USE_MOCK_DATA) {
+      if (isMockModeEnabled()) {
         if (!isMountedRef.current || requestId !== requestIdRef.current) {
           return;
         }
@@ -75,7 +123,7 @@ export function useHardwareData(): UseHardwareDataReturn {
         setData(mockHardwareData);
         setLastUpdated(new Date());
       } else {
-        const response = await fetchHardwareStatus();
+        const response = await fetchHealthStatus();
 
         if (!isMountedRef.current || requestId !== requestIdRef.current) {
           return;
@@ -126,9 +174,9 @@ export function useHardwareData(): UseHardwareDataReturn {
  */
 export function useHardwareDataPolling(intervalMs: number = 1000): UseHardwareDataReturn {
   const [data, setData] = useState<HardwareDataMap>({
-    spectrometer: null,
+    dms: null,
     camera: null,
-    robotarm: null,
+    robot: null,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -147,19 +195,19 @@ export function useHardwareDataPolling(intervalMs: number = 1000): UseHardwareDa
     setIsLoading(true);
 
     try {
-      if (USE_MOCK_DATA) {
+      if (isMockModeEnabled()) {
         if (!isMountedRef.current || requestId !== requestIdRef.current) {
           return;
         }
 
         setData({
-          spectrometer: { ...mockHardwareData.spectrometer, lastUpdate: new Date() },
+          dms: { ...mockHardwareData.dms, lastUpdate: new Date() },
           camera: { ...mockHardwareData.camera, lastUpdate: new Date() },
-          robotarm: { ...mockHardwareData.robotarm, lastUpdate: new Date() },
+          robot: { ...mockHardwareData.robot, lastUpdate: new Date() },
         });
         setLastUpdated(new Date());
       } else {
-        const response = await fetchHardwareStatus();
+        const response = await fetchHealthStatus();
 
         if (!isMountedRef.current || requestId !== requestIdRef.current) {
           return;

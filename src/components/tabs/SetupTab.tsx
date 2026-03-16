@@ -1,279 +1,261 @@
-import { useState } from 'react';
-import { ChevronRight, Upload, Download, RotateCcw, Save } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { ChevronRight, RefreshCcw } from 'lucide-react';
 import { CardSection } from '../CardSection';
-import { FormField } from '../FormField';
+import { fetchDefaultProfile, fetchProfiles, ProfileApiResponse } from '../../services/apiCalls';
+import { ProfileModel } from '../../types/profile.types';
+import { getMockDefaultProfile, getMockProfiles } from '../../mocks/profileMocks';
+import { isMockModeEnabled } from '../../state/mockMode';
 
 interface SetupTabProps {
+  selectedProfile: ProfileModel | null;
+  onProfileChange: (profile: ProfileModel) => void;
   onNext?: () => void;
 }
 
-export function SetupTab({ onNext }: SetupTabProps) {
-  const [formData, setFormData] = useState({
-    generalEnabled: true,
-    spectrometerEnabled: true,
-    scanMode: 'continuous',
-    integrationTime: '100',
-    averageScans: '5',
-    smoothingWindow: '3',
-    detectionMode: 'auto',
-    exposureTime: '50',
-    gainLevel: '2',
-    wavelengthRange: '400-900',
-  });
+function toProfileModel(profile: ProfileApiResponse): ProfileModel {
+  return {
+    name: profile.name,
+    description: profile.description ?? '',
+    settings: {
+      workZ:
+        typeof profile.workZ === 'number' && Number.isFinite(profile.workZ) ? profile.workZ : 0,
+      workR:
+        typeof profile.workR === 'number' && Number.isFinite(profile.workR) ? profile.workR : 0,
+      options: profile.options ?? {},
+    },
+  };
+}
 
-  const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+function parseJsonOptions(value: string): Record<string, unknown> {
+  if (value.trim().length === 0) {
+    return {};
+  }
+
+  const parsed = JSON.parse(value);
+  if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+    return parsed as Record<string, unknown>;
+  }
+
+  return {};
+}
+
+export function SetupTab({ selectedProfile, onProfileChange, onNext }: SetupTabProps) {
+  const [profiles, setProfiles] = useState<ProfileModel[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [optionsText, setOptionsText] = useState('{}');
+  const [optionsError, setOptionsError] = useState<string | null>(null);
+
+  const selectedProfileName = selectedProfile?.name ?? '';
+
+  const selectedProfileFromList = useMemo(
+    () => profiles.find((profile) => profile.name === selectedProfileName) ?? null,
+    [profiles, selectedProfileName],
+  );
+
+  const loadProfiles = async () => {
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const [allProfiles, defaultProfile] = isMockModeEnabled()
+        ? [getMockProfiles(), getMockDefaultProfile()]
+        : await Promise.all([
+            fetchProfiles().then((items) => items.map(toProfileModel)),
+            fetchDefaultProfile().then(toProfileModel),
+          ]);
+
+      setProfiles(allProfiles);
+
+      if (!selectedProfile) {
+        onProfileChange(defaultProfile);
+      }
+    } catch (error) {
+      console.error('Failed to load profiles:', error);
+      setErrorMessage('Failed to load profiles. You can switch to mock mode in the header.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadProfiles();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedProfile) {
+      setOptionsText('{}');
+      setOptionsError(null);
+      return;
+    }
+
+    setOptionsText(JSON.stringify(selectedProfile.settings.options, null, 2));
+    setOptionsError(null);
+  }, [selectedProfile]);
+
+  const handleProfileSelection = (profileName: string) => {
+    const profile = profiles.find((candidate) => candidate.name === profileName);
+    if (!profile) return;
+    onProfileChange(profile);
+  };
+
+  const handleDescriptionChange = (description: string) => {
+    if (!selectedProfile) return;
+    onProfileChange({ ...selectedProfile, description });
+  };
+
+  const handleWorkSettingChange = (key: 'workZ' | 'workR', rawValue: string) => {
+    if (!selectedProfile) return;
+
+    const parsed = Number(rawValue);
+    onProfileChange({
+      ...selectedProfile,
+      settings: {
+        ...selectedProfile.settings,
+        [key]: Number.isFinite(parsed) ? parsed : 0,
+      },
+    });
+  };
+
+  const handleOptionsChange = (rawValue: string) => {
+    setOptionsText(rawValue);
+    if (!selectedProfile) return;
+
+    try {
+      const nextOptions = parseJsonOptions(rawValue);
+      setOptionsError(null);
+      onProfileChange({
+        ...selectedProfile,
+        settings: {
+          ...selectedProfile.settings,
+          options: nextOptions,
+        },
+      });
+    } catch {
+      setOptionsError('Options must be valid JSON object syntax.');
+    }
   };
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-2xl mb-1">Scan Configuration</h2>
+          <h2 className="text-2xl mb-1">Profile Setup</h2>
           <p className="text-sm text-[var(--md-sys-color-on-surface-variant)]">
-            Configure your spectrometer settings before planning the scan route
+            Select a backend profile and adjust local run settings before route detection.
           </p>
         </div>
-        <div className="flex gap-2">
-          <button
-            className="p-2 border border-[var(--md-sys-color-outline)] rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-colors"
-            title="Reset to defaults"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </button>
-          <button
-            className="px-4 py-2 border border-[var(--md-sys-color-outline)] rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-colors text-sm flex items-center gap-2"
-            title="Save configuration"
-          >
-            <Save className="w-4 h-4" />
-            Save Config
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            void loadProfiles();
+          }}
+          className="px-3 py-2 border border-[var(--md-sys-color-outline)] rounded-lg text-sm flex items-center gap-2"
+          title="Reload profile data"
+        >
+          <RefreshCcw className="w-4 h-4" />
+          Reload
+        </button>
       </div>
 
-      {/* General Settings */}
+      {errorMessage && (
+        <div className="p-3 border border-[var(--md-sys-color-error)] rounded-lg text-sm text-[var(--md-sys-color-error)]">
+          {errorMessage}
+        </div>
+      )}
+
       <CardSection
-        title="General Settings"
-        description="Basic scan parameters and operational mode"
-        headerContent={
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-[var(--md-sys-color-surface-variant)] rounded-full text-xs">
-            <div
-              className={`w-2 h-2 rounded-full ${formData.generalEnabled ? 'bg-green-600' : 'bg-gray-400'}`}
-            />
-            <span>{formData.generalEnabled ? 'Enabled' : 'Disabled'}</span>
-          </div>
-        }
+        title="Profile Selection"
+        description="Profile values are editable locally for this run."
       >
-        <div className="mb-5">
-          <label className="flex items-start gap-3 cursor-pointer p-3 rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-colors">
-            <input
-              type="checkbox"
-              checked={formData.generalEnabled}
-              onChange={(e) => handleInputChange('generalEnabled', e.target.checked)}
-              className="mt-1 w-5 h-5 rounded border-[var(--md-sys-color-outline)] accent-[var(--md-sys-color-primary)]"
-            />
-            <div className="flex-1">
-              <div className="text-sm mb-0.5">Enable General Settings Module</div>
-              <div className="text-xs text-[var(--md-sys-color-on-surface-variant)]">
-                Activates primary scan configuration. Disable to use last saved settings.
-              </div>
-            </div>
-          </label>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <FormField
-            label="Scan Mode"
-            tooltip="Select the scanning operation mode"
-            helpText="Current: Continuous"
-            disabled={!formData.generalEnabled}
-          >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm text-[var(--md-sys-color-on-surface-variant)]">Profile</label>
             <select
-              value={formData.scanMode}
-              onChange={(e) => handleInputChange('scanMode', e.target.value)}
-              className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)] transition-all"
-              disabled={!formData.generalEnabled}
+              className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm"
+              value={selectedProfileName}
+              onChange={(event) => handleProfileSelection(event.target.value)}
+              disabled={isLoading || profiles.length === 0}
             >
-              <option value="continuous">Continuous</option>
-              <option value="single">Single Shot</option>
-              <option value="burst">Burst Mode</option>
+              {profiles.length === 0 ? (
+                <option value="">No profiles available</option>
+              ) : (
+                profiles.map((profile) => (
+                  <option key={profile.name} value={profile.name}>
+                    {profile.name}
+                  </option>
+                ))
+              )}
             </select>
-          </FormField>
-
-          <FormField
-            label="Integration Time (ms)"
-            tooltip="Time for signal integration"
-            helpText="Range: 10-1000ms"
-            disabled={!formData.generalEnabled}
-          >
-            <input
-              type="number"
-              value={formData.integrationTime}
-              onChange={(e) => handleInputChange('integrationTime', e.target.value)}
-              className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)] transition-all"
-              disabled={!formData.generalEnabled}
-              min="10"
-              max="1000"
-            />
-          </FormField>
-
-          <FormField
-            label="Average Scans"
-            tooltip="Number of scans to average"
-            helpText="Range: 1-100"
-            disabled={!formData.generalEnabled}
-          >
-            <input
-              type="number"
-              value={formData.averageScans}
-              onChange={(e) => handleInputChange('averageScans', e.target.value)}
-              className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)] transition-all"
-              disabled={!formData.generalEnabled}
-              min="1"
-              max="100"
-            />
-          </FormField>
-
-          <FormField
-            label="Smoothing Window"
-            tooltip="Data smoothing factor"
-            helpText="Range: 1-10"
-            disabled={!formData.generalEnabled}
-          >
-            <input
-              type="number"
-              value={formData.smoothingWindow}
-              onChange={(e) => handleInputChange('smoothingWindow', e.target.value)}
-              className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)] transition-all"
-              disabled={!formData.generalEnabled}
-              min="1"
-              max="10"
-            />
-          </FormField>
-        </div>
-      </CardSection>
-
-      {/* Spectrometer Settings */}
-      <CardSection
-        title="Spectrometer Settings"
-        description="Device-specific configuration for all connected spectrometers"
-        headerContent={
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-[var(--md-sys-color-surface-variant)] rounded-full text-xs">
-            <div
-              className={`w-2 h-2 rounded-full ${formData.spectrometerEnabled ? 'bg-green-600' : 'bg-gray-400'}`}
-            />
-            <span>{formData.spectrometerEnabled ? 'Enabled' : 'Disabled'}</span>
           </div>
-        }
-      >
-        <div className="mb-5">
-          <label className="flex items-start gap-3 cursor-pointer p-3 rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-colors">
-            <input
-              type="checkbox"
-              checked={formData.spectrometerEnabled}
-              onChange={(e) => handleInputChange('spectrometerEnabled', e.target.checked)}
-              className="mt-1 w-5 h-5 rounded border-[var(--md-sys-color-outline)] accent-[var(--md-sys-color-primary)]"
-            />
-            <div className="flex-1">
-              <div className="text-sm mb-0.5">Enable Advanced Spectrometer Controls</div>
-              <div className="text-xs text-[var(--md-sys-color-on-surface-variant)]">
-                Fine-tune hardware parameters for optimal signal quality. Requires calibration.
-              </div>
-            </div>
-          </label>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <FormField
-            label="Detection Mode"
-            tooltip="Signal detection method"
-            helpText="Current: Auto"
-            disabled={!formData.spectrometerEnabled}
-          >
-            <select
-              value={formData.detectionMode}
-              onChange={(e) => handleInputChange('detectionMode', e.target.value)}
-              className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)] transition-all"
-              disabled={!formData.spectrometerEnabled}
-            >
-              <option value="auto">Auto-detect</option>
-              <option value="manual">Manual</option>
-              <option value="adaptive">Adaptive</option>
-            </select>
-          </FormField>
-
-          <FormField
-            label="Exposure Time (ms)"
-            tooltip="Sensor exposure duration"
-            helpText="Range: 1-500ms"
-            disabled={!formData.spectrometerEnabled}
-          >
-            <input
-              type="number"
-              value={formData.exposureTime}
-              onChange={(e) => handleInputChange('exposureTime', e.target.value)}
-              className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)] transition-all"
-              disabled={!formData.spectrometerEnabled}
-              min="1"
-              max="500"
-            />
-          </FormField>
-
-          <FormField
-            label="Gain Level"
-            tooltip="Signal amplification level"
-            helpText="Range: 1-10"
-            disabled={!formData.spectrometerEnabled}
-          >
-            <input
-              type="number"
-              value={formData.gainLevel}
-              onChange={(e) => handleInputChange('gainLevel', e.target.value)}
-              className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)] transition-all"
-              disabled={!formData.spectrometerEnabled}
-              min="1"
-              max="10"
-            />
-          </FormField>
-
-          <FormField
-            label="Wavelength (nm)"
-            tooltip="Measurement range"
-            helpText="Format: min-max"
-            disabled={!formData.spectrometerEnabled}
-          >
+          <div className="space-y-2">
+            <label className="text-sm text-[var(--md-sys-color-on-surface-variant)]">
+              Description
+            </label>
             <input
               type="text"
-              value={formData.wavelengthRange}
-              onChange={(e) => handleInputChange('wavelengthRange', e.target.value)}
-              className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)] transition-all"
-              disabled={!formData.spectrometerEnabled}
-              placeholder="400-900"
+              value={selectedProfile?.description ?? selectedProfileFromList?.description ?? ''}
+              onChange={(event) => handleDescriptionChange(event.target.value)}
+              className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm"
+              placeholder="Profile description"
+              disabled={!selectedProfile}
             />
-          </FormField>
+          </div>
         </div>
       </CardSection>
 
-      {/* Action Buttons */}
-      <div className="flex items-center justify-between pt-4 border-t border-[var(--md-sys-color-outline-variant)]">
-        <div className="flex gap-3">
-          <button
-            className="p-2.5 border border-[var(--md-sys-color-outline)] rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-all"
-            title="Import configuration"
-          >
-            <Upload className="w-4 h-4" />
-          </button>
-          <button
-            className="p-2.5 border border-[var(--md-sys-color-outline)] rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-all"
-            title="Export configuration"
-          >
-            <Download className="w-4 h-4" />
-          </button>
+      <CardSection
+        title="Profile Settings"
+        description="Adjust these values before creating a job."
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="space-y-2">
+            <label className="text-sm text-[var(--md-sys-color-on-surface-variant)]">Work Z</label>
+            <input
+              type="number"
+              step="0.01"
+              value={selectedProfile?.settings.workZ ?? 0}
+              onChange={(event) => handleWorkSettingChange('workZ', event.target.value)}
+              className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm"
+              disabled={!selectedProfile}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm text-[var(--md-sys-color-on-surface-variant)]">Work R</label>
+            <input
+              type="number"
+              step="0.01"
+              value={selectedProfile?.settings.workR ?? 0}
+              onChange={(event) => handleWorkSettingChange('workR', event.target.value)}
+              className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm"
+              disabled={!selectedProfile}
+            />
+          </div>
         </div>
+
+        <div className="space-y-2">
+          <label className="text-sm text-[var(--md-sys-color-on-surface-variant)]">
+            Options (JSON)
+          </label>
+          <textarea
+            value={optionsText}
+            onChange={(event) => handleOptionsChange(event.target.value)}
+            className="w-full min-h-36 px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm font-mono"
+            disabled={!selectedProfile}
+          />
+          {optionsError && (
+            <p className="text-xs text-[var(--md-sys-color-error)]">{optionsError}</p>
+          )}
+        </div>
+      </CardSection>
+
+      <div className="flex items-center justify-end pt-4 border-t border-[var(--md-sys-color-outline-variant)]">
         <button
           onClick={onNext}
-          className="px-6 py-3 bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)] rounded-full flex items-center gap-2 hover:shadow-lg transition-all text-sm"
+          disabled={!selectedProfile || Boolean(optionsError)}
+          className="px-6 py-3 bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)] rounded-full flex items-center gap-2 hover:shadow-lg transition-all text-sm disabled:opacity-60"
         >
           Continue to Camera
           <ChevronRight className="w-4 h-4" />

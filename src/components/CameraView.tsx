@@ -1,11 +1,12 @@
 import { Camera, AlertCircle } from 'lucide-react';
-import { getCameraStreamUrl } from '../services/apiCalls';
+import { getStreamUrl } from '../services/apiCalls';
 import { useCameraStream } from '../hooks/useCameraStream';
 
 interface CameraViewProps {
   title?: string;
   showStatus?: boolean;
   height?: 'compact' | 'standard' | 'full';
+  streamKind?: 'camera' | 'detection';
 }
 
 const DEFAULT_RETRY_INTERVAL = 5000; // 5 seconds
@@ -14,9 +15,10 @@ export function CameraView({
   title = 'Live Camera Feed',
   showStatus = true,
   height = 'standard',
+  streamKind = 'camera',
 }: CameraViewProps) {
   const retryInterval = DEFAULT_RETRY_INTERVAL;
-  const streamUrl = getCameraStreamUrl();
+  const streamUrl = getStreamUrl(streamKind);
   const { streamStatus, streamSrc, showPlaceholder, handleLoad, handleError } = useCameraStream(
     streamUrl,
     retryInterval,

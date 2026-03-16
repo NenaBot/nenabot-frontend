@@ -8,6 +8,8 @@ import {
 
 interface CurrentScanStatusCardProps {
   scan: ScanStatusModel;
+  onAbort?: () => void;
+  isAbortDisabled?: boolean;
 }
 
 /**
@@ -16,7 +18,11 @@ interface CurrentScanStatusCardProps {
  * - shows points and progress bar
  * - keeps controls close to live status data
  */
-export function CurrentScanStatusCard({ scan }: CurrentScanStatusCardProps) {
+export function CurrentScanStatusCard({
+  scan,
+  onAbort,
+  isAbortDisabled = false,
+}: CurrentScanStatusCardProps) {
   const progress = getScanProgressPercent(scan);
   const stateLabel = getScanStateLabel(scan.state);
 
@@ -70,7 +76,12 @@ export function CurrentScanStatusCard({ scan }: CurrentScanStatusCardProps) {
       </div>
 
       <div className="flex gap-2">
-        <button className="flex-1 px-4 py-2.5 bg-[var(--md-sys-color-error)] text-[var(--md-sys-color-on-error)] rounded-lg flex items-center justify-center gap-2 hover:shadow-lg transition-all text-sm">
+        <button
+          type="button"
+          onClick={onAbort}
+          disabled={isAbortDisabled}
+          className="flex-1 px-4 py-2.5 bg-[var(--md-sys-color-error)] text-[var(--md-sys-color-on-error)] rounded-lg flex items-center justify-center gap-2 hover:shadow-lg transition-all text-sm disabled:opacity-60"
+        >
           <Square className="w-4 h-4 fill-current" />
           Abort
         </button>

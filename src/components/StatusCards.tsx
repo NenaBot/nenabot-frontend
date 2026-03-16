@@ -62,11 +62,11 @@ function getHardwareIcon(type: HardwareData['type']) {
   const className = 'text-xl text-(--md-sys-color-on-primary-container)';
 
   switch (type) {
-    case 'spectrometer':
-      return <MaterialSymbol name="lab_research" className={className} />;
+    case 'dms':
+      return <MaterialSymbol name="database" className={className} />;
     case 'camera':
       return <MaterialSymbol name="photo_camera" className={className} />;
-    case 'robotarm':
+    case 'robot':
       return <MaterialSymbol name="precision_manufacturing" className={className} />;
     default:
       return <MaterialSymbol name="settings" className={className} />;
@@ -189,7 +189,7 @@ function StatusCardsError({
 }
 
 export function StatusCards() {
-  const { spectrometer, camera, robotarm, isLoading, error, refetch } = useHardwareData();
+  const { dms, camera, robot, isLoading, error, refetch } = useHardwareData();
 
   if (isLoading) {
     return (
@@ -214,9 +214,9 @@ export function StatusCards() {
   return (
     <div className="mb-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {spectrometer && <StatusCard data={spectrometer} />}
+        {dms && <StatusCard data={dms} />}
         {camera && <StatusCard data={camera} />}
-        {robotarm && <StatusCard data={robotarm} />}
+        {robot && <StatusCard data={robot} />}
       </div>
     </div>
   );

@@ -17,7 +17,12 @@ export function CameraTab({ onNext }: CameraTabProps) {
       </div>
 
       {/* Camera Feed - Full Width */}
-      <CameraView title="Live Camera Feed" showStatus={true} height="standard" />
+      <CameraView
+        title="Live Detection Feed"
+        showStatus={true}
+        height="standard"
+        streamKind="detection"
+      />
 
       {/* Verification Checklist - Grid Layout */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

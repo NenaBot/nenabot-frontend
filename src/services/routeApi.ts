@@ -1,35 +1,27 @@
-import { DefaultRoutePlanApiResponse, fetchDefaultRoutePlan } from './apiCalls';
-import { createDefaultRoutePlan, RoutePlan } from '../types/route.types';
+import { checkPath, detectPath, PathDetectResponseApi, PixelPointApiResponse } from './apiCalls';
 
-function normalizeDefaultRoutePlanResponse(response: DefaultRoutePlanApiResponse): RoutePlan {
-  const fallback = createDefaultRoutePlan();
+export async function detectAndCheckPath(options?: Record<string, unknown>): Promise<{
+  detect: PathDetectResponseApi;
+  waypoints: PixelPointApiResponse[];
+}> {
+  const detect = await detectPath({ options: options ?? {} });
+  const points = (detect.detections ?? [])
+    .map((item) => {
+      if (typeof item.center_x !== 'number' || typeof item.center_y !== 'number') {
+        return null;
+      }
+
+      return {
+        x: item.center_x,
+        y: item.center_y,
+      };
+    })
+    .filter((point): point is PixelPointApiResponse => point !== null);
+
+  const checked = await checkPath(points);
 
   return {
-    settings: {
-      alwaysScanOnWaypoints:
-        typeof response.alwaysScanOnWaypoints === 'boolean'
-          ? response.alwaysScanOnWaypoints
-          : fallback.settings.alwaysScanOnWaypoints,
-      pointsPerCm:
-        typeof response.pointsPerCm === 'number' && Number.isFinite(response.pointsPerCm)
-          ? response.pointsPerCm
-          : fallback.settings.pointsPerCm,
-    },
-    estimate: {
-      measurementPoints:
-        typeof response.estimatedMeasurementPoints === 'number' &&
-        Number.isFinite(response.estimatedMeasurementPoints)
-          ? Math.max(1, Math.round(response.estimatedMeasurementPoints))
-          : fallback.estimate.measurementPoints,
-      estimatedSeconds:
-        typeof response.estimatedSeconds === 'number' && Number.isFinite(response.estimatedSeconds)
-          ? Math.max(1, Math.round(response.estimatedSeconds))
-          : fallback.estimate.estimatedSeconds,
-    },
+    detect,
+    waypoints: checked.waypoints ?? points,
   };
-}
-
-export async function getDefaultRoutePlan(): Promise<RoutePlan> {
-  const response = await fetchDefaultRoutePlan();
-  return normalizeDefaultRoutePlanResponse(response);
 }

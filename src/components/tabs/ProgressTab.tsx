@@ -1,17 +1,21 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { CameraView } from '../CameraView';
 import { CurrentScanStatusCard } from './progress/CurrentScanStatusCard';
 import { EventLogCard } from './progress/EventLogCard';
 import { MeasurementLogCard } from './progress/MeasurementLogCard';
 import { getScanProgressPercent, isTerminalScanState } from '../../types/progress.types';
 import { useProgressData } from '../../hooks/useProgressData';
+import { deleteJob } from '../../services/apiCalls';
+import { isMockModeEnabled } from '../../state/mockMode';
 
 interface ProgressTabProps {
+  jobId: string | null;
   onNext?: () => void;
 }
 
-export function ProgressTab({ onNext }: ProgressTabProps) {
-  const { progressState, isLoading, error } = useProgressData();
+export function ProgressTab({ jobId, onNext }: ProgressTabProps) {
+  const { progressState, isLoading, error } = useProgressData(jobId);
+  const [isAborting, setIsAborting] = useState(false);
 
   if (isLoading) {
     return <div className="text-sm text-[var(--md-sys-color-on-surface-variant)]">Loading...</div>;
@@ -26,6 +30,21 @@ export function ProgressTab({ onNext }: ProgressTabProps) {
   }
 
   const scanProgress = getScanProgressPercent(progressState.scan);
+
+  const handleAbort = async () => {
+    if (!jobId || isMockModeEnabled()) {
+      return;
+    }
+
+    setIsAborting(true);
+    try {
+      await deleteJob(jobId);
+    } catch (abortError) {
+      console.error('Failed to abort job:', abortError);
+    } finally {
+      setIsAborting(false);
+    }
+  };
 
   useEffect(() => {
     // Auto-advance to results when scan completes
@@ -48,7 +67,13 @@ export function ProgressTab({ onNext }: ProgressTabProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Panel - Status and Controls */}
         <div className="lg:col-span-1 space-y-6">
-          <CurrentScanStatusCard scan={progressState.scan} />
+          <CurrentScanStatusCard
+            scan={progressState.scan}
+            onAbort={() => {
+              void handleAbort();
+            }}
+            isAbortDisabled={!jobId || isAborting || isTerminalScanState(progressState.scan.state)}
+          />
           <EventLogCard events={progressState.events} />
           <MeasurementLogCard measurements={progressState.measurements} />
         </div>

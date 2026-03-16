@@ -1,168 +1,210 @@
-import { useEffect, useMemo, useState } from 'react';
-import { getDefaultRoutePlan } from '../services/routeApi';
+import { useMemo, useState } from 'react';
 import {
-  createRouteTabInitialState,
-  deriveEstimateFromBasis,
-  getPointsPerCmValidationError,
-  parsePointsPerCm,
-} from '../types/route.types';
+  checkPath,
+  createJob,
+  detectPath,
+  PathItemApiResponse,
+  PixelPointApiResponse,
+} from '../services/apiCalls';
+import { ProfileModel } from '../types/profile.types';
+import { isMockModeEnabled } from '../state/mockMode';
 
 interface RoutePreviewCoordinate {
   x: number;
   y: number;
 }
 
-interface RoutePreviewPoint {
+interface RoutePreviewPoint extends RoutePreviewCoordinate {
   id: string;
   label: string;
-  x: number;
-  y: number;
 }
 
-function createPreviewRoute(measurementPoints: number): {
-  routePath: RoutePreviewCoordinate[];
-  waypoints: RoutePreviewPoint[];
-} {
-  const columns = 8;
-  const rows = Math.max(2, Math.ceil(Math.max(8, Math.min(64, measurementPoints)) / columns));
-  const routePath: RoutePreviewCoordinate[] = [];
-  const waypoints: RoutePreviewPoint[] = [];
-
-  for (let row = 0; row < rows; row += 1) {
-    const normalizedY = rows === 1 ? 0.5 : row / (rows - 1);
-    const isEvenRow = row % 2 === 0;
-    const rowStart = isEvenRow ? 0 : columns - 1;
-    const rowEnd = isEvenRow ? columns : -1;
-    const rowStep = isEvenRow ? 1 : -1;
-
-    for (let column = rowStart; column !== rowEnd; column += rowStep) {
-      const normalizedX = columns === 1 ? 0.5 : column / (columns - 1);
-      routePath.push({ x: normalizedX, y: normalizedY });
-    }
-
-    const rowStartX = isEvenRow ? 0 : 1;
-    const rowEndX = isEvenRow ? 1 : 0;
-    waypoints.push({
-      id: `wp-${row}-start`,
-      label: `W${row * 2 + 1}`,
-      x: rowStartX,
-      y: normalizedY,
-    });
-    waypoints.push({ id: `wp-${row}-end`, label: `W${row * 2 + 2}`, x: rowEndX, y: normalizedY });
-  }
-
-  return { routePath, waypoints };
+interface UseRoutePlanOptions {
+  selectedProfile: ProfileModel | null;
 }
 
-export function useRoutePlan() {
-  const [routeState, setRouteState] = useState(createRouteTabInitialState);
+interface DetectState {
+  isDetecting: boolean;
+  isChecking: boolean;
+  isCreatingJob: boolean;
+  dryRun: boolean;
+  imageBase64: string | null;
+  detectError: string | null;
+  checkedWaypoints: PixelPointApiResponse[];
+  detectedPoints: PixelPointApiResponse[];
+}
 
-  useEffect(() => {
-    let isActive = true;
+function normalizeToUnit(
+  point: PixelPointApiResponse,
+  maxX: number,
+  maxY: number,
+): RoutePreviewCoordinate {
+  const x = maxX > 0 ? point.x / maxX : 0;
+  const y = maxY > 0 ? point.y / maxY : 0;
 
-    const loadDefaultRoutePlan = async () => {
-      setRouteState((prev) => ({
-        ...prev,
-        isLoadingDefaultPlan: true,
-        loadError: null,
-      }));
-
-      try {
-        const defaultPlan = await getDefaultRoutePlan();
-        const validationError = getPointsPerCmValidationError(
-          defaultPlan.settings.pointsPerCm.toString(),
-        );
-
-        if (!isActive) {
-          return;
-        }
-
-        setRouteState((prev) => ({
-          ...prev,
-          isLoadingDefaultPlan: false,
-          loadError: null,
-          pointsPerCmInput: defaultPlan.settings.pointsPerCm.toString(),
-          pointsPerCmError: validationError,
-          plan: defaultPlan,
-          estimateBasis: {
-            pointsPerCm: defaultPlan.settings.pointsPerCm,
-            estimate: defaultPlan.estimate,
-          },
-        }));
-      } catch (error) {
-        console.error('Failed to fetch default route plan:', error);
-
-        if (!isActive) {
-          return;
-        }
-
-        setRouteState((prev) => ({
-          ...prev,
-          isLoadingDefaultPlan: false,
-          loadError: 'Failed to load default route from backend. Using fallback values.',
-        }));
-      }
-    };
-
-    void loadDefaultRoutePlan();
-
-    return () => {
-      isActive = false;
-    };
-  }, []);
-
-  const handleAlwaysScanOnWaypointsChange = (checked: boolean) => {
-    setRouteState((prev) => ({
-      ...prev,
-      plan: {
-        ...prev.plan,
-        settings: {
-          ...prev.plan.settings,
-          alwaysScanOnWaypoints: checked,
-        },
-      },
-    }));
+  return {
+    x: Math.max(0, Math.min(1, x)),
+    y: Math.max(0, Math.min(1, y)),
   };
+}
 
-  const handlePointsPerCmInputChange = (value: string) => {
-    setRouteState((prev) => {
-      const pointsPerCmError = getPointsPerCmValidationError(value);
-      const parsedValue = parsePointsPerCm(value);
+function createMockDetectedPoints(): PixelPointApiResponse[] {
+  return [
+    { x: 90, y: 80 },
+    { x: 250, y: 80 },
+    { x: 410, y: 80 },
+    { x: 410, y: 210 },
+    { x: 250, y: 210 },
+    { x: 90, y: 210 },
+  ];
+}
 
-      if (parsedValue === null || pointsPerCmError !== null) {
-        return {
-          ...prev,
-          pointsPerCmInput: value,
-          pointsPerCmError,
-        };
+function detectItemsToPoints(items: PathItemApiResponse[]): PixelPointApiResponse[] {
+  return items
+    .map((item) => {
+      if (typeof item.center_x !== 'number' || typeof item.center_y !== 'number') {
+        return null;
       }
 
       return {
-        ...prev,
-        pointsPerCmInput: value,
-        pointsPerCmError: null,
-        plan: {
-          ...prev.plan,
-          settings: {
-            ...prev.plan.settings,
-            pointsPerCm: parsedValue,
-          },
-          estimate: deriveEstimateFromBasis(parsedValue, prev.estimateBasis),
-        },
+        x: item.center_x,
+        y: item.center_y,
       };
-    });
+    })
+    .filter((item): item is PixelPointApiResponse => item !== null);
+}
+
+export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
+  const [state, setState] = useState<DetectState>({
+    isDetecting: false,
+    isChecking: false,
+    isCreatingJob: false,
+    dryRun: false,
+    imageBase64: null,
+    detectError: null,
+    checkedWaypoints: [],
+    detectedPoints: [],
+  });
+
+  const detectAndCheckPath = async () => {
+    setState((prev) => ({ ...prev, isDetecting: true, detectError: null }));
+
+    try {
+      const detectionResponse = isMockModeEnabled()
+        ? {
+            ok: true,
+            detections: [],
+            image_base64: null,
+          }
+        : await detectPath({ options: selectedProfile?.settings.options ?? {} });
+
+      const detectedPoints = isMockModeEnabled()
+        ? createMockDetectedPoints()
+        : detectItemsToPoints(detectionResponse.detections ?? []);
+
+      if (detectedPoints.length === 0) {
+        throw new Error('No path points were detected.');
+      }
+
+      setState((prev) => ({
+        ...prev,
+        isDetecting: false,
+        isChecking: true,
+        detectedPoints,
+        imageBase64: detectionResponse.image_base64 ?? null,
+      }));
+
+      const checked = isMockModeEnabled()
+        ? { waypoints: detectedPoints }
+        : await checkPath(detectedPoints);
+
+      setState((prev) => ({
+        ...prev,
+        isChecking: false,
+        checkedWaypoints: checked.waypoints ?? detectedPoints,
+      }));
+    } catch (error) {
+      console.error('Path detection/check failed:', error);
+      setState((prev) => ({
+        ...prev,
+        isDetecting: false,
+        isChecking: false,
+        detectError: 'Failed to detect/check path. Please retry.',
+      }));
+    }
   };
 
-  const preview = useMemo(
-    () => createPreviewRoute(routeState.plan.estimate.measurementPoints),
-    [routeState.plan.estimate.measurementPoints],
-  );
+  const createScanJob = async (): Promise<string | null> => {
+    if (state.checkedWaypoints.length === 0) {
+      return null;
+    }
+
+    setState((prev) => ({ ...prev, isCreatingJob: true, detectError: null }));
+
+    try {
+      if (isMockModeEnabled()) {
+        const mockJobId = `mock-job-${Date.now()}`;
+        setState((prev) => ({ ...prev, isCreatingJob: false }));
+        return mockJobId;
+      }
+
+      const response = await createJob({
+        path: state.checkedWaypoints,
+        workZ: selectedProfile?.settings.workZ ?? 0,
+        workR: selectedProfile?.settings.workR ?? 0,
+        dryRun: state.dryRun,
+        options: {
+          profile: selectedProfile?.name ?? 'default',
+          ...(selectedProfile?.settings.options ?? {}),
+        },
+        imageBase64: state.imageBase64,
+      });
+
+      setState((prev) => ({ ...prev, isCreatingJob: false }));
+      return response.id;
+    } catch (error) {
+      console.error('Job creation failed:', error);
+      setState((prev) => ({
+        ...prev,
+        isCreatingJob: false,
+        detectError: 'Failed to create job. Please retry.',
+      }));
+      return null;
+    }
+  };
+
+  const preview = useMemo(() => {
+    const points =
+      state.checkedWaypoints.length > 0 ? state.checkedWaypoints : state.detectedPoints;
+
+    if (points.length === 0) {
+      return {
+        routePath: [] as RoutePreviewCoordinate[],
+        waypoints: [] as RoutePreviewPoint[],
+      };
+    }
+
+    const maxX = Math.max(...points.map((point) => point.x));
+    const maxY = Math.max(...points.map((point) => point.y));
+
+    const normalized = points.map((point) => normalizeToUnit(point, maxX, maxY));
+
+    return {
+      routePath: normalized,
+      waypoints: normalized.map((point, index) => ({
+        id: `wp-${index + 1}`,
+        label: `W${index + 1}`,
+        x: point.x,
+        y: point.y,
+      })),
+    };
+  }, [state.checkedWaypoints, state.detectedPoints]);
 
   return {
-    routeState,
-    isFormValid: routeState.pointsPerCmError === null,
+    state,
     preview,
-    handleAlwaysScanOnWaypointsChange,
-    handlePointsPerCmInputChange,
+    setDryRun: (value: boolean) => setState((prev) => ({ ...prev, dryRun: value })),
+    detectAndCheckPath,
+    createScanJob,
   };
 }

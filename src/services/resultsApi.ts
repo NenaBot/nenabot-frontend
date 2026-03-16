@@ -1,13 +1,9 @@
 import {
-  downloadScanResult,
-  fetchAvailableScanResults,
-  fetchLatestScanResult,
-  fetchScanResultById,
-  MeasurementPointApiResponse,
-  RouteCoordinateApiResponse,
-  ScanResultApiResponse,
-  ScanResultExportFormat,
-  ScanResultSummaryApiResponse,
+  fetchJobById,
+  fetchJobs,
+  fetchLatestJob,
+  getJobImageUrl,
+  JobApiResponse,
 } from './apiCalls';
 import {
   getMockLatestScanResult,
@@ -20,138 +16,131 @@ import {
   ScanResultSummary,
   ScanRouteCoordinate,
 } from '../types/results.types';
+import { isMockModeEnabled } from '../state/mockMode';
 
-const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === 'true';
-
-function normalizeCoordinate(raw: number | undefined): number {
-  if (typeof raw !== 'number' || !Number.isFinite(raw)) {
+function normalizeAxisByBounds(value: number, max: number): number {
+  if (!Number.isFinite(value)) {
     return 0;
   }
 
-  if (raw > 1) {
-    return Math.max(0, Math.min(1, raw / 100));
+  if (max <= 0) {
+    return 0;
   }
 
-  return Math.max(0, Math.min(1, raw));
+  return Math.max(0, Math.min(1, value / max));
 }
 
-function normalizeRouteCoordinate(point: RouteCoordinateApiResponse): ScanRouteCoordinate {
-  return {
-    x: normalizeCoordinate(point.x),
-    y: normalizeCoordinate(point.y),
-  };
+function toMeasurementValue(scanResult: Record<string, unknown> | null | undefined): number {
+  if (!scanResult || typeof scanResult !== 'object') {
+    return 0;
+  }
+
+  const numericCandidateKeys = ['measuredValue', 'value', 'intensity', 'signal'];
+  for (const key of numericCandidateKeys) {
+    const value = scanResult[key];
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+  }
+
+  return 0;
 }
 
-function normalizeMeasurementPoint(
-  point: MeasurementPointApiResponse,
-  index: number,
-): MeasurementPoint {
-  return {
-    id:
-      typeof point.id === 'string' || typeof point.id === 'number'
-        ? String(point.id)
-        : `mp-${index + 1}`,
-    label:
-      typeof point.label === 'string' && point.label.trim().length > 0
-        ? point.label
-        : `P-${index + 1}`,
-    x: normalizeCoordinate(point.x),
-    y: normalizeCoordinate(point.y),
-    waypointIndex:
-      typeof point.waypointIndex === 'number' && Number.isFinite(point.waypointIndex)
-        ? Math.max(0, Math.round(point.waypointIndex))
-        : index + 1,
-    measuredValue:
-      typeof point.measuredValue === 'number' && Number.isFinite(point.measuredValue)
-        ? point.measuredValue
-        : typeof point.intensity === 'number' && Number.isFinite(point.intensity)
-          ? point.intensity
-          : 0,
-    comment: typeof point.comment === 'string' ? point.comment : '',
-    timestamp: typeof point.timestamp === 'string' ? point.timestamp : '',
-  };
+async function fetchJobImageObjectUrl(jobId: string): Promise<string | null> {
+  try {
+    const response = await fetch(getJobImageUrl(jobId));
+    if (!response.ok) {
+      return null;
+    }
+
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
+  } catch {
+    return null;
+  }
 }
 
-function normalizeScanResult(response: ScanResultApiResponse): ScanResult {
-  const measurementPoints = Array.isArray(response.measurementPoints)
-    ? response.measurementPoints.map(normalizeMeasurementPoint)
-    : [];
+async function normalizeJobToResult(job: JobApiResponse): Promise<ScanResult> {
+  const measurements = Array.isArray(job.measurements) ? job.measurements : [];
+  const xCandidates = measurements.map((item) => item.pixelX ?? 0);
+  const yCandidates = measurements.map((item) => item.pixelY ?? 0);
+  const maxX = Math.max(1, ...xCandidates);
+  const maxY = Math.max(1, ...yCandidates);
 
-  const routePathSource =
-    Array.isArray(response.routePath) && response.routePath.length > 0
-      ? response.routePath
-      : measurementPoints.map((point) => ({ x: point.x, y: point.y }));
+  const measurementPoints: MeasurementPoint[] = measurements.map((measurement, index) => {
+    const rawX = typeof measurement.pixelX === 'number' ? measurement.pixelX : 0;
+    const rawY = typeof measurement.pixelY === 'number' ? measurement.pixelY : 0;
+
+    return {
+      id: `${job.id}-m-${index + 1}`,
+      label: `P-${(index + 1).toString().padStart(3, '0')}`,
+      x: normalizeAxisByBounds(rawX, maxX),
+      y: normalizeAxisByBounds(rawY, maxY),
+      waypointIndex:
+        typeof measurement.waypointIndex === 'number' && Number.isFinite(measurement.waypointIndex)
+          ? measurement.waypointIndex
+          : index + 1,
+      measuredValue: toMeasurementValue(measurement.scanResult),
+      comment: measurement.simulated ? 'Simulated' : '',
+      timestamp: measurement.timestamp ?? '',
+    };
+  });
+
+  const routePath: ScanRouteCoordinate[] = measurementPoints.map((point) => ({
+    x: point.x,
+    y: point.y,
+  }));
 
   return {
-    scanId:
-      typeof response.scanId === 'string' && response.scanId.trim().length > 0
-        ? response.scanId
-        : 'unknown-scan',
-    createdAt:
-      typeof response.createdAt === 'string' ? response.createdAt : new Date().toISOString(),
-    sourceName:
-      typeof response.sourceName === 'string' && response.sourceName.trim().length > 0
-        ? response.sourceName
-        : 'Latest scan',
-    previewImageUrl: typeof response.previewImageUrl === 'string' ? response.previewImageUrl : null,
-    routePath: routePathSource.map(normalizeRouteCoordinate),
+    scanId: job.id,
+    createdAt: new Date().toISOString(),
+    sourceName: job.options?.profile ? String(job.options.profile) : `Job ${job.id}`,
+    previewImageUrl: await fetchJobImageObjectUrl(job.id),
+    routePath,
     measurementPoints,
   };
 }
 
-function normalizeScanSummary(response: ScanResultSummaryApiResponse): ScanResultSummary {
+function normalizeJobSummary(job: JobApiResponse): ScanResultSummary {
   return {
-    scanId:
-      typeof response.scanId === 'string' && response.scanId.trim().length > 0
-        ? response.scanId
-        : 'unknown-scan',
-    createdAt:
-      typeof response.createdAt === 'string' ? response.createdAt : new Date().toISOString(),
-    sourceName:
-      typeof response.sourceName === 'string' && response.sourceName.trim().length > 0
-        ? response.sourceName
-        : 'Uploaded scan',
-    measurementPointCount:
-      typeof response.measurementPointCount === 'number' &&
-      Number.isFinite(response.measurementPointCount)
-        ? Math.max(0, Math.round(response.measurementPointCount))
-        : 0,
+    scanId: job.id,
+    createdAt: new Date().toISOString(),
+    sourceName: job.options?.profile ? String(job.options.profile) : `Job ${job.id}`,
+    measurementPointCount: Array.isArray(job.measurements) ? job.measurements.length : 0,
   };
 }
 
 export async function getAvailableScanResultSummaries(): Promise<ScanResultSummary[]> {
-  if (USE_MOCK_DATA) {
+  if (isMockModeEnabled()) {
     return getMockScanResultSummaries();
   }
 
-  const response = await fetchAvailableScanResults();
-  return response.map(normalizeScanSummary);
+  const response = await fetchJobs();
+  return response.map(normalizeJobSummary);
 }
 
 export async function getLatestScanResult(): Promise<ScanResult> {
-  if (USE_MOCK_DATA) {
+  if (isMockModeEnabled()) {
     return getMockLatestScanResult();
   }
 
-  const response = await fetchLatestScanResult();
-  return normalizeScanResult(response);
+  const response = await fetchLatestJob();
+  return normalizeJobToResult(response);
 }
 
 export async function getScanResult(scanId: string): Promise<ScanResult> {
-  if (USE_MOCK_DATA) {
+  if (isMockModeEnabled()) {
     return getMockScanResultById(scanId);
   }
 
-  const response = await fetchScanResultById(scanId);
-  return normalizeScanResult(response);
+  const response = await fetchJobById(scanId);
+  return normalizeJobToResult(response);
 }
 
-export async function exportScanResult(
-  scanId: string,
-  format: ScanResultExportFormat,
-): Promise<void> {
-  const blob = await downloadScanResult(scanId, format);
-  const extension = format === 'csv' ? 'csv' : 'json';
+function downloadContent(scanId: string, extension: 'json' | 'csv', content: string) {
+  const blob = new Blob([content], {
+    type: extension === 'json' ? 'application/json' : 'text/csv',
+  });
   const objectUrl = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = objectUrl;
@@ -160,4 +149,37 @@ export async function exportScanResult(
   anchor.click();
   anchor.remove();
   URL.revokeObjectURL(objectUrl);
+}
+
+export async function exportScanResult(scanId: string, format: 'json' | 'csv'): Promise<void> {
+  const result = await getScanResult(scanId);
+
+  if (format === 'json') {
+    downloadContent(scanId, 'json', JSON.stringify(result, null, 2));
+    return;
+  }
+
+  const header = [
+    'id',
+    'label',
+    'x',
+    'y',
+    'waypointIndex',
+    'measuredValue',
+    'comment',
+    'timestamp',
+  ];
+  const rows = result.measurementPoints.map((point) =>
+    [
+      point.id,
+      point.label,
+      point.x,
+      point.y,
+      point.waypointIndex,
+      point.measuredValue,
+      point.comment,
+      point.timestamp,
+    ].join(','),
+  );
+  downloadContent(scanId, 'csv', [header.join(','), ...rows].join('\n'));
 }

@@ -5,7 +5,7 @@
  * - `paused` keeps partial progress and allows resume.
  * - `completed` and `aborted` are terminal states.
  */
-export type ScanLifecycleState = 'running' | 'paused' | 'completed' | 'aborted';
+export type ScanLifecycleState = 'created' | 'running' | 'completed' | 'failed' | 'stopped';
 
 /**
  * Event severity controls iconography and emphasis in the event log.
@@ -80,14 +80,16 @@ export function getScanProgressPercent(scan: ScanStatusModel): number {
  */
 export function getScanStateLabel(state: ScanLifecycleState): string {
   switch (state) {
+    case 'created':
+      return 'Created';
     case 'running':
       return 'In Progress';
-    case 'paused':
-      return 'Paused';
     case 'completed':
       return 'Completed';
-    case 'aborted':
-      return 'Aborted';
+    case 'failed':
+      return 'Failed';
+    case 'stopped':
+      return 'Stopped';
     default:
       return 'Unknown';
   }
@@ -111,5 +113,5 @@ export function formatDuration(totalSeconds: number): string {
  * Terminal states indicate no further scan progression is expected.
  */
 export function isTerminalScanState(state: ScanLifecycleState): boolean {
-  return state === 'completed' || state === 'aborted';
+  return state === 'completed' || state === 'failed' || state === 'stopped';
 }

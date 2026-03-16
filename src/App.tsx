@@ -7,9 +7,12 @@ import { CameraTab } from './components/tabs/CameraTab';
 import { RouteTab } from './components/tabs/RouteTab';
 import { ProgressTab } from './components/tabs/ProgressTab';
 import { ResultsTab } from './components/tabs/ResultsTab';
+import { ProfileModel } from './types/profile.types';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('setup');
+  const [selectedProfile, setSelectedProfile] = useState<ProfileModel | null>(null);
+  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
 
   const goToCamera = () => setActiveTab('camera');
   const goToRoute = () => setActiveTab('route');
@@ -19,17 +22,31 @@ export default function App() {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'setup':
-        return <SetupTab onNext={goToCamera} />;
+        return (
+          <SetupTab
+            selectedProfile={selectedProfile}
+            onProfileChange={setSelectedProfile}
+            onNext={goToCamera}
+          />
+        );
       case 'camera':
         return <CameraTab onNext={goToRoute} />;
       case 'route':
-        return <RouteTab onNext={goToProgress} />;
+        return (
+          <RouteTab
+            selectedProfile={selectedProfile}
+            onJobCreated={(jobId) => {
+              setCurrentJobId(jobId);
+              goToProgress();
+            }}
+          />
+        );
       case 'progress':
-        return <ProgressTab onNext={goToResults} />;
+        return <ProgressTab jobId={currentJobId} onNext={goToResults} />;
       case 'results':
-        return <ResultsTab />;
+        return <ResultsTab initialJobId={currentJobId} />;
       default:
-        return <SetupTab />;
+        return <SetupTab selectedProfile={selectedProfile} onProfileChange={setSelectedProfile} />;
     }
   };
 

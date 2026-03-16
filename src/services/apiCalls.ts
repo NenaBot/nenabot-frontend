@@ -1,158 +1,214 @@
-import { HardwareData } from '../types/hardware.types';
-import { APIError } from './apiClient';
 import { apiClient } from './apiClient';
 
-export type HardwareStatusApiResponse = {
-  spectrometer: (Omit<HardwareData, 'lastUpdate'> & { lastUpdate: string | Date }) | null;
-  camera: (Omit<HardwareData, 'lastUpdate'> & { lastUpdate: string | Date }) | null;
-  robotarm: (Omit<HardwareData, 'lastUpdate'> & { lastUpdate: string | Date }) | null;
-};
-
-export interface DefaultRoutePlanApiResponse {
-  alwaysScanOnWaypoints?: boolean;
-  pointsPerCm?: number;
-  estimatedMeasurementPoints?: number;
-  estimatedSeconds?: number;
+export interface ComponentHealthApiResponse {
+  status: string;
+  error?: string | null;
 }
 
-export interface RouteCoordinateApiResponse {
-  x?: number;
-  y?: number;
+export interface HealthApiResponse {
+  status: string;
+  uptimeSeconds?: number;
+  robot: ComponentHealthApiResponse;
+  camera: ComponentHealthApiResponse;
+  dms: ComponentHealthApiResponse;
 }
 
-export interface MeasurementPointApiResponse {
-  id?: string | number;
-  label?: string;
-  x?: number;
-  y?: number;
-  waypointIndex?: number;
-  measuredValue?: number;
-  comment?: string;
-  wavelengthNm?: number;
-  intensity?: number;
-  voltageV?: number;
-  temperatureC?: number;
-  timestamp?: string;
+export interface ProfileApiResponse {
+  name: string;
+  description?: string | null;
+  workZ?: number;
+  workR?: number;
+  options?: Record<string, unknown> | null;
 }
 
-export interface ScanResultApiResponse {
-  scanId?: string;
-  createdAt?: string;
-  sourceName?: string;
-  previewImageUrl?: string | null;
-  routePath?: RouteCoordinateApiResponse[];
-  measurementPoints?: MeasurementPointApiResponse[];
+export interface PixelPointApiResponse {
+  x: number;
+  y: number;
 }
 
-export interface ScanResultSummaryApiResponse {
-  scanId?: string;
-  createdAt?: string;
-  sourceName?: string;
-  measurementPointCount?: number;
+export interface WaypointApiResponse {
+  x: number;
+  y: number;
+  z?: number;
+  r?: number;
 }
 
-export type ScanResultExportFormat = 'json' | 'csv';
+export interface MeasurementApiResponse {
+  waypointIndex: number;
+  waypoint: WaypointApiResponse;
+  pixelX?: number | null;
+  pixelY?: number | null;
+  scanResult?: Record<string, unknown> | null;
+  simulated?: boolean;
+  timestamp?: string | null;
+}
 
-let hardwareStatusInFlight: Promise<HardwareStatusApiResponse> | null = null;
-let defaultRoutePlanInFlight: Promise<DefaultRoutePlanApiResponse> | null = null;
-let scanResultsInFlight: Promise<ScanResultSummaryApiResponse[]> | null = null;
-let latestScanResultInFlight: Promise<ScanResultApiResponse> | null = null;
-const scanResultByIdInFlight = new Map<string, Promise<ScanResultApiResponse>>();
+export interface JobStatusApiResponse {
+  state?: string;
+  lastPointProcessed?: number;
+  error?: string | null;
+}
 
-export async function fetchHardwareStatus(): Promise<HardwareStatusApiResponse> {
-  if (hardwareStatusInFlight) {
-    return hardwareStatusInFlight;
-  }
+export interface JobApiResponse {
+  id: string;
+  options?: Record<string, unknown> | null;
+  path?: WaypointApiResponse[];
+  dryRun?: boolean;
+  measurements?: MeasurementApiResponse[];
+  status?: JobStatusApiResponse;
+}
 
-  hardwareStatusInFlight = apiClient.get<HardwareStatusApiResponse>('/api/hardware/status');
+export interface PathDetectRequestApi {
+  options?: Record<string, unknown> | null;
+}
 
+export interface PathItemApiResponse {
+  corners?: { x: number; y: number }[];
+  width_mm?: number;
+  height_mm?: number;
+  center_x?: number;
+  center_y?: number;
+  confidence?: number;
+}
+
+export interface CalibrationApiResponse {
+  calibrated?: boolean;
+  robotStart?: WaypointApiResponse | null;
+  canvasStart?: PixelPointApiResponse | null;
+  pixelsPerMm?: number | null;
+}
+
+export interface PathDetectResponseApi {
+  ok: boolean;
+  detections?: PathItemApiResponse[];
+  image_base64?: string | null;
+  pixelsPerMm?: number | null;
+  markerCount?: number;
+  calibration?: CalibrationApiResponse | null;
+  error?: string | null;
+  options?: Record<string, unknown> | null;
+}
+
+export interface PathCheckResponseApi {
+  waypoints?: PixelPointApiResponse[];
+}
+
+export interface CreateJobRequestApi {
+  path: PixelPointApiResponse[];
+  workZ: number;
+  workR: number;
+  dryRun: boolean;
+  options?: Record<string, unknown> | null;
+  imageBase64?: string | null;
+}
+
+export interface JobEventApiResponse {
+  type: string;
+  jobId: string;
+  state: string;
+  lastPointProcessed?: number;
+  totalPoints?: number;
+  measurement?: MeasurementApiResponse | null;
+  error?: string | null;
+  timestamp?: string | null;
+}
+
+let healthInFlight: Promise<HealthApiResponse> | null = null;
+let profileListInFlight: Promise<ProfileApiResponse[]> | null = null;
+let defaultProfileInFlight: Promise<ProfileApiResponse> | null = null;
+let latestJobInFlight: Promise<JobApiResponse> | null = null;
+let jobsInFlight: Promise<JobApiResponse[]> | null = null;
+const jobByIdInFlight = new Map<string, Promise<JobApiResponse>>();
+
+export async function fetchHealthStatus(): Promise<HealthApiResponse> {
+  if (healthInFlight) return healthInFlight;
+  healthInFlight = apiClient.get<HealthApiResponse>('/api/health');
   try {
-    return await hardwareStatusInFlight;
+    return await healthInFlight;
   } finally {
-    hardwareStatusInFlight = null;
+    healthInFlight = null;
   }
 }
 
-export async function fetchDefaultRoutePlan(): Promise<DefaultRoutePlanApiResponse> {
-  if (defaultRoutePlanInFlight) {
-    return defaultRoutePlanInFlight;
-  }
-
-  defaultRoutePlanInFlight = apiClient.get<DefaultRoutePlanApiResponse>('/api/route/default');
-
+export async function fetchProfiles(): Promise<ProfileApiResponse[]> {
+  if (profileListInFlight) return profileListInFlight;
+  profileListInFlight = apiClient.get<ProfileApiResponse[]>('/api/profile');
   try {
-    return await defaultRoutePlanInFlight;
+    return await profileListInFlight;
   } finally {
-    defaultRoutePlanInFlight = null;
+    profileListInFlight = null;
   }
 }
 
-export function getCameraStreamUrl(): string {
-  return apiClient.getVideoStreamUrl();
-}
-
-export async function fetchAvailableScanResults(): Promise<ScanResultSummaryApiResponse[]> {
-  if (scanResultsInFlight) {
-    return scanResultsInFlight;
-  }
-
-  scanResultsInFlight = apiClient.get<ScanResultSummaryApiResponse[]>('/api/results');
-
+export async function fetchDefaultProfile(): Promise<ProfileApiResponse> {
+  if (defaultProfileInFlight) return defaultProfileInFlight;
+  defaultProfileInFlight = apiClient.get<ProfileApiResponse>('/api/profile/default');
   try {
-    return await scanResultsInFlight;
+    return await defaultProfileInFlight;
   } finally {
-    scanResultsInFlight = null;
+    defaultProfileInFlight = null;
   }
 }
 
-export async function fetchLatestScanResult(): Promise<ScanResultApiResponse> {
-  if (latestScanResultInFlight) {
-    return latestScanResultInFlight;
-  }
+export async function detectPath(
+  payload: PathDetectRequestApi = {},
+): Promise<PathDetectResponseApi> {
+  return apiClient.post<PathDetectResponseApi>('/api/path/detect', payload);
+}
 
-  latestScanResultInFlight = apiClient.get<ScanResultApiResponse>('/api/results/latest');
+export async function checkPath(waypoints: PixelPointApiResponse[]): Promise<PathCheckResponseApi> {
+  return apiClient.post<PathCheckResponseApi>('/api/path', { waypoints });
+}
 
+export async function createJob(payload: CreateJobRequestApi): Promise<JobApiResponse> {
+  return apiClient.post<JobApiResponse>('/api/job', payload);
+}
+
+export async function fetchJobs(): Promise<JobApiResponse[]> {
+  if (jobsInFlight) return jobsInFlight;
+  jobsInFlight = apiClient.get<JobApiResponse[]>('/api/job');
   try {
-    return await latestScanResultInFlight;
+    return await jobsInFlight;
   } finally {
-    latestScanResultInFlight = null;
+    jobsInFlight = null;
   }
 }
 
-export async function fetchScanResultById(scanId: string): Promise<ScanResultApiResponse> {
-  const normalizedId = scanId.trim();
-
-  if (scanResultByIdInFlight.has(normalizedId)) {
-    return scanResultByIdInFlight.get(normalizedId)!;
+export async function fetchLatestJob(): Promise<JobApiResponse> {
+  if (latestJobInFlight) return latestJobInFlight;
+  latestJobInFlight = apiClient.get<JobApiResponse>('/api/job/latest');
+  try {
+    return await latestJobInFlight;
+  } finally {
+    latestJobInFlight = null;
   }
+}
 
-  const request = apiClient.get<ScanResultApiResponse>(
-    `/api/results/${encodeURIComponent(normalizedId)}`,
-  );
-  scanResultByIdInFlight.set(normalizedId, request);
+export async function fetchJobById(jobId: string): Promise<JobApiResponse> {
+  const normalizedId = jobId.trim();
+  if (jobByIdInFlight.has(normalizedId)) return jobByIdInFlight.get(normalizedId)!;
 
+  const request = apiClient.get<JobApiResponse>(`/api/job/${encodeURIComponent(normalizedId)}`);
+  jobByIdInFlight.set(normalizedId, request);
   try {
     return await request;
   } finally {
-    scanResultByIdInFlight.delete(normalizedId);
+    jobByIdInFlight.delete(normalizedId);
   }
 }
 
-export async function downloadScanResult(
-  scanId: string,
-  format: ScanResultExportFormat,
-): Promise<Blob> {
-  const normalizedId = scanId.trim();
-  const endpoint = `/api/results/${encodeURIComponent(normalizedId)}/export?format=${encodeURIComponent(format)}`;
-  const response = await fetch(`${apiClient.getBaseUrl()}${endpoint}`);
+export async function deleteJob(jobId: string): Promise<void> {
+  await apiClient.delete<void>(`/api/job/${encodeURIComponent(jobId.trim())}`);
+}
 
-  if (!response.ok) {
-    throw new APIError(
-      response.status,
-      'EXPORT_FAILED',
-      `Failed to export scan result ${normalizedId}.`,
-    );
-  }
+export function getStreamUrl(kind: 'camera' | 'detection'): string {
+  return `${apiClient.getBaseUrl()}/api/stream/${kind}/feed`;
+}
 
-  return response.blob();
+export function getJobEventsUrl(jobId: string): string {
+  return `${apiClient.getBaseUrl()}/api/job/${encodeURIComponent(jobId)}/events`;
+}
+
+export function getJobImageUrl(jobId: string): string {
+  return `${apiClient.getBaseUrl()}/api/job/${encodeURIComponent(jobId)}/image`;
 }

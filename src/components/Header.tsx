@@ -1,9 +1,11 @@
 import { Microscope, Github, HelpCircle, Settings, Sun, Moon } from 'lucide-react';
 import { appConfig } from '../config/app.config';
 import { useDarkMode } from '../hooks/useDarkMode';
+import { useMockMode } from '../hooks/useMockMode';
 
 export function Header() {
   const [dark, setDark] = useDarkMode();
+  const [mockMode, setMockMode] = useMockMode();
 
   return (
     <header className="border-b border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface)] shadow-sm theme-transition">
@@ -20,6 +22,18 @@ export function Header() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {import.meta.env.DEV && (
+            <label className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--md-sys-color-outline)] text-xs">
+              <input
+                type="checkbox"
+                checked={mockMode}
+                onChange={(event) => setMockMode(event.target.checked)}
+                className="w-4 h-4 accent-[var(--md-sys-color-primary)]"
+              />
+              <span>Mock Data</span>
+            </label>
+          )}
+
           <button
             className="p-2 rounded-full hover:bg-[var(--md-sys-color-surface-variant)] transition-colors"
             title="Help & Documentation"

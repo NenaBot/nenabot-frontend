@@ -17,7 +17,11 @@ function getFirstPointId(result: ScanResult | null): string | null {
   return result.measurementPoints[0].id;
 }
 
-export function ResultsTab() {
+interface ResultsTabProps {
+  initialJobId?: string | null;
+}
+
+export function ResultsTab({ initialJobId }: ResultsTabProps) {
   const {
     scanResult,
     scanSummaries,
@@ -30,7 +34,7 @@ export function ResultsTab() {
     refresh,
     loadSelectedScan,
     downloadCurrentScan,
-  } = useResultsData();
+  } = useResultsData(initialJobId);
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
   const [exportFormat, setExportFormat] = useState<ExportFormat>('json');
   const [criticalThreshold, setCriticalThreshold] = useState(1);
