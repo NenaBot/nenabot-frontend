@@ -1,4 +1,8 @@
-import { formatEstimatedTime, formatMeasurementPoints, RouteEstimate } from './route.model';
+import {
+  formatEstimatedTime,
+  formatMeasurementPoints,
+  RouteEstimate,
+} from '../../../types/route.types';
 
 interface RouteEstimateSummaryProps {
   estimate: RouteEstimate;

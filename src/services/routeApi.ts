@@ -1,5 +1,5 @@
-import { DefaultRoutePlanApiResponse, fetchDefaultRoutePlan } from '../../../services/apiCalls';
-import { createDefaultRoutePlan, RoutePlan } from './route.model';
+import { DefaultRoutePlanApiResponse, fetchDefaultRoutePlan } from './apiCalls';
+import { createDefaultRoutePlan, RoutePlan } from '../types/route.types';
 
 function normalizeDefaultRoutePlanResponse(response: DefaultRoutePlanApiResponse): RoutePlan {
   const fallback = createDefaultRoutePlan();

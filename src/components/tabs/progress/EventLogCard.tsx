@@ -1,5 +1,5 @@
 import { AlertTriangle, CheckCircle } from 'lucide-react';
-import { ProgressEvent } from './progress.model';
+import { ProgressEvent } from '../../../types/progress.types';
 
 interface EventLogCardProps {
   events: ProgressEvent[];

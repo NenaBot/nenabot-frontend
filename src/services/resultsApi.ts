@@ -8,18 +8,20 @@ import {
   ScanResultApiResponse,
   ScanResultExportFormat,
   ScanResultSummaryApiResponse,
-} from '../../../services/apiCalls';
+} from './apiCalls';
 import {
   getMockLatestScanResult,
   getMockScanResultById,
   getMockScanResultSummaries,
-} from '../../../mocks/scanResultsMocks';
+} from '../mocks/scanResultsMocks';
 import {
   MeasurementPoint,
   ScanResult,
   ScanResultSummary,
   ScanRouteCoordinate,
-} from './results.model';
+} from '../types/results.types';
+
+const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === 'true';
 
 function normalizeCoordinate(raw: number | undefined): number {
   if (typeof raw !== 'number' || !Number.isFinite(raw)) {
@@ -118,33 +120,30 @@ function normalizeScanSummary(response: ScanResultSummaryApiResponse): ScanResul
 }
 
 export async function getAvailableScanResultSummaries(): Promise<ScanResultSummary[]> {
-  try {
-    const response = await fetchAvailableScanResults();
-    return response.map(normalizeScanSummary);
-  } catch (error) {
-    console.warn('Using mock scan summaries due to API error:', error);
+  if (USE_MOCK_DATA) {
     return getMockScanResultSummaries();
   }
+
+  const response = await fetchAvailableScanResults();
+  return response.map(normalizeScanSummary);
 }
 
 export async function getLatestScanResult(): Promise<ScanResult> {
-  try {
-    const response = await fetchLatestScanResult();
-    return normalizeScanResult(response);
-  } catch (error) {
-    console.warn('Using mock latest scan result due to API error:', error);
+  if (USE_MOCK_DATA) {
     return getMockLatestScanResult();
   }
+
+  const response = await fetchLatestScanResult();
+  return normalizeScanResult(response);
 }
 
 export async function getScanResult(scanId: string): Promise<ScanResult> {
-  try {
-    const response = await fetchScanResultById(scanId);
-    return normalizeScanResult(response);
-  } catch (error) {
-    console.warn(`Using mock scan result for ${scanId} due to API error:`, error);
+  if (USE_MOCK_DATA) {
     return getMockScanResultById(scanId);
   }
+
+  const response = await fetchScanResultById(scanId);
+  return normalizeScanResult(response);
 }
 
 export async function exportScanResult(

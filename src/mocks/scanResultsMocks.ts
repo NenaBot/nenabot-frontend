@@ -1,4 +1,4 @@
-import { ScanResult, ScanResultSummary } from '../components/tabs/results/results.model';
+import { ScanResult, ScanResultSummary } from '../types/results.types';
 
 const MOCK_SCAN_IDS = ['mock-scan-latest', 'mock-scan-02', 'mock-scan-03'];
 

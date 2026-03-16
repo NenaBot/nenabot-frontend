@@ -1,10 +1,10 @@
-import { Clock, Pause, Square } from 'lucide-react';
+import { Clock, Square } from 'lucide-react';
 import {
   formatDuration,
   getScanProgressPercent,
   getScanStateLabel,
   ScanStatusModel,
-} from './progress.model';
+} from '../../../types/progress.types';
 
 interface CurrentScanStatusCardProps {
   scan: ScanStatusModel;
@@ -70,10 +70,6 @@ export function CurrentScanStatusCard({ scan }: CurrentScanStatusCardProps) {
       </div>
 
       <div className="flex gap-2">
-        <button className="flex-1 px-4 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg flex items-center justify-center gap-2 hover:bg-[var(--md-sys-color-surface-variant)] transition-all text-sm">
-          <Pause className="w-4 h-4" />
-          Pause
-        </button>
         <button className="flex-1 px-4 py-2.5 bg-[var(--md-sys-color-error)] text-[var(--md-sys-color-on-error)] rounded-lg flex items-center justify-center gap-2 hover:shadow-lg transition-all text-sm">
           <Square className="w-4 h-4 fill-current" />
           Abort

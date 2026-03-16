@@ -3,15 +3,27 @@ import { CameraView } from '../CameraView';
 import { CurrentScanStatusCard } from './progress/CurrentScanStatusCard';
 import { EventLogCard } from './progress/EventLogCard';
 import { MeasurementLogCard } from './progress/MeasurementLogCard';
-import { mockProgressTabState } from '../../mocks/progressMocks';
-import { getScanProgressPercent, isTerminalScanState } from './progress/progress.model';
+import { getScanProgressPercent, isTerminalScanState } from '../../types/progress.types';
+import { useProgressData } from '../../hooks/useProgressData';
 
 interface ProgressTabProps {
   onNext?: () => void;
 }
 
 export function ProgressTab({ onNext }: ProgressTabProps) {
-  const progressState = mockProgressTabState;
+  const { progressState, isLoading, error } = useProgressData();
+
+  if (isLoading) {
+    return <div className="text-sm text-[var(--md-sys-color-on-surface-variant)]">Loading...</div>;
+  }
+
+  if (!progressState) {
+    return (
+      <div className="p-4 border border-[var(--md-sys-color-error)] rounded-lg text-sm text-[var(--md-sys-color-error)]">
+        {error ?? 'Unable to load progress data.'}
+      </div>
+    );
+  }
 
   const scanProgress = getScanProgressPercent(progressState.scan);
 

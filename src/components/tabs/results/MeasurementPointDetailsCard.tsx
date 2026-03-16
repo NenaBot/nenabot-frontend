@@ -4,7 +4,7 @@ import {
   formatMeasuredValue,
   isCriticalMeasurement,
   MeasurementPoint,
-} from './results.model';
+} from '../../../types/results.types';
 
 interface MeasurementPointDetailsCardProps {
   point: MeasurementPoint | null;

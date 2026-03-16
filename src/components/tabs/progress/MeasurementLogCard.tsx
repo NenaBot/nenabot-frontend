@@ -1,5 +1,5 @@
 import { CheckCircle } from 'lucide-react';
-import { ScanMeasurement } from './progress.model';
+import { ScanMeasurement } from '../../../types/progress.types';
 
 interface MeasurementLogCardProps {
   measurements: ScanMeasurement[];

@@ -1,21 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BarChart3, Download, RefreshCcw } from 'lucide-react';
 import { RoutePreviewPanel } from '../shared/RoutePreviewPanel';
-import {
-  exportScanResult,
-  getAvailableScanResultSummaries,
-  getLatestScanResult,
-  getScanResult,
-} from './results/results.api';
 import { MeasurementPointDetailsCard } from './results/MeasurementPointDetailsCard';
 import { MeasurementPointsTable } from './results/MeasurementPointsTable';
 import { ThresholdSettingsCard } from './results/ThresholdSettingsCard';
-import {
-  formatDateTime,
-  isCriticalMeasurement,
-  ScanResult,
-  ScanResultSummary,
-} from './results/results.model';
+import { formatDateTime, isCriticalMeasurement, ScanResult } from '../../types/results.types';
+import { useResultsData } from '../../hooks/useResultsData';
 
 type ExportFormat = 'json' | 'csv';
 
@@ -28,16 +18,26 @@ function getFirstPointId(result: ScanResult | null): string | null {
 }
 
 export function ResultsTab() {
-  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
-  const [scanSummaries, setScanSummaries] = useState<ScanResultSummary[]>([]);
-  const [selectedScanId, setSelectedScanId] = useState('');
+  const {
+    scanResult,
+    scanSummaries,
+    selectedScanId,
+    setSelectedScanId,
+    isLoading,
+    isLoadingScanList,
+    isDownloading,
+    errorMessage,
+    refresh,
+    loadSelectedScan,
+    downloadCurrentScan,
+  } = useResultsData();
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
   const [exportFormat, setExportFormat] = useState<ExportFormat>('json');
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingScanList, setIsLoadingScanList] = useState(true);
-  const [isDownloading, setIsDownloading] = useState(false);
   const [criticalThreshold, setCriticalThreshold] = useState(1);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSelectedPointId(getFirstPointId(scanResult));
+  }, [scanResult]);
 
   const criticalPointIds = useMemo(() => {
     if (!scanResult) {
@@ -89,81 +89,6 @@ export function ResultsTab() {
     setSelectedPointId(nextPoint.id);
   };
 
-  const loadLatestResult = async () => {
-    setIsLoading(true);
-    setErrorMessage(null);
-
-    try {
-      const latestResult = await getLatestScanResult();
-      setScanResult(latestResult);
-      setSelectedPointId(getFirstPointId(latestResult));
-      setSelectedScanId(latestResult.scanId);
-    } catch (error) {
-      console.error('Failed to load latest scan result:', error);
-      setErrorMessage('Failed to load the latest scan result.');
-      setScanResult(null);
-      setSelectedPointId(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadScanSummaries = async () => {
-    setIsLoadingScanList(true);
-
-    try {
-      const summaries = await getAvailableScanResultSummaries();
-      setScanSummaries(summaries);
-    } catch (error) {
-      console.error('Failed to load available scan results:', error);
-      setScanSummaries([]);
-    } finally {
-      setIsLoadingScanList(false);
-    }
-  };
-
-  useEffect(() => {
-    void Promise.all([loadLatestResult(), loadScanSummaries()]);
-  }, []);
-
-  const handleLoadSelectedScan = async () => {
-    if (selectedScanId.trim().length === 0) {
-      return;
-    }
-
-    setIsLoading(true);
-    setErrorMessage(null);
-
-    try {
-      const loadedResult = await getScanResult(selectedScanId);
-      setScanResult(loadedResult);
-      setSelectedPointId(getFirstPointId(loadedResult));
-    } catch (error) {
-      console.error('Failed to load selected scan result:', error);
-      setErrorMessage(`Failed to load scan ${selectedScanId}.`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDownload = async () => {
-    if (!scanResult) {
-      return;
-    }
-
-    setIsDownloading(true);
-    setErrorMessage(null);
-
-    try {
-      await exportScanResult(scanResult.scanId, exportFormat);
-    } catch (error) {
-      console.error('Failed to export scan result:', error);
-      setErrorMessage('Failed to export scan result.');
-    } finally {
-      setIsDownloading(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between">
@@ -196,7 +121,9 @@ export function ResultsTab() {
 
           <button
             className="px-4 py-2 border border-[var(--md-sys-color-outline)] rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-colors text-sm"
-            onClick={handleLoadSelectedScan}
+            onClick={() => {
+              void loadSelectedScan();
+            }}
             disabled={isLoading || selectedScanId.trim().length === 0}
           >
             Load Scan
@@ -205,7 +132,7 @@ export function ResultsTab() {
           <button
             className="px-3 py-2 border border-[var(--md-sys-color-outline)] rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-colors"
             onClick={() => {
-              void Promise.all([loadLatestResult(), loadScanSummaries()]);
+              void refresh();
             }}
             disabled={isLoading || isLoadingScanList}
             title="Refresh result data"
@@ -224,7 +151,9 @@ export function ResultsTab() {
 
           <button
             className="px-4 py-2 bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)] rounded-lg hover:shadow-md transition-all text-sm flex items-center gap-2 disabled:opacity-60"
-            onClick={handleDownload}
+            onClick={() => {
+              void downloadCurrentScan(exportFormat);
+            }}
             disabled={!scanResult || isDownloading}
           >
             <Download className="w-4 h-4" />

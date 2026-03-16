@@ -1,14 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
 import { Camera, AlertCircle } from 'lucide-react';
 import { getCameraStreamUrl } from '../services/apiCalls';
+import { useCameraStream } from '../hooks/useCameraStream';
 
 interface CameraViewProps {
   title?: string;
   showStatus?: boolean;
   height?: 'compact' | 'standard' | 'full';
 }
-
-type StreamStatus = 'loading' | 'connected' | 'disconnected' | 'error';
 
 const DEFAULT_RETRY_INTERVAL = 5000; // 5 seconds
 
@@ -18,52 +16,17 @@ export function CameraView({
   height = 'standard',
 }: CameraViewProps) {
   const retryInterval = DEFAULT_RETRY_INTERVAL;
-  const [streamStatus, setStreamStatus] = useState<StreamStatus>('loading');
-  const [streamUrl] = useState(() => getCameraStreamUrl());
-  const imgRef = useRef<HTMLImageElement>(null);
-  const retryTimeoutRef = useRef<number | undefined>(undefined);
+  const streamUrl = getCameraStreamUrl();
+  const { streamStatus, streamSrc, showPlaceholder, handleLoad, handleError } = useCameraStream(
+    streamUrl,
+    retryInterval,
+  );
 
   const heightMap = {
     compact: 'aspect-video',
     standard: 'aspect-video',
     full: 'h-[600px]',
   };
-
-  useEffect(() => {
-    const img = imgRef.current;
-    if (!img) return;
-
-    const handleLoad = () => {
-      setStreamStatus('connected');
-      // Clear any pending retry
-      clearTimeout(retryTimeoutRef.current);
-    };
-
-    const handleError = () => {
-      setStreamStatus('disconnected');
-
-      // Auto-retry if enabled
-      if (retryInterval > 0) {
-        retryTimeoutRef.current = window.setTimeout(() => {
-          if (img) {
-            // Force reload by appending timestamp
-            const url = new URL(streamUrl);
-            url.searchParams.set('t', Date.now().toString());
-            img.src = url.toString();
-          }
-        }, retryInterval);
-      }
-    };
-
-    img.addEventListener('load', handleLoad);
-    img.addEventListener('error', handleError);
-
-    return () => {
-      img.removeEventListener('load', handleLoad);
-      img.removeEventListener('error', handleError);
-      clearTimeout(retryTimeoutRef.current);
-    };
-  }, [streamUrl, retryInterval]);
 
   const getStatusBadge = () => {
     switch (streamStatus) {
@@ -92,8 +55,6 @@ export function CameraView({
     }
   };
 
-  const showPlaceholder = streamStatus !== 'connected';
-
   return (
     <div className="border border-[var(--md-sys-color-outline-variant)] rounded-2xl overflow-hidden bg-[var(--md-sys-color-surface-container-lowest)]">
       {/* Header */}
@@ -109,10 +70,11 @@ export function CameraView({
       <div className={`${heightMap[height]} w-full relative overflow-hidden`}>
         {/* MJPEG Stream */}
         <img
-          ref={imgRef}
-          src={streamUrl}
+          src={streamSrc}
           alt="Live camera stream"
           className={`w-full h-full object-cover ${showPlaceholder ? 'hidden' : 'block'}`}
+          onLoad={handleLoad}
+          onError={handleError}
         />
 
         {/* Placeholder - shown when stream unavailable */}

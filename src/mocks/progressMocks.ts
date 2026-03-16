@@ -1,4 +1,4 @@
-import { ProgressTabState } from '../components/tabs/progress/progress.model';
+import { ProgressTabState } from '../types/progress.types';
 
 export const mockProgressTabState: ProgressTabState = {
   scan: {

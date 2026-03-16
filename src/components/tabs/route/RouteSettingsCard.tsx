@@ -7,7 +7,7 @@ import {
   POINTS_PER_CM_INPUT_MIN,
   RouteEstimate,
   RouteSettings,
-} from './route.model';
+} from '../../../types/route.types';
 
 interface RouteSettingsCardProps {
   settings: RouteSettings;
