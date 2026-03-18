@@ -1,7 +1,8 @@
 const MOCK_MODE_STORAGE_KEY = 'nenabot-use-mock-data';
 
 function readInitialMockMode(): boolean {
-  const envDefault = import.meta.env.VITE_USE_MOCK_DATA === 'true';
+  const envDefault =
+    typeof __APP_ENV__ !== 'undefined' && __APP_ENV__?.VITE_USE_MOCK_DATA === 'true';
 
   if (typeof window === 'undefined') {
     return envDefault;

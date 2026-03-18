@@ -214,24 +214,31 @@ For issues specific to:
 - **Vite**: https://vitejs.dev/guide/
 - **React**: https://react.dev/
 
-## Running UI Tests
+## Running Tests
 
-This project uses Playwright for UI testing.
+Use the existing scripts:
 
-### Setup
+- `npm run test` - Run unit tests (Jest)
+- `npm run test:ui` - Run UI tests (Playwright)
+- `npm run test:ui:debug` - Run UI tests in Playwright debug mode
+- Run a specific Playwright file with `npx playwright test tests-ui/example.spec.ts`
 
-Install Playwright and its dependencies:
-```bash
-npm install --save-dev @playwright/test
-npx playwright install
-```
+Playwright tests are configured to start the dev server automatically via `playwright.config.ts`.
 
-The tests are configured to automatically start the dev server and test against localhost.
-- `npm run test` - Run tests
-- `npm run test:debug` - Run tests with the UI visible
-- add filename e.g. `npm run test tests/example.spec.ts` to run specific file
+## Test Placement Policy
 
-### Test Files
+Use one convention for each test layer:
 
-Test files are located in the `tests-ui` directory with the `.spec.ts` extension.
+- Unit tests go in `src/test/`
+- Organize unit tests by concern under `src/test/components/`, `src/test/hooks/`, and `src/test/services/`
+- UI/E2E tests go in `tests-ui/` with `.spec.ts` naming
+
+Avoid adding new unit tests under mixed locations like `src/**/__tests__/` unless there is a strong reason for colocation.
+
+## CI Test Workflows
+
+GitHub Actions has separate test workflows for clearer PR checks:
+
+- `unit-tests`: `.github/workflows/unit-tests.yml` (runs `npm test`)
+- `ui-tests`: `.github/workflows/ui-tests.yml` (runs `npm run test:ui` and uploads Playwright report)
 

@@ -115,8 +115,15 @@ export function useProgressData(jobId: string | null) {
   }, [mappedState]);
 
   useEffect(() => {
-    setError(streamError);
-  }, [streamError]);
+    if (streamError) {
+      setError(streamError);
+      return;
+    }
+
+    if (jobId) {
+      setError(null);
+    }
+  }, [jobId, streamError]);
 
   return {
     progressState,
