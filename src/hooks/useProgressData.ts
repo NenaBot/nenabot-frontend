@@ -24,6 +24,23 @@ function toEventLevel(type: string): ProgressEvent['level'] {
   return 'info';
 }
 
+function normalizeEventType(type: unknown): string {
+  return typeof type === 'string' ? type : 'unknown';
+}
+
+function normalizeEventTime(timestamp: unknown): string {
+  if (typeof timestamp !== 'string' || timestamp.trim().length === 0) {
+    return '-';
+  }
+
+  const parsed = new Date(timestamp);
+  if (Number.isNaN(parsed.getTime())) {
+    return '-';
+  }
+
+  return parsed.toLocaleTimeString();
+}
+
 export function useProgressData(jobId: string | null) {
   const [progressState, setProgressState] = useState<ProgressTabState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,13 +57,16 @@ export function useProgressData(jobId: string | null) {
       return;
     }
 
+    setProgressState(null);
+    setError(null);
+
     if (!jobId) {
-      setProgressState(null);
       setError('No active job selected.');
       setIsLoading(false);
       return;
     }
 
+    setIsLoading(true);
     setIsLoading(false);
   }, [jobId]);
 
@@ -94,9 +114,9 @@ export function useProgressData(jobId: string | null) {
       },
       events: jobEvents.map((event, index) => ({
         id: index + 1,
-        time: event.timestamp ? new Date(event.timestamp).toLocaleTimeString() : '-',
-        level: toEventLevel(event.type),
-        message: event.type,
+        time: normalizeEventTime(event.timestamp),
+        level: toEventLevel(normalizeEventType(event.type)),
+        message: normalizeEventType(event.type),
       })),
       measurements: jobEvents
         .filter((event) => Boolean(event.measurement))
@@ -105,7 +125,7 @@ export function useProgressData(jobId: string | null) {
           point: `WP-${event.measurement?.waypointIndex ?? index + 1}`,
           wavelength: '-',
           intensity: 0,
-          status: event.type.includes('completed') ? 'complete' : 'processing',
+          status: normalizeEventType(event.type).includes('completed') ? 'complete' : 'processing',
         })),
     };
   }, [jobEvents, jobId]);
