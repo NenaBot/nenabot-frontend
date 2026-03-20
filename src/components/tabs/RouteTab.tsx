@@ -1,48 +1,13 @@
 import { Map, Play, Radar } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { RoutePreviewPanel } from '../shared/RoutePreviewPanel';
 import { useRoutePlan } from '../../hooks/useRoutePlan';
+import { DEFAULT_ROUTE_PREVIEW } from '../../mocks/routeMocks';
 import { ProfileModel } from '../../types/profile.types';
-import { RoutePreviewCoordinate, RoutePreviewPoint } from '../../types/routePreview.types';
 
 interface RouteTabProps {
   selectedProfile: ProfileModel | null;
   onJobCreated: (jobId: string) => void;
-}
-
-// Default mock waypoints and route path displayed when no detection has been performed
-interface DefaultPreviewData {
-  waypoints: RoutePreviewPoint[];
-  routePath: RoutePreviewCoordinate[];
-}
-
-function createDefaultMockPreview(): DefaultPreviewData {
-  const waypoints = [
-    { id: 'wp-1', label: '1', x: 0.15, y: 0.2 },
-    { id: 'wp-2', label: '2', x: 0.5, y: 0.2 },
-    { id: 'wp-3', label: '3', x: 0.85, y: 0.2 },
-    { id: 'wp-4', label: '4', x: 0.85, y: 0.5 },
-    { id: 'wp-5', label: '5', x: 0.5, y: 0.5 },
-    { id: 'wp-6', label: '6', x: 0.15, y: 0.5 },
-    { id: 'wp-7', label: '7', x: 0.15, y: 0.8 },
-    { id: 'wp-8', label: '8', x: 0.5, y: 0.8 },
-    { id: 'wp-9', label: '9', x: 0.85, y: 0.8 },
-  ];
-
-  // Create a serpentine path connecting all waypoints
-  const routePath = [
-    { x: 0.15, y: 0.2 },
-    { x: 0.5, y: 0.2 },
-    { x: 0.85, y: 0.2 },
-    { x: 0.85, y: 0.5 },
-    { x: 0.5, y: 0.5 },
-    { x: 0.15, y: 0.5 },
-    { x: 0.15, y: 0.8 },
-    { x: 0.5, y: 0.8 },
-    { x: 0.85, y: 0.8 },
-  ];
-
-  return { waypoints, routePath };
 }
 
 export function RouteTab({ selectedProfile, onJobCreated }: RouteTabProps) {
@@ -52,17 +17,15 @@ export function RouteTab({ selectedProfile, onJobCreated }: RouteTabProps) {
 
   const imageUrl = state.imageBase64 ? `data:image/jpeg;base64,${state.imageBase64}` : null;
 
-  // Display default mock data when no detection has been performed yet
-  const defaultPreview = useMemo(() => createDefaultMockPreview(), []);
-  const [draggableWaypoints, setDraggableWaypoints] = useState(defaultPreview.waypoints);
+  const [draggableWaypoints, setDraggableWaypoints] = useState(DEFAULT_ROUTE_PREVIEW.waypoints);
 
   useEffect(() => {
     if (preview.waypoints.length > 0) {
       setDraggableWaypoints(preview.waypoints);
       return;
     }
-    setDraggableWaypoints(defaultPreview.waypoints);
-  }, [defaultPreview.waypoints, preview.waypoints]);
+    setDraggableWaypoints(DEFAULT_ROUTE_PREVIEW.waypoints);
+  }, [preview.waypoints]);
 
   const displayWaypoints = draggableWaypoints;
   const displayRoutePath = displayWaypoints.map(({ x, y }) => ({ x, y }));
