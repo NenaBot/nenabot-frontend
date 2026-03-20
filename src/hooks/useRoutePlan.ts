@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  checkPath,
   createJob,
   detectPath,
   PathItemApiResponse,
+  PathPopulatePointApiResponse,
+  populatePath,
   PixelPointApiResponse,
 } from '../services/apiCalls';
 import { ProfileModel } from '../types/profile.types';
@@ -15,28 +16,44 @@ interface UseRoutePlanOptions {
 }
 
 interface DetectState {
-  isDetecting: boolean;
-  isChecking: boolean;
+  isInitializing: boolean;
+  isPopulating: boolean;
   isCreatingJob: boolean;
   dryRun: boolean;
+  measurementDensity: number;
   imageBase64: string | null;
-  detectError: string | null;
-  checkedWaypoints: PixelPointApiResponse[];
-  detectedPoints: PixelPointApiResponse[];
+  routeError: string | null;
+  cornerPoints: PixelPointApiResponse[];
+  measurementPoints: PixelPointApiResponse[];
+  populatedPath: PixelPointApiResponse[];
+  detectItems: PathItemApiResponse[];
 }
 
 interface PreviewData {
   routePath: RoutePreviewCoordinate[];
-  waypoints: RoutePreviewPoint[];
+  points: RoutePreviewPoint[];
+  cornerPointIds: string[];
+  draggablePointIds: string[];
+  bounds: {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+  };
 }
 
-function normalizeToUnit(
-  point: PixelPointApiResponse,
-  maxX: number,
-  maxY: number,
-): RoutePreviewCoordinate {
-  const x = maxX > 0 ? point.x / maxX : 0;
-  const y = maxY > 0 ? point.y / maxY : 0;
+interface PreviewBounds {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+}
+
+function normalizeToUnit(point: PixelPointApiResponse, bounds: PreviewBounds): RoutePreviewCoordinate {
+  const spanX = Math.max(bounds.maxX - bounds.minX, 1);
+  const spanY = Math.max(bounds.maxY - bounds.minY, 1);
+  const x = (point.x - bounds.minX) / spanX;
+  const y = (point.y - bounds.minY) / spanY;
 
   return {
     x: Math.max(0, Math.min(1, x)),
@@ -55,6 +72,19 @@ function createMockDetectedPoints(): PixelPointApiResponse[] {
   ];
 }
 
+function getMeasurementDensityFromProfile(selectedProfile: ProfileModel | null): number {
+  const options = selectedProfile?.settings.options;
+  const densityOption =
+    (options?.measurementDensity as number | undefined) ??
+    (options?.pointsPerCm as number | undefined);
+
+  if (typeof densityOption === 'number' && Number.isFinite(densityOption) && densityOption >= 0) {
+    return densityOption;
+  }
+
+  return 0.5;
+}
+
 function detectItemsToPoints(items: PathItemApiResponse[]): PixelPointApiResponse[] {
   return items
     .map((item) => {
@@ -70,20 +100,171 @@ function detectItemsToPoints(items: PathItemApiResponse[]): PixelPointApiRespons
     .filter((item): item is PixelPointApiResponse => item !== null);
 }
 
+function createMockPopulatedPath(
+  corners: PixelPointApiResponse[],
+  measurementDensity: number,
+): PathPopulatePointApiResponse[] {
+  if (corners.length === 0) {
+    return [];
+  }
+
+  const measurementCountPerSegment = Math.max(0, Math.round(measurementDensity * 2));
+  const path: PathPopulatePointApiResponse[] = [];
+
+  for (let index = 0; index < corners.length; index += 1) {
+    const current = corners[index];
+    const next = corners[index + 1];
+
+    path.push({ ...current, type: 'corner', isCorner: true });
+
+    if (!next || measurementCountPerSegment === 0) {
+      continue;
+    }
+
+    for (let step = 1; step <= measurementCountPerSegment; step += 1) {
+      const ratio = step / (measurementCountPerSegment + 1);
+      path.push({
+        x: current.x + (next.x - current.x) * ratio,
+        y: current.y + (next.y - current.y) * ratio,
+        type: 'measurement',
+      });
+    }
+  }
+
+  return path;
+}
+
+function parsePopulatePath(response: {
+  waypoints?: PathPopulatePointApiResponse[];
+  path?: PathPopulatePointApiResponse[];
+  points?: PathPopulatePointApiResponse[];
+}): PathPopulatePointApiResponse[] {
+  return response.path ?? response.waypoints ?? response.points ?? [];
+}
+
+function splitCornersAndMeasurements(
+  points: PathPopulatePointApiResponse[],
+  corners: PixelPointApiResponse[],
+): { corners: PixelPointApiResponse[]; measurements: PixelPointApiResponse[] } {
+  const cornerSet = new Set(corners.map((point) => `${point.x}:${point.y}`));
+
+  const mapped = points.map((point) => ({ x: point.x, y: point.y, meta: point }));
+  const parsedCorners = mapped
+    .filter((point) => point.meta.type === 'corner' || point.meta.isCorner)
+    .map((point) => ({ x: point.x, y: point.y }));
+
+  if (parsedCorners.length > 0) {
+    return {
+      corners: parsedCorners,
+      measurements: mapped
+        .filter((point) => !(point.meta.type === 'corner' || point.meta.isCorner))
+        .map((point) => ({ x: point.x, y: point.y })),
+    };
+  }
+
+  return {
+    corners,
+    measurements: mapped
+      .filter((point) => !cornerSet.has(`${point.x}:${point.y}`))
+      .map((point) => ({ x: point.x, y: point.y })),
+  };
+}
+
 export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
   const [state, setState] = useState<DetectState>({
-    isDetecting: false,
-    isChecking: false,
+    isInitializing: false,
+    isPopulating: false,
     isCreatingJob: false,
     dryRun: false,
+    measurementDensity: isMockModeEnabled() ? 0.5 : getMeasurementDensityFromProfile(selectedProfile),
     imageBase64: null,
-    detectError: null,
-    checkedWaypoints: [],
-    detectedPoints: [],
+    routeError: null,
+    cornerPoints: [],
+    measurementPoints: [],
+    populatedPath: [],
+    detectItems: [],
   });
+  const populateRequestCounterRef = useRef(0);
 
-  const detectAndCheckPath = async () => {
-    setState((prev) => ({ ...prev, isDetecting: true, detectError: null }));
+  const runPopulate = useCallback(
+    async (
+      cornerPoints: PixelPointApiResponse[],
+      measurementDensity: number,
+      detectItems: PathItemApiResponse[],
+    ) => {
+      if (cornerPoints.length === 0) {
+        setState((prev) => ({
+          ...prev,
+          isPopulating: false,
+          measurementPoints: [],
+          populatedPath: [],
+        }));
+        return;
+      }
+
+      const requestId = populateRequestCounterRef.current + 1;
+      populateRequestCounterRef.current = requestId;
+      setState((prev) => ({ ...prev, isPopulating: true, routeError: null }));
+
+      try {
+        const populateResponse = isMockModeEnabled()
+          ? {
+              path: createMockPopulatedPath(cornerPoints, measurementDensity),
+            }
+          : await populatePath({
+              corners: cornerPoints,
+              measurementDensity,
+              detections: detectItems,
+              options: selectedProfile?.settings.options ?? {},
+            });
+
+        if (populateRequestCounterRef.current !== requestId) {
+          return;
+        }
+
+        const populated = parsePopulatePath(populateResponse).map((point) => ({
+          x: point.x,
+          y: point.y,
+          type: point.type,
+          isCorner: point.isCorner,
+        }));
+
+        const pathPoints = populated.length > 0 ? populated : cornerPoints;
+        const split = splitCornersAndMeasurements(pathPoints, cornerPoints);
+
+        setState((prev) => ({
+          ...prev,
+          isPopulating: false,
+          routeError: null,
+          cornerPoints: split.corners,
+          measurementPoints: split.measurements,
+          populatedPath: pathPoints.map(({ x, y }) => ({ x, y })),
+        }));
+      } catch (error) {
+        console.error('Path populate failed:', error);
+        if (populateRequestCounterRef.current === requestId) {
+          setState((prev) => ({
+            ...prev,
+            isPopulating: false,
+            routeError: 'Failed to update route preview. Please retry.',
+          }));
+        }
+      }
+    },
+    [selectedProfile],
+  );
+
+  const initializeRoute = useCallback(async () => {
+    const defaultMeasurementDensity = isMockModeEnabled()
+      ? 0.5
+      : getMeasurementDensityFromProfile(selectedProfile);
+
+    setState((prev) => ({
+      ...prev,
+      isInitializing: true,
+      routeError: null,
+      measurementDensity: defaultMeasurementDensity,
+    }));
 
     try {
       const detectionResponse = isMockModeEnabled()
@@ -94,9 +275,10 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
           }
         : await detectPath({ options: selectedProfile?.settings.options ?? {} });
 
+      const detectItems = detectionResponse.detections ?? [];
       const detectedPoints = isMockModeEnabled()
         ? createMockDetectedPoints()
-        : detectItemsToPoints(detectionResponse.detections ?? []);
+        : detectItemsToPoints(detectItems);
 
       if (detectedPoints.length === 0) {
         throw new Error('No path points were detected.');
@@ -104,38 +286,71 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
 
       setState((prev) => ({
         ...prev,
-        isDetecting: false,
-        isChecking: true,
-        detectedPoints,
+        isInitializing: false,
+        cornerPoints: detectedPoints,
+        detectItems,
         imageBase64: detectionResponse.image_base64 ?? null,
       }));
 
-      const checked = isMockModeEnabled()
-        ? { waypoints: detectedPoints }
-        : await checkPath(detectedPoints);
-
-      setState((prev) => ({
-        ...prev,
-        isChecking: false,
-        checkedWaypoints: checked.waypoints ?? detectedPoints,
-      }));
+      await runPopulate(detectedPoints, defaultMeasurementDensity, detectItems);
     } catch (error) {
-      console.error('Path detection/check failed:', error);
+      console.error('Path detection failed:', error);
       setState((prev) => ({
         ...prev,
-        isDetecting: false,
-        isChecking: false,
-        detectError: 'Failed to detect/check path. Please retry.',
+        isInitializing: false,
+        isPopulating: false,
+        routeError: 'Failed to detect route points. Please retry.',
       }));
     }
+  }, [runPopulate, selectedProfile]);
+
+  useEffect(() => {
+    if (!selectedProfile) {
+      setState((prev) => ({
+        ...prev,
+        routeError: null,
+        cornerPoints: [],
+        measurementPoints: [],
+        populatedPath: [],
+        imageBase64: null,
+      }));
+      return;
+    }
+
+    void initializeRoute();
+  }, [initializeRoute, selectedProfile]);
+
+  const setMeasurementDensity = (value: number) => {
+    setState((prev) => ({ ...prev, measurementDensity: value }));
+    void runPopulate(state.cornerPoints, value, state.detectItems);
+  };
+
+  const moveCornerPoint = (pointId: string, x: number, y: number) => {
+    const cornerIndex = Number(pointId.replace('corner-', '')) - 1;
+    if (
+      !Number.isInteger(cornerIndex) ||
+      cornerIndex < 0 ||
+      cornerIndex >= state.cornerPoints.length
+    ) {
+      return;
+    }
+
+    const updatedCorners = state.cornerPoints.map((point, index) =>
+      index === cornerIndex ? { x, y } : point,
+    );
+
+    setState((prev) => ({ ...prev, cornerPoints: updatedCorners }));
+    void runPopulate(updatedCorners, state.measurementDensity, state.detectItems);
   };
 
   const createScanJob = async (): Promise<string | null> => {
-    if (state.checkedWaypoints.length === 0) {
+    const path = state.populatedPath.length > 0 ? state.populatedPath : state.cornerPoints;
+
+    if (path.length === 0) {
       return null;
     }
 
-    setState((prev) => ({ ...prev, isCreatingJob: true, detectError: null }));
+    setState((prev) => ({ ...prev, isCreatingJob: true, routeError: null }));
 
     try {
       if (isMockModeEnabled()) {
@@ -145,7 +360,7 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
       }
 
       const response = await createJob({
-        path: state.checkedWaypoints,
+        path,
         workZ: selectedProfile?.settings.workZ ?? 0,
         workR: selectedProfile?.settings.workR ?? 0,
         dryRun: state.dryRun,
@@ -163,44 +378,68 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
       setState((prev) => ({
         ...prev,
         isCreatingJob: false,
-        detectError: 'Failed to create job. Please retry.',
+        routeError: 'Failed to create job. Please retry.',
       }));
       return null;
     }
   };
 
   const preview = useMemo<PreviewData>(() => {
-    const points =
-      state.checkedWaypoints.length > 0 ? state.checkedWaypoints : state.detectedPoints;
+    const routePoints = state.populatedPath.length > 0 ? state.populatedPath : state.cornerPoints;
+    const allPoints = [...state.cornerPoints, ...state.measurementPoints];
 
-    if (points.length === 0) {
+    if (routePoints.length === 0 && allPoints.length === 0) {
       return {
         routePath: [] as RoutePreviewCoordinate[],
-        waypoints: [] as RoutePreviewPoint[],
+        points: [] as RoutePreviewPoint[],
+        cornerPointIds: [],
+        draggablePointIds: [],
+        bounds: {
+          minX: 0,
+          maxX: 1,
+          minY: 0,
+          maxY: 1,
+        },
       };
     }
 
-    const maxX = Math.max(...points.map((point) => point.x));
-    const maxY = Math.max(...points.map((point) => point.y));
+    const source = [...routePoints, ...allPoints];
+    const bounds: PreviewBounds = {
+      minX: Math.min(...source.map((point) => point.x)),
+      maxX: Math.max(...source.map((point) => point.x)),
+      minY: Math.min(...source.map((point) => point.y)),
+      maxY: Math.max(...source.map((point) => point.y)),
+    };
 
-    const normalized = points.map((point) => normalizeToUnit(point, maxX, maxY));
+    const normalizedRoutePath = routePoints.map((point) => normalizeToUnit(point, bounds));
+    const normalizedCorners = state.cornerPoints.map((point, index) => ({
+      id: `corner-${index + 1}`,
+      label: `C${index + 1}`,
+      ...normalizeToUnit(point, bounds),
+    }));
+    const normalizedMeasurements = state.measurementPoints.map((point, index) => ({
+      id: `measurement-${index + 1}`,
+      label: `M${index + 1}`,
+      ...normalizeToUnit(point, bounds),
+    }));
+    const cornerPointIds = normalizedCorners.map((point) => point.id);
 
     return {
-      routePath: normalized,
-      waypoints: normalized.map((point, index) => ({
-        id: `wp-${index + 1}`,
-        label: `W${index + 1}`,
-        x: point.x,
-        y: point.y,
-      })),
+      routePath: normalizedRoutePath,
+      points: [...normalizedCorners, ...normalizedMeasurements],
+      cornerPointIds,
+      draggablePointIds: cornerPointIds,
+      bounds,
     };
-  }, [state.checkedWaypoints, state.detectedPoints]);
+  }, [state.cornerPoints, state.measurementPoints, state.populatedPath]);
 
   return {
     state,
     preview,
     setDryRun: (value: boolean) => setState((prev) => ({ ...prev, dryRun: value })),
-    detectAndCheckPath,
+    setMeasurementDensity,
+    moveCornerPoint,
+    resetRoutePlan: initializeRoute,
     createScanJob,
   };
 }

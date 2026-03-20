@@ -6,6 +6,8 @@ interface RoutePreviewSvgLayerProps {
   measurementPoints: RoutePreviewPoint[];
   selectedPointId: string | null;
   criticalPointIds: string[];
+  cornerPointIds: string[];
+  draggablePointIds: string[];
   disablePointSelection: boolean;
   enablePointDragging: boolean;
   viewBox: string;
@@ -27,6 +29,8 @@ export function RoutePreviewSvgLayer({
   measurementPoints,
   selectedPointId,
   criticalPointIds,
+  cornerPointIds,
+  draggablePointIds,
   disablePointSelection,
   enablePointDragging,
   viewBox,
@@ -46,11 +50,8 @@ export function RoutePreviewSvgLayer({
     point,
     displayPos: getDisplayPosition(point),
   }));
-  // Keep the route edges attached to nodes by deriving the path from live point positions.
-  const polyline =
-    renderedPoints.length > 1
-      ? renderedPoints.map(({ displayPos }) => `${displayPos.x},${displayPos.y}`).join(' ')
-      : polylineFromPoints(routePath);
+  // Draw the route only from backend-populated ordered path data.
+  const polyline = polylineFromPoints(routePath);
 
   return (
     <svg
@@ -81,17 +82,23 @@ export function RoutePreviewSvgLayer({
       {renderedPoints.map(({ point, displayPos }) => {
         const isSelected = point.id === selectedPointId;
         const isCritical = criticalPointIds.includes(point.id);
+        const isCorner = cornerPointIds.includes(point.id);
+        const isDraggable = enablePointDragging && draggablePointIds.includes(point.id);
         const isDragging = draggedPointId === point.id;
         const isLabelVisible = isSelected || isDragging || hoveredPointId === point.id;
 
         return (
           <g
             key={point.id}
-            onMouseDown={(event) => onPointMouseDown(point.id, event)}
+            onMouseDown={(event) => {
+              if (isDraggable) {
+                onPointMouseDown(point.id, event);
+              }
+            }}
             onMouseEnter={() => onPointHover(point.id)}
             onMouseLeave={() => onPointHover(null)}
             style={{
-              cursor: enablePointDragging ? 'grab' : 'default',
+              cursor: isDraggable ? 'grab' : 'default',
             }}
             role="button"
             aria-label={`Point ${point.label}`}
@@ -105,7 +112,9 @@ export function RoutePreviewSvgLayer({
                   ? 'var(--md-sys-color-tertiary)'
                   : isCritical
                     ? 'var(--md-sys-color-error)'
-                    : 'var(--md-sys-color-secondary)'
+                    : isCorner
+                      ? 'var(--md-sys-color-primary)'
+                      : 'var(--md-sys-color-secondary)'
               }
               stroke="var(--md-sys-color-on-surface)"
               strokeWidth={isDragging ? '0.8' : '0.5'}

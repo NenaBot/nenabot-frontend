@@ -12,6 +12,8 @@ interface RoutePreviewPanelProps {
   measurementPoints?: RoutePreviewPoint[];
   selectedPointId?: string | null;
   criticalPointIds?: string[];
+  cornerPointIds?: string[];
+  draggablePointIds?: string[];
   onSelectPoint?: (pointId: string) => void;
   disablePointSelection?: boolean;
   enablePointDragging?: boolean;
@@ -27,6 +29,8 @@ export function RoutePreviewPanel({
   measurementPoints = [],
   selectedPointId = null,
   criticalPointIds = [],
+  cornerPointIds = [],
+  draggablePointIds = [],
   onSelectPoint,
   disablePointSelection = false,
   enablePointDragging = false,
@@ -93,6 +97,8 @@ export function RoutePreviewPanel({
           measurementPoints={measurementPoints}
           selectedPointId={selectedPointId}
           criticalPointIds={criticalPointIds}
+          cornerPointIds={cornerPointIds}
+          draggablePointIds={draggablePointIds}
           disablePointSelection={disablePointSelection}
           enablePointDragging={enablePointDragging}
           viewBox={camera.viewBox}

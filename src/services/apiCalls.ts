@@ -93,6 +93,24 @@ export interface PathCheckResponseApi {
   waypoints?: PixelPointApiResponse[];
 }
 
+export interface PathPopulateRequestApi {
+  corners: PixelPointApiResponse[];
+  measurementDensity: number;
+  detections?: PathItemApiResponse[];
+  options?: Record<string, unknown> | null;
+}
+
+export interface PathPopulatePointApiResponse extends PixelPointApiResponse {
+  isCorner?: boolean;
+  type?: 'corner' | 'measurement';
+}
+
+export interface PathPopulateResponseApi {
+  waypoints?: PathPopulatePointApiResponse[];
+  path?: PathPopulatePointApiResponse[];
+  points?: PathPopulatePointApiResponse[];
+}
+
 export interface CreateJobRequestApi {
   path: PixelPointApiResponse[];
   workZ: number;
@@ -160,8 +178,14 @@ export async function checkPath(waypoints: PixelPointApiResponse[]): Promise<Pat
   return apiClient.post<PathCheckResponseApi>('/api/path', { waypoints });
 }
 
+export async function populatePath(
+  payload: PathPopulateRequestApi,
+): Promise<PathPopulateResponseApi> {
+  return apiClient.post<PathPopulateResponseApi>('/api/path/populate', payload);
+}
+
 export async function createJob(payload: CreateJobRequestApi): Promise<JobApiResponse> {
-  return apiClient.post<JobApiResponse>('/api/job', payload);
+  return apiClient.post<JobApiResponse>('/api/jobs', payload);
 }
 
 export async function fetchJobs(): Promise<JobApiResponse[]> {

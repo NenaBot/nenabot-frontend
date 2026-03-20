@@ -18,6 +18,8 @@ describe('RoutePreviewSvgLayer', () => {
     measurementPoints: mockPoints,
     selectedPointId: null,
     criticalPointIds: [],
+    cornerPointIds: ['p1'],
+    draggablePointIds: ['p1'],
     disablePointSelection: false,
     enablePointDragging: false,
     viewBox: '0 0 100 100',
@@ -53,8 +55,10 @@ describe('RoutePreviewSvgLayer', () => {
       expect(polyline).toBeInTheDocument();
     });
 
-    it('should not render polyline when no route path', () => {
-      const { container } = render(<RoutePreviewSvgLayer {...mockProps} routePath={[]} />);
+    it('should not render polyline when no route path and no points', () => {
+      const { container } = render(
+        <RoutePreviewSvgLayer {...mockProps} routePath={[]} measurementPoints={[]} />,
+      );
 
       const polyline = container.querySelector('polyline');
       expect(polyline).not.toBeInTheDocument();
@@ -134,13 +138,24 @@ describe('RoutePreviewSvgLayer', () => {
 
   describe('point interactions', () => {
     it('should call onPointMouseDown when point is clicked down', () => {
-      const { container } = render(<RoutePreviewSvgLayer {...mockProps} />);
+      const { container } = render(<RoutePreviewSvgLayer {...mockProps} enablePointDragging={true} />);
 
       const pointGroups = container.querySelectorAll('g');
       if (pointGroups.length > 0) {
         fireEvent.mouseDown(pointGroups[0]);
 
         expect(mockProps.onPointMouseDown).toHaveBeenCalled();
+      }
+    });
+
+    it('should not call onPointMouseDown for non-draggable points', () => {
+      const { container } = render(<RoutePreviewSvgLayer {...mockProps} enablePointDragging={true} />);
+
+      const pointGroups = container.querySelectorAll('g');
+      if (pointGroups.length > 1) {
+        fireEvent.mouseDown(pointGroups[1]);
+
+        expect(mockProps.onPointMouseDown).not.toHaveBeenCalled();
       }
     });
 
@@ -270,13 +285,20 @@ describe('RoutePreviewSvgLayer', () => {
     });
   });
 
-  describe('polyline from live points', () => {
-    it('should render polyline from measurement points when available', () => {
+  describe('polyline rendering source', () => {
+    it('should render polyline from routePath ordering', () => {
+      const { container } = render(<RoutePreviewSvgLayer {...mockProps} />);
+
+      const polyline = container.querySelector('polyline');
+      expect(polyline).toBeInTheDocument();
+      expect(polyline).toHaveAttribute('points', '20,30 80,70');
+    });
+
+    it('should not render polyline when routePath is empty', () => {
       const { container } = render(<RoutePreviewSvgLayer {...mockProps} routePath={[]} />);
 
       const polyline = container.querySelector('polyline');
-      // With live points, should still render polyline
-      expect(polyline).toBeInTheDocument();
+      expect(polyline).not.toBeInTheDocument();
     });
   });
 });

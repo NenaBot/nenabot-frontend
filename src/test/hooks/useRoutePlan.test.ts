@@ -1,12 +1,12 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useRoutePlan } from '../../hooks/useRoutePlan';
-import { checkPath, createJob, detectPath } from '../../services/apiCalls';
+import { createJob, detectPath, populatePath } from '../../services/apiCalls';
 import { isMockModeEnabled } from '../../state/mockMode';
 import { ProfileModel } from '../../types/profile.types';
 
 jest.mock('../../services/apiCalls', () => ({
   detectPath: jest.fn(),
-  checkPath: jest.fn(),
+  populatePath: jest.fn(),
   createJob: jest.fn(),
 }));
 
@@ -20,7 +20,10 @@ const selectedProfile: ProfileModel = {
   settings: {
     workZ: 10,
     workR: 20,
-    options: { speed: 'slow' },
+    options: {
+      speed: 'slow',
+      measurementDensity: 0.7,
+    },
   },
 };
 
@@ -29,9 +32,6 @@ describe('useRoutePlan', () => {
     jest.clearAllMocks();
     jest.spyOn(console, 'error').mockImplementation(() => undefined);
     (isMockModeEnabled as jest.Mock).mockReturnValue(false);
-  });
-
-  test('detects and checks path successfully', async () => {
     (detectPath as jest.Mock).mockResolvedValue({
       ok: true,
       detections: [
@@ -40,80 +40,87 @@ describe('useRoutePlan', () => {
       ],
       image_base64: 'abc123',
     });
-    (checkPath as jest.Mock).mockResolvedValue({
-      waypoints: [
-        { x: 12, y: 22 },
-        { x: 32, y: 42 },
+    (populatePath as jest.Mock).mockResolvedValue({
+      path: [
+        { x: 10, y: 20, type: 'corner' },
+        { x: 20, y: 30, type: 'measurement' },
+        { x: 30, y: 40, type: 'corner' },
       ],
     });
+  });
 
+  test('detects route points and populates path on mount', async () => {
     const { result } = renderHook(() => useRoutePlan({ selectedProfile }));
 
-    await act(async () => {
-      await result.current.detectAndCheckPath();
-    });
-
     await waitFor(() => {
-      expect(result.current.state.isDetecting).toBe(false);
-      expect(result.current.state.isChecking).toBe(false);
+      expect(detectPath).toHaveBeenCalledWith({ options: selectedProfile.settings.options });
+      expect(populatePath).toHaveBeenCalledWith({
+        corners: [
+          { x: 10, y: 20 },
+          { x: 30, y: 40 },
+        ],
+        measurementDensity: 0.7,
+        detections: [
+          { center_x: 10, center_y: 20 },
+          { center_x: 30, center_y: 40 },
+        ],
+        options: selectedProfile.settings.options,
+      });
     });
 
-    expect(detectPath).toHaveBeenCalledWith({ options: { speed: 'slow' } });
-    expect(checkPath).toHaveBeenCalledWith([
+    expect(result.current.state.measurementPoints).toEqual([{ x: 20, y: 30 }]);
+    expect(result.current.state.cornerPoints).toEqual([
       { x: 10, y: 20 },
       { x: 30, y: 40 },
     ]);
-    expect(result.current.state.checkedWaypoints).toEqual([
-      { x: 12, y: 22 },
-      { x: 32, y: 42 },
-    ]);
     expect(result.current.state.imageBase64).toBe('abc123');
-    expect(result.current.preview.waypoints.length).toBe(2);
+    expect(result.current.preview.cornerPointIds.length).toBe(2);
+    expect(result.current.preview.points.length).toBe(3);
   });
 
-  test('sets user-facing error when no points are detected', async () => {
-    (detectPath as jest.Mock).mockResolvedValue({
-      ok: true,
-      detections: [],
-      image_base64: null,
-    });
-
+  test('re-populates when measurement density changes', async () => {
     const { result } = renderHook(() => useRoutePlan({ selectedProfile }));
+
+    await waitFor(() => {
+      expect(populatePath).toHaveBeenCalledTimes(1);
+    });
 
     await act(async () => {
-      await result.current.detectAndCheckPath();
+      result.current.setMeasurementDensity(1.1);
     });
 
-    expect(checkPath).not.toHaveBeenCalled();
-    expect(result.current.state.detectError).toBe('Failed to detect/check path. Please retry.');
-    expect(result.current.state.isDetecting).toBe(false);
-    expect(result.current.state.isChecking).toBe(false);
+    await waitFor(() => {
+      expect(populatePath).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          measurementDensity: 1.1,
+        }),
+      );
+    });
   });
 
-  test('returns null when creating a job without checked waypoints', async () => {
+  test('re-populates when a corner point is moved', async () => {
     const { result } = renderHook(() => useRoutePlan({ selectedProfile }));
 
-    const jobId = await act(async () => result.current.createScanJob());
+    await waitFor(() => {
+      expect(populatePath).toHaveBeenCalledTimes(1);
+    });
 
-    expect(jobId).toBeNull();
-    expect(createJob).not.toHaveBeenCalled();
+    await act(async () => {
+      result.current.moveCornerPoint('corner-1', 0.5, 0.5);
+    });
+
+    await waitFor(() => {
+      expect(populatePath).toHaveBeenCalledTimes(2);
+    });
   });
 
-  test('creates a scan job with profile settings and dryRun', async () => {
-    (detectPath as jest.Mock).mockResolvedValue({
-      ok: true,
-      detections: [{ center_x: 10, center_y: 20 }],
-      image_base64: 'image-data',
-    });
-    (checkPath as jest.Mock).mockResolvedValue({
-      waypoints: [{ x: 10, y: 20 }],
-    });
+  test('creates a scan job with populated path and dry run settings', async () => {
     (createJob as jest.Mock).mockResolvedValue({ id: 'job-123' });
 
     const { result } = renderHook(() => useRoutePlan({ selectedProfile }));
 
-    await act(async () => {
-      await result.current.detectAndCheckPath();
+    await waitFor(() => {
+      expect(populatePath).toHaveBeenCalledTimes(1);
     });
 
     act(() => {
@@ -124,15 +131,46 @@ describe('useRoutePlan', () => {
 
     expect(jobId).toBe('job-123');
     expect(createJob).toHaveBeenCalledWith({
-      path: [{ x: 10, y: 20 }],
+      path: [
+        { x: 10, y: 20 },
+        { x: 20, y: 30 },
+        { x: 30, y: 40 },
+      ],
       workZ: 10,
       workR: 20,
       dryRun: true,
       options: {
         profile: 'default-profile',
         speed: 'slow',
+        measurementDensity: 0.7,
       },
-      imageBase64: 'image-data',
+      imageBase64: 'abc123',
     });
+  });
+
+  test('sets a user-facing error when detection returns no points', async () => {
+    (detectPath as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      detections: [],
+      image_base64: null,
+    });
+
+    const { result } = renderHook(() => useRoutePlan({ selectedProfile }));
+
+    await waitFor(() => {
+      expect(result.current.state.isInitializing).toBe(false);
+    });
+
+    expect(populatePath).not.toHaveBeenCalled();
+    expect(result.current.state.routeError).toBe('Failed to detect route points. Please retry.');
+  });
+
+  test('returns null when creating a job without profile/path', async () => {
+    const { result } = renderHook(() => useRoutePlan({ selectedProfile: null }));
+
+    const jobId = await act(async () => result.current.createScanJob());
+
+    expect(jobId).toBeNull();
+    expect(createJob).not.toHaveBeenCalled();
   });
 });
