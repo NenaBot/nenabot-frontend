@@ -138,7 +138,9 @@ describe('RoutePreviewSvgLayer', () => {
 
   describe('point interactions', () => {
     it('should call onPointMouseDown when point is clicked down', () => {
-      const { container } = render(<RoutePreviewSvgLayer {...mockProps} enablePointDragging={true} />);
+      const { container } = render(
+        <RoutePreviewSvgLayer {...mockProps} enablePointDragging={true} />,
+      );
 
       const pointGroups = container.querySelectorAll('g');
       if (pointGroups.length > 0) {
@@ -149,7 +151,9 @@ describe('RoutePreviewSvgLayer', () => {
     });
 
     it('should not call onPointMouseDown for non-draggable points', () => {
-      const { container } = render(<RoutePreviewSvgLayer {...mockProps} enablePointDragging={true} />);
+      const { container } = render(
+        <RoutePreviewSvgLayer {...mockProps} enablePointDragging={true} />,
+      );
 
       const pointGroups = container.querySelectorAll('g');
       if (pointGroups.length > 1) {

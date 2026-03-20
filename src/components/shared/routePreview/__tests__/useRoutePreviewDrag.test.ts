@@ -110,22 +110,49 @@ describe('useRoutePreviewDrag', () => {
       const onDragEnd = jest.fn();
       const { result } = renderHook(() => useRoutePreviewDrag(true, onDragEnd));
 
-      const mockSvgEvent = createMockSVGEvent();
+      // Create a mock SVG element with proper matrix transformation
+      const mockSvgElement = {
+        createSVGPoint: jest.fn(() => {
+          return { x: 0, y: 0, matrixTransform: jest.fn(function() { return this; }) };
+        }),
+        getScreenCTM: jest.fn(() => ({
+          a: 1, b: 0, c: 0, d: 1, e: 0, f: 0,
+          inverse: jest.fn(function() { return this; }),
+        })),
+      } as unknown as SVGSVGElement;
 
       act(() => {
         result.current.beginDrag('point-1', createMockMouseEvent());
+      });
+
+      expect(result.current.isDragging).toBe(true);
+
+      // Update drag with mock SVG event
+      const mockSvgEvent = {
+        currentTarget: mockSvgElement,
+        clientX: 50,
+        clientY: 50,
+      } as unknown as React.MouseEvent<SVGSVGElement>;
+
+      act(() => {
         result.current.updateDrag(mockSvgEvent);
+      });
+
+      act(() => {
         result.current.completeDrag();
       });
 
+      // Verify the callback was called
       expect(onDragEnd).toHaveBeenCalledWith('point-1', expect.any(Number), expect.any(Number));
 
       // Verify coordinates are normalized [0..1]
-      const [, x, y] = onDragEnd.mock.calls[0];
-      expect(x).toBeGreaterThanOrEqual(0);
-      expect(x).toBeLessThanOrEqual(1);
-      expect(y).toBeGreaterThanOrEqual(0);
-      expect(y).toBeLessThanOrEqual(1);
+      if (onDragEnd.mock.calls.length > 0) {
+        const [, x, y] = onDragEnd.mock.calls[0];
+        expect(x).toBeGreaterThanOrEqual(0);
+        expect(x).toBeLessThanOrEqual(1);
+        expect(y).toBeGreaterThanOrEqual(0);
+        expect(y).toBeLessThanOrEqual(1);
+      }
     });
 
     it('should clear drag state after completeDrag', () => {

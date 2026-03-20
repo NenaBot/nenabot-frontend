@@ -49,7 +49,10 @@ interface PreviewBounds {
   maxY: number;
 }
 
-function normalizeToUnit(point: PixelPointApiResponse, bounds: PreviewBounds): RoutePreviewCoordinate {
+function normalizeToUnit(
+  point: PixelPointApiResponse,
+  bounds: PreviewBounds,
+): RoutePreviewCoordinate {
   const spanX = Math.max(bounds.maxX - bounds.minX, 1);
   const spanY = Math.max(bounds.maxY - bounds.minY, 1);
   const x = (point.x - bounds.minX) / spanX;
@@ -176,7 +179,9 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
     isPopulating: false,
     isCreatingJob: false,
     dryRun: false,
-    measurementDensity: isMockModeEnabled() ? 0.5 : getMeasurementDensityFromProfile(selectedProfile),
+    measurementDensity: isMockModeEnabled()
+      ? 0.5
+      : getMeasurementDensityFromProfile(selectedProfile),
     imageBase64: null,
     routeError: null,
     cornerPoints: [],

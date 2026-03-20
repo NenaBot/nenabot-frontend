@@ -207,6 +207,9 @@ describe('useRoutePreviewCamera', () => {
 
       act(() => {
         result.current.zoomIn();
+      });
+
+      act(() => {
         result.current.beginPan({
           clientX: 100,
           clientY: 100,
