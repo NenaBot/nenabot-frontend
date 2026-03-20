@@ -1,10 +1,10 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import { CameraView } from '../CameraView';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { CameraView } from '../../components/CameraView';
 
-// Mock the apiClient
 jest.mock('../../services/apiClient', () => ({
   apiClient: {
     getVideoStreamUrl: jest.fn(() => 'http://localhost:8000/api/camera/stream'),
+    getBaseUrl: jest.fn(() => 'http://localhost:8000'),
   },
 }));
 
@@ -36,9 +36,8 @@ describe('CameraView', () => {
   test('shows offline status when stream fails to load', async () => {
     render(<CameraView />);
 
-    // Simulate image error
     const img = screen.getByAltText('Live camera stream');
-    img.dispatchEvent(new Event('error'));
+    fireEvent.error(img);
 
     await waitFor(() => {
       expect(screen.getByText('Offline')).toBeInTheDocument();
@@ -48,9 +47,8 @@ describe('CameraView', () => {
   test('shows live status when stream loads successfully', async () => {
     render(<CameraView />);
 
-    // Simulate image load
     const img = screen.getByAltText('Live camera stream');
-    img.dispatchEvent(new Event('load'));
+    fireEvent.load(img);
 
     await waitFor(() => {
       expect(screen.getByText('Live')).toBeInTheDocument();

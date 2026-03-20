@@ -25,14 +25,20 @@ nenabot-ui/
 |   |   |   |-- ProgressTab.tsx
 |   |   |   `-- ResultsTab.tsx
 |   |   |-- shared/
-|   |   `-- __tests__/
 |   |-- hooks/
 |   |-- services/
 |   |-- mocks/
 |   |-- config/
 |   |-- styles/
-|   `-- types/
+|   |-- types/
+|   `-- test/
+|       |-- components/
+|       |-- hooks/
+|       `-- services/
 |-- tests-ui/
+|-- .github/workflows/
+|   |-- unit-tests.yml
+|   `-- ui-tests.yml
 |-- build/
 |-- DEVELOPMENT.md
 `-- package.json
@@ -49,9 +55,28 @@ nenabot-ui/
     - Domain types in `types/`
     - Development fallback data in `mocks/`
 - Keep side effects in hooks: data polling/fetching behavior belongs in custom hooks (for example `useHardwareData`).
-- Tests near behavior:
-    - Component/unit tests in `src/**/__tests__/`
-    - End-to-end flows in `tests-ui/`
+- Test conventions:
+    - Unit tests in `src/test/` (organized by area such as `components/`, `hooks/`, `services/`)
+    - UI/E2E tests in `tests-ui/`
+
+## CI Workflows
+
+Two independent workflows run in GitHub Actions:
+
+- Unit tests: `.github/workflows/unit-tests.yml`
+    - Installs dependencies with `npm ci`
+    - Runs `npm test`
+- UI tests: `.github/workflows/ui-tests.yml`
+    - Installs dependencies with `npm ci`
+    - Installs Playwright browsers
+    - Runs `npm run test:ui`
+    - Uploads Playwright report artifacts
+
+Why this split exists:
+
+- Clear PR checks (`unit-tests` and `ui-tests` appear separately)
+- Faster diagnosis when only one test layer fails
+- Easier branch protection rules per test type
 
 ## Setup And Run Instructions
 
