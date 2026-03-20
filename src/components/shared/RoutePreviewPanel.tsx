@@ -20,6 +20,8 @@ interface RoutePreviewPanelProps {
   criticalPointIds?: string[];
   onSelectPoint?: (pointId: string) => void;
   disablePointSelection?: boolean;
+  enablePointDragging?: boolean;
+  onPointDragEnd?: (pointId: string, newX: number, newY: number) => void;
 }
 
 const ZOOM_MIN = 1;
@@ -43,8 +45,12 @@ export function RoutePreviewPanel({
   criticalPointIds = [],
   onSelectPoint,
   disablePointSelection = false,
+  enablePointDragging = false,
+  onPointDragEnd,
 }: RoutePreviewPanelProps) {
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [draggedPointId, setDraggedPointId] = useState<string | null>(null);
+  const [draggedPointPos, setDraggedPointPos] = useState<{ x: number; y: number } | null>(null);
   const hasOverlayData = routePath.length > 0 || measurementPoints.length > 0;
   const showGridOverlay = !imageUrl;
 
@@ -53,6 +59,54 @@ export function RoutePreviewPanel({
   const handleZoomIn = () => setZoomLevel((prev) => Math.min(ZOOM_MAX, prev + ZOOM_STEP));
   const handleZoomOut = () => setZoomLevel((prev) => Math.max(ZOOM_MIN, prev - ZOOM_STEP));
   const handleFitToScreen = () => setZoomLevel(1);
+
+  const handleSvgMouseDown = (e: React.MouseEvent<SVGSVGElement>, pointId?: string) => {
+    if (!enablePointDragging || !pointId) return;
+    setDraggedPointId(pointId);
+  };
+
+  const handleSvgMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (!enablePointDragging || !draggedPointId) return;
+
+    const svg = e.currentTarget;
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+
+    const screenCTM = svg.getScreenCTM();
+    if (screenCTM) {
+      const localPt = pt.matrixTransform(screenCTM.inverse());
+      setDraggedPointPos({
+        x: Math.max(0, Math.min(100, localPt.x)) / 100,
+        y: Math.max(0, Math.min(100, localPt.y)) / 100,
+      });
+    }
+  };
+
+  const handleSvgMouseUp = () => {
+    if (!enablePointDragging || !draggedPointId || !draggedPointPos) {
+      setDraggedPointId(null);
+      setDraggedPointPos(null);
+      return;
+    }
+
+    if (onPointDragEnd) {
+      onPointDragEnd(draggedPointId, draggedPointPos.x, draggedPointPos.y);
+    }
+
+    setDraggedPointId(null);
+    setDraggedPointPos(null);
+  };
+
+  const getPointDisplayPosition = (point: RoutePreviewPoint): { x: number; y: number } => {
+    if (draggedPointId === point.id && draggedPointPos) {
+      return {
+        x: draggedPointPos.x * 100,
+        y: draggedPointPos.y * 100,
+      };
+    }
+    return { x: toSvgPoint(point.x), y: toSvgPoint(point.y) };
+  };
 
   return (
     <div className="border border-[var(--md-sys-color-outline-variant)] rounded-2xl overflow-hidden bg-[var(--md-sys-color-surface-container-lowest)]">
@@ -114,13 +168,17 @@ export function RoutePreviewPanel({
             viewBox="0 0 100 100"
             preserveAspectRatio="xMidYMid meet"
             className="absolute inset-0 w-full h-full"
+            onMouseMove={handleSvgMouseMove}
+            onMouseUp={handleSvgMouseUp}
+            onMouseLeave={handleSvgMouseUp}
+            style={{ cursor: draggedPointId ? 'grabbing' : 'default' }}
           >
             {polyline.length > 0 && (
               <polyline
                 points={polyline}
                 fill="none"
                 stroke="var(--md-sys-color-primary)"
-                strokeWidth="1.2"
+                strokeWidth="1.8"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 vectorEffect="non-scaling-stroke"
@@ -130,23 +188,34 @@ export function RoutePreviewPanel({
             {measurementPoints.map((point) => {
               const isSelected = point.id === selectedPointId;
               const isCritical = criticalPointIds.includes(point.id);
+              const isDragging = draggedPointId === point.id;
+              const displayPos = getPointDisplayPosition(point);
 
               return (
-                <g key={point.id}>
+                <g
+                  key={point.id}
+                  onMouseDown={(e: React.MouseEvent<SVGGElement>) =>
+                    handleSvgMouseDown(e, point.id)
+                  }
+                  style={{
+                    cursor: enablePointDragging ? 'grab' : 'default',
+                  }}
+                >
                   <circle
-                    cx={toSvgPoint(point.x)}
-                    cy={toSvgPoint(point.y)}
-                    r={isSelected ? 1.8 : 1.3}
+                    cx={displayPos.x}
+                    cy={displayPos.y}
+                    r={isSelected ? 2.8 : 2.2}
                     fill={
                       isSelected
                         ? 'var(--md-sys-color-tertiary)'
                         : isCritical
                           ? '#dc2626'
-                          : 'var(--md-sys-color-secondary-container)'
+                          : '#fbbf24'
                     }
                     stroke="var(--md-sys-color-on-surface)"
-                    strokeWidth="0.35"
+                    strokeWidth={isDragging ? '0.8' : '0.5'}
                     vectorEffect="non-scaling-stroke"
+                    opacity={isDragging ? 0.8 : 1}
                     className={disablePointSelection ? '' : 'cursor-pointer'}
                     onClick={() => {
                       if (!disablePointSelection && onSelectPoint) {
@@ -154,6 +223,19 @@ export function RoutePreviewPanel({
                       }
                     }}
                   />
+                  <text
+                    x={displayPos.x}
+                    y={displayPos.y}
+                    dominantBaseline="middle"
+                    textAnchor="middle"
+                    fontSize="2.0"
+                    fontWeight="600"
+                    fill="var(--md-sys-color-on-surface)"
+                    pointerEvents="none"
+                    vectorEffect="non-scaling-stroke"
+                  >
+                    {point.label}
+                  </text>
                 </g>
               );
             })}

@@ -1,4 +1,5 @@
 import { Map, Play, Radar } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { RoutePreviewPanel } from '../shared/RoutePreviewPanel';
 import { useRoutePlan } from '../../hooks/useRoutePlan';
 import { ProfileModel } from '../../types/profile.types';
@@ -8,12 +9,60 @@ interface RouteTabProps {
   onJobCreated: (jobId: string) => void;
 }
 
+// Default mock waypoints and route path displayed when no detection has been performed
+interface DefaultPreviewData {
+  waypoints: Array<{ id: string; label: string; x: number; y: number }>;
+  routePath: Array<{ x: number; y: number }>;
+}
+
+function createDefaultMockPreview(): DefaultPreviewData {
+  const waypoints = [
+    { id: 'wp-1', label: '1', x: 0.15, y: 0.2 },
+    { id: 'wp-2', label: '2', x: 0.5, y: 0.2 },
+    { id: 'wp-3', label: '3', x: 0.85, y: 0.2 },
+    { id: 'wp-4', label: '4', x: 0.85, y: 0.5 },
+    { id: 'wp-5', label: '5', x: 0.5, y: 0.5 },
+    { id: 'wp-6', label: '6', x: 0.15, y: 0.5 },
+    { id: 'wp-7', label: '7', x: 0.15, y: 0.8 },
+    { id: 'wp-8', label: '8', x: 0.5, y: 0.8 },
+    { id: 'wp-9', label: '9', x: 0.85, y: 0.8 },
+  ];
+
+  // Create a serpentine path connecting all waypoints
+  const routePath = [
+    { x: 0.15, y: 0.2 },
+    { x: 0.5, y: 0.2 },
+    { x: 0.85, y: 0.2 },
+    { x: 0.85, y: 0.5 },
+    { x: 0.5, y: 0.5 },
+    { x: 0.15, y: 0.5 },
+    { x: 0.15, y: 0.8 },
+    { x: 0.5, y: 0.8 },
+    { x: 0.85, y: 0.8 },
+  ];
+
+  return { waypoints, routePath };
+}
+
 export function RouteTab({ selectedProfile, onJobCreated }: RouteTabProps) {
   const { state, preview, setDryRun, detectAndCheckPath, createScanJob } = useRoutePlan({
     selectedProfile,
   });
 
   const imageUrl = state.imageBase64 ? `data:image/jpeg;base64,${state.imageBase64}` : null;
+
+  // Display default mock data when no detection has been performed yet
+  const defaultPreview = useMemo(() => createDefaultMockPreview(), []);
+  const [draggableWaypoints, setDraggableWaypoints] = useState(defaultPreview.waypoints);
+  const displayRoutePath =
+    preview.routePath.length > 0 ? preview.routePath : defaultPreview.routePath;
+  const displayWaypoints = preview.waypoints.length > 0 ? preview.waypoints : draggableWaypoints;
+
+  const handleWaypointDragEnd = (pointId: string, newX: number, newY: number) => {
+    setDraggableWaypoints((prev) =>
+      prev.map((wp) => (wp.id === pointId ? { ...wp, x: newX, y: newY } : wp)),
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -97,9 +146,11 @@ export function RouteTab({ selectedProfile, onJobCreated }: RouteTabProps) {
           <RoutePreviewPanel
             title="Detected Static Image + Path Overlay"
             imageUrl={imageUrl}
-            routePath={preview.routePath}
-            measurementPoints={preview.waypoints}
+            routePath={displayRoutePath}
+            measurementPoints={displayWaypoints}
             disablePointSelection={true}
+            enablePointDragging={true}
+            onPointDragEnd={handleWaypointDragEnd}
           />
         </div>
       </div>
