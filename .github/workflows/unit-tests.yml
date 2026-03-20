@@ -2,9 +2,13 @@ name: Run Unit Tests
 
 on:
   push:
-    branches: [main]
+    branches: [main, feat/ci-frontend-enhancements]
   pull_request:
     branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
   unit-tests:
@@ -23,12 +27,109 @@ jobs:
         run: npm ci
 
       - name: Run unit tests
-        run: npm test -- --coverage
+        id: run_unit_tests
+        shell: bash
+        run: |
+          set +e
+          npm test -- --coverage 2>&1 | tee unit-test-output.txt
+          status=${PIPESTATUS[0]}
+
+          if [ "$status" -eq 0 ]; then
+            echo "status_label=PASSED" >> "$GITHUB_OUTPUT"
+            echo "status_emoji=✅" >> "$GITHUB_OUTPUT"
+          else
+            echo "status_label=FAILED" >> "$GITHUB_OUTPUT"
+            echo "status_emoji=❌" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Build unit test summary
+        if: always()
+        shell: bash
+        env:
+          STATUS_LABEL: ${{ steps.run_unit_tests.outputs.status_label }}
+          STATUS_EMOJI: ${{ steps.run_unit_tests.outputs.status_emoji }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          {
+            echo "## 🧪 Unit Test Report"
+            echo
+            echo "${STATUS_EMOJI} **Status: ${STATUS_LABEL}**"
+            echo
+            echo "- Workflow run: [Open run details](${RUN_URL})"
+            echo "- Job summary: open the run link above, then expand the unit-tests job"
+            echo
+            echo "<details>"
+            echo "<summary>📋 Show executed tests and raw output</summary>"
+            echo
+            echo '```text'
+            if [ -f unit-test-output.txt ]; then
+              sed -E 's/\x1b\[[0-9;]*m//g' unit-test-output.txt | tail -n 500
+            else
+              echo "No test output file was generated."
+            fi
+            echo '```'
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment PR with unit test status
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: actions/github-script@v7
+        env:
+          STATUS_LABEL: ${{ steps.run_unit_tests.outputs.status_label }}
+          STATUS_EMOJI: ${{ steps.run_unit_tests.outputs.status_emoji }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        with:
+          script: |
+            const marker = '<!-- ci-report-unit-tests -->';
+            const body = `${marker}
+            ## 🧪 Unit Tests ${process.env.STATUS_EMOJI} ${process.env.STATUS_LABEL}
+
+            - Result: **${process.env.STATUS_LABEL}**
+            - Job summary: [Open workflow run](${process.env.RUN_URL}) and expand the **unit-tests** job
+            - Trigger: ${context.eventName}
+            `;
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+
+            const existing = comments.find(
+              (c) => c.user?.type === 'Bot' && c.body?.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v5
         if: always()
         with:
-          name: jest-coverage
-          path: coverage/
+          name: jest-coverage-html
+          path: coverage/lcov-report/
           retention-days: 14
+
+      - name: Fail workflow if unit tests failed
+        if: always() && steps.run_unit_tests.outputs.exit_code != '0'
+        run: exit 1
