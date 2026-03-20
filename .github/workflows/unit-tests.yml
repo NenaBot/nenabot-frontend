@@ -34,6 +34,15 @@ jobs:
           npm test -- --coverage 2>&1 | tee unit-test-output.txt
           status=${PIPESTATUS[0]}
 
+          tests_line=$(grep -E '^[[:space:]]*Tests:' unit-test-output.txt | tail -1)
+          passed_count=$(echo "$tests_line" | grep -Eo '[0-9]+ passed' | awk '{print $1}')
+          failed_count=$(echo "$tests_line" | grep -Eo '[0-9]+ failed' | awk '{print $1}')
+          skipped_count=$(echo "$tests_line" | grep -Eo '[0-9]+ skipped' | awk '{print $1}')
+
+          echo "passed_count=${passed_count:-n/a}" >> "$GITHUB_OUTPUT"
+          echo "failed_count=${failed_count:-n/a}" >> "$GITHUB_OUTPUT"
+          echo "skipped_count=${skipped_count:-0}" >> "$GITHUB_OUTPUT"
+
           if [ "$status" -eq 0 ]; then
             echo "status_label=PASSED" >> "$GITHUB_OUTPUT"
             echo "status_emoji=✅" >> "$GITHUB_OUTPUT"
@@ -51,12 +60,20 @@ jobs:
         env:
           STATUS_LABEL: ${{ steps.run_unit_tests.outputs.status_label }}
           STATUS_EMOJI: ${{ steps.run_unit_tests.outputs.status_emoji }}
+          PASSED_COUNT: ${{ steps.run_unit_tests.outputs.passed_count }}
+          FAILED_COUNT: ${{ steps.run_unit_tests.outputs.failed_count }}
+          SKIPPED_COUNT: ${{ steps.run_unit_tests.outputs.skipped_count }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           {
             echo "## 🧪 Unit Test Report"
             echo
             echo "${STATUS_EMOJI} **Status: ${STATUS_LABEL}**"
+            echo
+            echo "### Totals"
+            echo "- ✅ Passed: **${PASSED_COUNT}**"
+            echo "- ❌ Failed: **${FAILED_COUNT}**"
+            echo "- ⏭️ Skipped: **${SKIPPED_COUNT}**"
             echo
             echo "- Workflow run: [Open run details](${RUN_URL})"
             echo "- Job summary: open the run link above, then expand the unit-tests job"
