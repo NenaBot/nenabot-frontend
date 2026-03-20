@@ -1,8 +1,9 @@
 import { Map, Play, Radar } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { RoutePreviewPanel } from '../shared/RoutePreviewPanel';
 import { useRoutePlan } from '../../hooks/useRoutePlan';
 import { ProfileModel } from '../../types/profile.types';
+import { RoutePreviewCoordinate, RoutePreviewPoint } from '../../types/routePreview.types';
 
 interface RouteTabProps {
   selectedProfile: ProfileModel | null;
@@ -11,8 +12,8 @@ interface RouteTabProps {
 
 // Default mock waypoints and route path displayed when no detection has been performed
 interface DefaultPreviewData {
-  waypoints: Array<{ id: string; label: string; x: number; y: number }>;
-  routePath: Array<{ x: number; y: number }>;
+  waypoints: RoutePreviewPoint[];
+  routePath: RoutePreviewCoordinate[];
 }
 
 function createDefaultMockPreview(): DefaultPreviewData {
@@ -54,9 +55,17 @@ export function RouteTab({ selectedProfile, onJobCreated }: RouteTabProps) {
   // Display default mock data when no detection has been performed yet
   const defaultPreview = useMemo(() => createDefaultMockPreview(), []);
   const [draggableWaypoints, setDraggableWaypoints] = useState(defaultPreview.waypoints);
-  const displayRoutePath =
-    preview.routePath.length > 0 ? preview.routePath : defaultPreview.routePath;
-  const displayWaypoints = preview.waypoints.length > 0 ? preview.waypoints : draggableWaypoints;
+
+  useEffect(() => {
+    if (preview.waypoints.length > 0) {
+      setDraggableWaypoints(preview.waypoints);
+      return;
+    }
+    setDraggableWaypoints(defaultPreview.waypoints);
+  }, [defaultPreview.waypoints, preview.waypoints]);
+
+  const displayWaypoints = draggableWaypoints;
+  const displayRoutePath = displayWaypoints.map(({ x, y }) => ({ x, y }));
 
   const handleWaypointDragEnd = (pointId: string, newX: number, newY: number) => {
     setDraggableWaypoints((prev) =>

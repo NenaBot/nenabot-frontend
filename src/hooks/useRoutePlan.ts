@@ -8,16 +8,7 @@ import {
 } from '../services/apiCalls';
 import { ProfileModel } from '../types/profile.types';
 import { isMockModeEnabled } from '../state/mockMode';
-
-interface RoutePreviewCoordinate {
-  x: number;
-  y: number;
-}
-
-interface RoutePreviewPoint extends RoutePreviewCoordinate {
-  id: string;
-  label: string;
-}
+import { RoutePreviewCoordinate, RoutePreviewPoint } from '../types/routePreview.types';
 
 interface UseRoutePlanOptions {
   selectedProfile: ProfileModel | null;
@@ -32,6 +23,11 @@ interface DetectState {
   detectError: string | null;
   checkedWaypoints: PixelPointApiResponse[];
   detectedPoints: PixelPointApiResponse[];
+}
+
+interface PreviewData {
+  routePath: RoutePreviewCoordinate[];
+  waypoints: RoutePreviewPoint[];
 }
 
 function normalizeToUnit(
@@ -173,7 +169,7 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
     }
   };
 
-  const preview = useMemo(() => {
+  const preview = useMemo<PreviewData>(() => {
     const points =
       state.checkedWaypoints.length > 0 ? state.checkedWaypoints : state.detectedPoints;
 

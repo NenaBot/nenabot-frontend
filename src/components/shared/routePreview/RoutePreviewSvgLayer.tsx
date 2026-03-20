@@ -1,0 +1,141 @@
+import { polylineFromPoints } from './geometry';
+import { RoutePreviewCoordinate, RoutePreviewPoint } from '../../../types/routePreview.types';
+
+interface RoutePreviewSvgLayerProps {
+  routePath: RoutePreviewCoordinate[];
+  measurementPoints: RoutePreviewPoint[];
+  selectedPointId: string | null;
+  criticalPointIds: string[];
+  disablePointSelection: boolean;
+  enablePointDragging: boolean;
+  viewBox: string;
+  draggedPointId: string | null;
+  hoveredPointId: string | null;
+  isPanning: boolean;
+  onPointMouseDown: (pointId: string, event: React.MouseEvent<SVGGElement>) => void;
+  onPointHover: (pointId: string | null) => void;
+  onSelectPoint?: (pointId: string) => void;
+  onMouseMove: (event: React.MouseEvent<SVGSVGElement>) => void;
+  onMouseUp: () => void;
+  onMouseDown: (event: React.MouseEvent<SVGSVGElement>) => void;
+  onWheel: (event: React.WheelEvent<SVGSVGElement>) => void;
+  getDisplayPosition: (point: RoutePreviewPoint) => { x: number; y: number };
+}
+
+export function RoutePreviewSvgLayer({
+  routePath,
+  measurementPoints,
+  selectedPointId,
+  criticalPointIds,
+  disablePointSelection,
+  enablePointDragging,
+  viewBox,
+  draggedPointId,
+  hoveredPointId,
+  isPanning,
+  onPointMouseDown,
+  onPointHover,
+  onSelectPoint,
+  onMouseMove,
+  onMouseUp,
+  onMouseDown,
+  onWheel,
+  getDisplayPosition,
+}: RoutePreviewSvgLayerProps) {
+  const renderedPoints = measurementPoints.map((point) => ({
+    point,
+    displayPos: getDisplayPosition(point),
+  }));
+  // Keep the route edges attached to nodes by deriving the path from live point positions.
+  const polyline =
+    renderedPoints.length > 1
+      ? renderedPoints.map(({ displayPos }) => `${displayPos.x},${displayPos.y}`).join(' ')
+      : polylineFromPoints(routePath);
+
+  return (
+    <svg
+      viewBox={viewBox}
+      preserveAspectRatio="xMidYMid meet"
+      className="absolute inset-0 w-full h-full"
+      role="img"
+      aria-label="Route preview"
+      onMouseMove={onMouseMove}
+      onMouseUp={onMouseUp}
+      onMouseLeave={onMouseUp}
+      onMouseDown={onMouseDown}
+      onWheel={onWheel}
+      style={{ cursor: draggedPointId ? 'grabbing' : isPanning ? 'grabbing' : 'default' }}
+    >
+      {polyline.length > 0 && (
+        <polyline
+          points={polyline}
+          fill="none"
+          stroke="var(--md-sys-color-primary)"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      )}
+
+      {renderedPoints.map(({ point, displayPos }) => {
+        const isSelected = point.id === selectedPointId;
+        const isCritical = criticalPointIds.includes(point.id);
+        const isDragging = draggedPointId === point.id;
+        const isLabelVisible = isSelected || isDragging || hoveredPointId === point.id;
+
+        return (
+          <g
+            key={point.id}
+            onMouseDown={(event) => onPointMouseDown(point.id, event)}
+            onMouseEnter={() => onPointHover(point.id)}
+            onMouseLeave={() => onPointHover(null)}
+            style={{
+              cursor: enablePointDragging ? 'grab' : 'default',
+            }}
+            role="button"
+            aria-label={`Point ${point.label}`}
+          >
+            <circle
+              cx={displayPos.x}
+              cy={displayPos.y}
+              r={isSelected ? 2.8 : 2.2}
+              fill={
+                isSelected
+                  ? 'var(--md-sys-color-tertiary)'
+                  : isCritical
+                    ? 'var(--md-sys-color-error)'
+                    : 'var(--md-sys-color-secondary)'
+              }
+              stroke="var(--md-sys-color-on-surface)"
+              strokeWidth={isDragging ? '0.8' : '0.5'}
+              vectorEffect="non-scaling-stroke"
+              opacity={isDragging ? 0.8 : 1}
+              className={disablePointSelection ? '' : 'cursor-pointer'}
+              onClick={() => {
+                if (!disablePointSelection && onSelectPoint) {
+                  onSelectPoint(point.id);
+                }
+              }}
+            />
+            {isLabelVisible && (
+              <text
+                x={displayPos.x}
+                y={displayPos.y}
+                dominantBaseline="middle"
+                textAnchor="middle"
+                fontSize="2.0"
+                fontWeight="600"
+                fill="var(--md-sys-color-on-surface)"
+                pointerEvents="none"
+                vectorEffect="non-scaling-stroke"
+              >
+                {point.label}
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
