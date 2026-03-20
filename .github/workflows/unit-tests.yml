@@ -2,7 +2,7 @@ name: Run Unit Tests
 
 on:
   push:
-    branches: [main, feat/ci-frontend-enhancements]
+    branches: [main]
   pull_request:
     branches: [main]
 
