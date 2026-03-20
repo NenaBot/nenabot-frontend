@@ -7,8 +7,16 @@
  * - Type-safe responses
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '30000', 10);
+function getAppEnvValue(key: keyof ImportMetaEnv): string | undefined {
+  if (typeof __APP_ENV__ !== 'undefined' && __APP_ENV__ && __APP_ENV__[key]) {
+    return __APP_ENV__[key];
+  }
+
+  return undefined;
+}
+
+const API_BASE_URL = getAppEnvValue('VITE_API_URL') || 'http://localhost:8000';
+const API_TIMEOUT = parseInt(getAppEnvValue('VITE_API_TIMEOUT') || '30000', 10);
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 

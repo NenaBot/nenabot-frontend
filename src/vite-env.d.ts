@@ -14,3 +14,12 @@ interface ImportMeta {
       MODE: string;
     }>;
 }
+
+declare const __APP_ENV__:
+  | (ImportMetaEnv &
+      Readonly<{
+        DEV?: boolean;
+        PROD?: boolean;
+        MODE?: string;
+      }>)
+  | undefined;
