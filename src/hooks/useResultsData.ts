@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ScanResult, ScanResultSummary } from '../types/results.types';
 import {
-  exportScanResult,
   getAvailableScanResultSummaries,
   getLatestScanResult,
   getScanResult,
 } from '../services/resultsApi';
+import { exportScanResult } from '../services/resultsApi/exportScanResult';
 
 type ExportFormat = 'json' | 'csv';
 

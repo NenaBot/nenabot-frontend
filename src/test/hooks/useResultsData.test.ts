@@ -1,16 +1,19 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useResultsData } from '../../hooks/useResultsData';
 import {
-  exportScanResult,
   getAvailableScanResultSummaries,
   getLatestScanResult,
   getScanResult,
 } from '../../services/resultsApi';
+import { exportScanResult } from '../../services/resultsApi/exportScanResult';
 
-jest.mock('../../services/resultsApi', () => ({
+jest.mock('../../services/resultsApi/index', () => ({
   getLatestScanResult: jest.fn(),
   getAvailableScanResultSummaries: jest.fn(),
   getScanResult: jest.fn(),
+}));
+
+jest.mock('../../services/resultsApi/exportScanResult', () => ({
   exportScanResult: jest.fn(),
 }));
 
