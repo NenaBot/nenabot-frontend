@@ -84,12 +84,12 @@ describe('RoutePreviewPanel', () => {
 
       // The circle elements have the onClick handler
       const circles = container.querySelectorAll('circle[class="cursor-pointer"]');
-      
+
       if (circles.length > 0) {
         // Click on the circle which has the handler
-        // The event should be properly captured by React's synthetic event system  
+        // The event should be properly captured by React's synthetic event system
         fireEvent.click(circles[0]);
-        
+
         expect(onSelectPoint).toHaveBeenCalled();
       }
     });
@@ -242,7 +242,7 @@ describe('RoutePreviewPanel', () => {
         // The grid overlay has the pointer-events-none class which is unique to it
         return classList?.includes('pointer-events-none') && classList?.includes('opacity');
       });
-      
+
       expect(gridOverlay).toBeTruthy();
     });
 
@@ -265,11 +265,11 @@ describe('RoutePreviewPanel', () => {
 
       // Get the main route preview SVG, not the toolbar icon SVG
       const svg = container.querySelector('svg[aria-label="Route preview"]') as SVGSVGElement;
-      
+
       if (!svg) {
         throw new Error('Route preview SVG not found');
       }
-      
+
       const initialViewBox = svg.getAttribute('viewBox');
 
       const zoomInBtn = screen.getByLabelText('Zoom in');

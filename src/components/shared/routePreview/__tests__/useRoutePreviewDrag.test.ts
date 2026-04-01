@@ -113,11 +113,24 @@ describe('useRoutePreviewDrag', () => {
       // Create a mock SVG element with proper matrix transformation
       const mockSvgElement = {
         createSVGPoint: jest.fn(() => {
-          return { x: 0, y: 0, matrixTransform: jest.fn(function() { return this; }) };
+          return {
+            x: 0,
+            y: 0,
+            matrixTransform: jest.fn(function () {
+              return this;
+            }),
+          };
         }),
         getScreenCTM: jest.fn(() => ({
-          a: 1, b: 0, c: 0, d: 1, e: 0, f: 0,
-          inverse: jest.fn(function() { return this; }),
+          a: 1,
+          b: 0,
+          c: 0,
+          d: 1,
+          e: 0,
+          f: 0,
+          inverse: jest.fn(function () {
+            return this;
+          }),
         })),
       } as unknown as SVGSVGElement;
 
