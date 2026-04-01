@@ -31,6 +31,15 @@ export function RouteTab({ selectedProfile, onJobCreated }: RouteTabProps) {
     state.measurementDensity,
   );
   const [measurementDensityError, setMeasurementDensityError] = useState<string | null>(null);
+  const detectedPoints = state.detectItems.length;
+  const checkedWaypoints = detectedPoints > 0 ? state.measurementPoints.length : 0;
+  const isRouteReady =
+    detectedPoints > 0 &&
+    checkedWaypoints > 0 &&
+    preview.routePath.length > 0 &&
+    !state.isInitializing &&
+    !state.isPopulating;
+  const isStartDisabled = !isRouteReady || state.isCreatingJob || !selectedProfile;
 
   useEffect(() => {
     setMeasurementDensityInput(state.measurementDensity.toString());
@@ -175,9 +184,14 @@ export function RouteTab({ selectedProfile, onJobCreated }: RouteTabProps) {
         </div>
       </div>
 
+      <div className="flex items-center justify-between text-sm text-[var(--md-sys-color-on-surface-variant)] border border-[var(--md-sys-color-outline-variant)] rounded-lg px-3 py-2">
+        <span>Detected points: {detectedPoints}</span>
+        <span>Checked waypoints: {checkedWaypoints}</span>
+      </div>
+
       <button
         type="button"
-        disabled={preview.routePath.length === 0 || state.isCreatingJob || !selectedProfile}
+        disabled={isStartDisabled}
         onClick={() => {
           void createScanJob().then((jobId) => {
             if (jobId) {
