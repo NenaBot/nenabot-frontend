@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { useJobEvents } from '../../hooks/useJobEvents';
 
 jest.mock('../../services/apiCalls', () => ({
-  getJobEventsUrl: jest.fn((jobId: string) => `http://localhost:8000/api/job/${jobId}/events`),
+  getJobEventsUrl: jest.fn((jobId: string) => `http://localhost:8000/api/jobs/${jobId}/events`),
 }));
 
 type Listener = (event: MessageEvent<string>) => void;

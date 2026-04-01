@@ -150,7 +150,7 @@ export async function fetchHealthStatus(): Promise<HealthApiResponse> {
 
 export async function fetchProfiles(): Promise<ProfileApiResponse[]> {
   if (profileListInFlight) return profileListInFlight;
-  profileListInFlight = apiClient.get<ProfileApiResponse[]>('/api/profile');
+  profileListInFlight = apiClient.get<ProfileApiResponse[]>('/api/profiles');
   try {
     return await profileListInFlight;
   } finally {
@@ -160,7 +160,7 @@ export async function fetchProfiles(): Promise<ProfileApiResponse[]> {
 
 export async function fetchDefaultProfile(): Promise<ProfileApiResponse> {
   if (defaultProfileInFlight) return defaultProfileInFlight;
-  defaultProfileInFlight = apiClient.get<ProfileApiResponse>('/api/profile/default');
+  defaultProfileInFlight = apiClient.get<ProfileApiResponse>('/api/profiles/default');
   try {
     return await defaultProfileInFlight;
   } finally {
@@ -190,7 +190,7 @@ export async function createJob(payload: CreateJobRequestApi): Promise<JobApiRes
 
 export async function fetchJobs(): Promise<JobApiResponse[]> {
   if (jobsInFlight) return jobsInFlight;
-  jobsInFlight = apiClient.get<JobApiResponse[]>('/api/job');
+  jobsInFlight = apiClient.get<JobApiResponse[]>('/api/jobs');
   try {
     return await jobsInFlight;
   } finally {
@@ -200,7 +200,7 @@ export async function fetchJobs(): Promise<JobApiResponse[]> {
 
 export async function fetchLatestJob(): Promise<JobApiResponse> {
   if (latestJobInFlight) return latestJobInFlight;
-  latestJobInFlight = apiClient.get<JobApiResponse>('/api/job/latest');
+  latestJobInFlight = apiClient.get<JobApiResponse>('/api/jobs/latest');
   try {
     return await latestJobInFlight;
   } finally {
@@ -212,7 +212,7 @@ export async function fetchJobById(jobId: string): Promise<JobApiResponse> {
   const normalizedId = jobId.trim();
   if (jobByIdInFlight.has(normalizedId)) return jobByIdInFlight.get(normalizedId)!;
 
-  const request = apiClient.get<JobApiResponse>(`/api/job/${encodeURIComponent(normalizedId)}`);
+  const request = apiClient.get<JobApiResponse>(`/api/jobs/${encodeURIComponent(normalizedId)}`);
   jobByIdInFlight.set(normalizedId, request);
   try {
     return await request;
@@ -222,17 +222,17 @@ export async function fetchJobById(jobId: string): Promise<JobApiResponse> {
 }
 
 export async function deleteJob(jobId: string): Promise<void> {
-  await apiClient.delete<void>(`/api/job/${encodeURIComponent(jobId.trim())}`);
+  await apiClient.delete<void>(`/api/jobs/${encodeURIComponent(jobId.trim())}`);
 }
 
 export function getStreamUrl(kind: 'camera' | 'detection'): string {
-  return `${apiClient.getBaseUrl()}/api/stream/${kind}/feed`;
+  return `${apiClient.getBaseUrl()}/api/streams/${kind}/feed`;
 }
 
 export function getJobEventsUrl(jobId: string): string {
-  return `${apiClient.getBaseUrl()}/api/job/${encodeURIComponent(jobId)}/events`;
+  return `${apiClient.getBaseUrl()}/api/jobs/${encodeURIComponent(jobId)}/events`;
 }
 
 export function getJobImageUrl(jobId: string): string {
-  return `${apiClient.getBaseUrl()}/api/job/${encodeURIComponent(jobId)}/image`;
+  return `${apiClient.getBaseUrl()}/api/jobs/${encodeURIComponent(jobId)}/image`;
 }

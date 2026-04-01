@@ -113,7 +113,7 @@ export const apiClient = {
    * Used for MJPEG multipart streams that need direct src access
    */
   getVideoStreamUrl: (): string => {
-    return `${API_BASE_URL}/api/camera/stream`;
+    return `${API_BASE_URL}/api/streams/camera/feed`;
   },
 
   /**

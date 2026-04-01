@@ -68,11 +68,11 @@ describe('apiCalls', () => {
 
     await fetchJobById('  job/with spaces  ');
 
-    expect(apiClient.get).toHaveBeenCalledWith('/api/job/job%2Fwith%20spaces');
+    expect(apiClient.get).toHaveBeenCalledWith('/api/jobs/job%2Fwith%20spaces');
   });
 
   test('builds stream and job-events URLs from base API URL', () => {
-    expect(getStreamUrl('camera')).toBe('http://localhost:8000/api/stream/camera/feed');
-    expect(getJobEventsUrl('job/1')).toBe('http://localhost:8000/api/job/job%2F1/events');
+    expect(getStreamUrl('camera')).toBe('http://localhost:8000/api/streams/camera/feed');
+    expect(getJobEventsUrl('job/1')).toBe('http://localhost:8000/api/jobs/job%2F1/events');
   });
 });

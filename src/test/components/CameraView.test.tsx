@@ -3,7 +3,7 @@ import { CameraView } from '../../components/CameraView';
 
 jest.mock('../../services/apiClient', () => ({
   apiClient: {
-    getVideoStreamUrl: jest.fn(() => 'http://localhost:8000/api/camera/stream'),
+    getVideoStreamUrl: jest.fn(() => 'http://localhost:8000/api/streams/camera/feed'),
     getBaseUrl: jest.fn(() => 'http://localhost:8000'),
   },
 }));
