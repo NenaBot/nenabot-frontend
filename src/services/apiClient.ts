@@ -52,6 +52,8 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
+  console.log(`[API] ${method} ${url}`, { body, headers, timeout, retries });
+
   try {
     const response = await fetch(url, {
       method,
@@ -67,6 +69,7 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
+      console.error(`[API] ${method} ${url} failed:`, response.status, error);
       throw new APIError(
         response.status,
         error.code || 'UNKNOWN_ERROR',
@@ -74,7 +77,9 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
       );
     }
 
-    return (await response.json()) as T;
+    const data = (await response.json()) as T;
+    console.log(`[API] ${method} ${url} success:`, data);
+    return data;
   } catch (error) {
     clearTimeout(timeoutId);
 
@@ -84,10 +89,12 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
       !(error instanceof APIError) &&
       !(error instanceof TypeError && error.message.includes('JSON'))
     ) {
+      console.warn(`[API] ${method} ${url} retrying (${retries} attempts left):`, error);
       await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
       return request<T>(endpoint, { ...config, retries: retries - 1 });
     }
 
+    console.error(`[API] ${method} ${url} failed permanently:`, error);
     throw error;
   }
 }

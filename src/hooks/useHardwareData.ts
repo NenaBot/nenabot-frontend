@@ -114,36 +114,47 @@ export function useHardwareData(): UseHardwareDataReturn {
     const requestId = ++requestIdRef.current;
     setIsLoading(true);
 
+    console.log(`[HardwareData] Fetching data (request ${requestId})`);
+
     try {
       if (isMockModeEnabled()) {
         if (!isMountedRef.current || requestId !== requestIdRef.current) {
+          console.log(`[HardwareData] Request ${requestId} cancelled (unmounted or superseded)`);
           return;
         }
 
+        console.log(`[HardwareData] Using mock data`);
         setData(mockHardwareData);
         setLastUpdated(new Date());
       } else {
+        console.log(`[HardwareData] Fetching from API`);
         const response = await fetchHealthStatus();
 
         if (!isMountedRef.current || requestId !== requestIdRef.current) {
+          console.log(`[HardwareData] Request ${requestId} cancelled (unmounted or superseded)`);
           return;
         }
 
-        setData(normalizeHardwareData(response));
+        const normalizedData = normalizeHardwareData(response);
+        console.log(`[HardwareData] API response normalized:`, normalizedData);
+        setData(normalizedData);
         setLastUpdated(new Date());
       }
       setError(null);
+      console.log(`[HardwareData] Data fetch successful`);
     } catch (err) {
       if (!isMountedRef.current || requestId !== requestIdRef.current) {
+        console.log(`[HardwareData] Request ${requestId} cancelled (unmounted or superseded)`);
         return;
       }
 
       const fetchError = err instanceof Error ? err : new Error('Unknown error');
-      console.error('Failed to fetch hardware data:', fetchError);
+      console.error('[HardwareData] Failed to fetch hardware data:', fetchError);
       setError(fetchError);
     } finally {
       if (isMountedRef.current && requestId === requestIdRef.current) {
         setIsLoading(false);
+        console.log(`[HardwareData] Request ${requestId} completed`);
       }
     }
   }, []);
@@ -187,6 +198,7 @@ export function useHardwareDataPolling(intervalMs: number = 1000): UseHardwareDa
 
   const fetchData = useCallback(async () => {
     if (inFlightRef.current) {
+      console.log(`[HardwareDataPolling] Request already in flight, skipping`);
       return;
     }
 
@@ -194,12 +206,20 @@ export function useHardwareDataPolling(intervalMs: number = 1000): UseHardwareDa
     const requestId = ++requestIdRef.current;
     setIsLoading(true);
 
+    console.log(
+      `[HardwareDataPolling] Fetching data (request ${requestId}, interval: ${intervalMs}ms)`,
+    );
+
     try {
       if (isMockModeEnabled()) {
         if (!isMountedRef.current || requestId !== requestIdRef.current) {
+          console.log(
+            `[HardwareDataPolling] Request ${requestId} cancelled (unmounted or superseded)`,
+          );
           return;
         }
 
+        console.log(`[HardwareDataPolling] Using mock data`);
         setData({
           dms: { ...mockHardwareData.dms, lastUpdate: new Date() },
           camera: { ...mockHardwareData.camera, lastUpdate: new Date() },
@@ -207,29 +227,40 @@ export function useHardwareDataPolling(intervalMs: number = 1000): UseHardwareDa
         });
         setLastUpdated(new Date());
       } else {
+        console.log(`[HardwareDataPolling] Fetching from API`);
         const response = await fetchHealthStatus();
 
         if (!isMountedRef.current || requestId !== requestIdRef.current) {
+          console.log(
+            `[HardwareDataPolling] Request ${requestId} cancelled (unmounted or superseded)`,
+          );
           return;
         }
 
-        setData(normalizeHardwareData(response));
+        const normalizedData = normalizeHardwareData(response);
+        console.log(`[HardwareDataPolling] API response normalized:`, normalizedData);
+        setData(normalizedData);
         setLastUpdated(new Date());
       }
       setError(null);
+      console.log(`[HardwareDataPolling] Data fetch successful`);
     } catch (err) {
       if (!isMountedRef.current || requestId !== requestIdRef.current) {
+        console.log(
+          `[HardwareDataPolling] Request ${requestId} cancelled (unmounted or superseded)`,
+        );
         return;
       }
 
       const fetchError = err instanceof Error ? err : new Error('Unknown error');
-      console.error('Failed to fetch hardware data:', fetchError);
+      console.error('[HardwareDataPolling] Failed to fetch hardware data:', fetchError);
       setError(fetchError);
     } finally {
       inFlightRef.current = false;
 
       if (isMountedRef.current && requestId === requestIdRef.current) {
         setIsLoading(false);
+        console.log(`[HardwareDataPolling] Request ${requestId} completed`);
       }
     }
   }, []);

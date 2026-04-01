@@ -50,7 +50,12 @@ export function useProgressData(jobId: string | null) {
   );
 
   useEffect(() => {
+    console.log(
+      `[ProgressData] Initializing for jobId: ${jobId}, mockMode: ${isMockModeEnabled()}`,
+    );
+
     if (isMockModeEnabled()) {
+      console.log(`[ProgressData] Using mock data`);
       setProgressState(mockProgressTabState);
       setError(null);
       setIsLoading(false);
@@ -61,11 +66,13 @@ export function useProgressData(jobId: string | null) {
     setError(null);
 
     if (!jobId) {
+      console.log(`[ProgressData] No job ID provided`);
       setError('No active job selected.');
       setIsLoading(false);
       return;
     }
 
+    console.log(`[ProgressData] Loading progress for job ${jobId}`);
     setIsLoading(true);
     setIsLoading(false);
   }, [jobId]);
@@ -80,6 +87,7 @@ export function useProgressData(jobId: string | null) {
     }
 
     if (jobEvents.length === 0) {
+      console.log(`[ProgressData] No events yet for job ${jobId}`);
       return {
         scan: {
           state: 'created',
