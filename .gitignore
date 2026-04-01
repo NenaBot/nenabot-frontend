@@ -4,6 +4,7 @@ build
 dist
 *notes*
 settings.json
+coverage
 # Playwright
 test-results/
 playwright-report/

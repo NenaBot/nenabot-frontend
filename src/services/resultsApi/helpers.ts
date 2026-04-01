@@ -1,22 +1,10 @@
-import {
-  fetchJobById,
-  fetchJobs,
-  fetchLatestJob,
-  getJobImageUrl,
-  JobApiResponse,
-} from './apiCalls';
-import {
-  getMockLatestScanResult,
-  getMockScanResultById,
-  getMockScanResultSummaries,
-} from '../mocks/scanResultsMocks';
+import { getJobImageUrl, JobApiResponse } from '../apiCalls';
 import {
   MeasurementPoint,
   ScanResult,
   ScanResultSummary,
   ScanRouteCoordinate,
-} from '../types/results.types';
-import { isMockModeEnabled } from '../state/mockMode';
+} from '../../types/results.types';
 
 function normalizeAxisByBounds(value: number, max: number): number {
   if (!Number.isFinite(value)) {
@@ -110,33 +98,6 @@ function normalizeJobSummary(job: JobApiResponse): ScanResultSummary {
   };
 }
 
-export async function getAvailableScanResultSummaries(): Promise<ScanResultSummary[]> {
-  if (isMockModeEnabled()) {
-    return getMockScanResultSummaries();
-  }
-
-  const response = await fetchJobs();
-  return response.map(normalizeJobSummary);
-}
-
-export async function getLatestScanResult(): Promise<ScanResult> {
-  if (isMockModeEnabled()) {
-    return getMockLatestScanResult();
-  }
-
-  const response = await fetchLatestJob();
-  return normalizeJobToResult(response);
-}
-
-export async function getScanResult(scanId: string): Promise<ScanResult> {
-  if (isMockModeEnabled()) {
-    return getMockScanResultById(scanId);
-  }
-
-  const response = await fetchJobById(scanId);
-  return normalizeJobToResult(response);
-}
-
 function downloadContent(scanId: string, extension: 'json' | 'csv', content: string) {
   const blob = new Blob([content], {
     type: extension === 'json' ? 'application/json' : 'text/csv',
@@ -151,35 +112,11 @@ function downloadContent(scanId: string, extension: 'json' | 'csv', content: str
   URL.revokeObjectURL(objectUrl);
 }
 
-export async function exportScanResult(scanId: string, format: 'json' | 'csv'): Promise<void> {
-  const result = await getScanResult(scanId);
-
-  if (format === 'json') {
-    downloadContent(scanId, 'json', JSON.stringify(result, null, 2));
-    return;
-  }
-
-  const header = [
-    'id',
-    'label',
-    'x',
-    'y',
-    'waypointIndex',
-    'measuredValue',
-    'comment',
-    'timestamp',
-  ];
-  const rows = result.measurementPoints.map((point) =>
-    [
-      point.id,
-      point.label,
-      point.x,
-      point.y,
-      point.waypointIndex,
-      point.measuredValue,
-      point.comment,
-      point.timestamp,
-    ].join(','),
-  );
-  downloadContent(scanId, 'csv', [header.join(','), ...rows].join('\n'));
-}
+export {
+  downloadContent,
+  fetchJobImageObjectUrl,
+  normalizeAxisByBounds,
+  normalizeJobSummary,
+  normalizeJobToResult,
+  toMeasurementValue,
+};
