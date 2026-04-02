@@ -79,7 +79,8 @@ function mapEventsToProgressState(events: JobEventApiResponse[]): ProgressTabSta
       ? Math.max(0, Math.round(lastEvent.totalPoints))
       : 0;
   const completedPoints =
-    typeof lastEvent.lastPointProcessed === 'number' && Number.isFinite(lastEvent.lastPointProcessed)
+    typeof lastEvent.lastPointProcessed === 'number' &&
+    Number.isFinite(lastEvent.lastPointProcessed)
       ? Math.max(0, Math.round(lastEvent.lastPointProcessed))
       : 0;
 
