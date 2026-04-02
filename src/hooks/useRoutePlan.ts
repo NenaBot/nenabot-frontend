@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   createJob,
   detectPath,
+  PathDetectResponseApi,
   PathItemApiResponse,
   PathPopulatePointApiResponse,
   populatePath,
@@ -68,19 +69,48 @@ function normalizeToUnit(
   };
 }
 
-function createMockDetectedPoints(): PixelPointApiResponse[] {
-  return [
-    { x: 90, y: 80 },
-    { x: 250, y: 80 },
-    { x: 410, y: 80 },
-    { x: 410, y: 210 },
-    { x: 250, y: 210 },
-    { x: 90, y: 210 },
-  ];
-}
-
-function createMockBatteries(): BatteryCornersApiResponse[] {
-  return [{ corners: createMockDetectedPoints() }];
+function createMockDetectionResponse(): PathDetectResponseApi {
+  return {
+    ok: true,
+    detections: [
+      {
+        corners: [
+          { x: 90, y: 80 },
+          { x: 250, y: 80 },
+          { x: 250, y: 210 },
+          { x: 90, y: 210 },
+        ],
+        center_x: 170,
+        center_y: 145,
+        width_mm: 34,
+        height_mm: 14,
+        confidence: 0.98,
+      },
+      {
+        corners: [
+          { pixelX: 290, pixelY: 90 },
+          { pixelX: 430, pixelY: 90 },
+          { pixelX: 430, pixelY: 220 },
+          { pixelX: 290, pixelY: 220 },
+        ],
+        center_x: 360,
+        center_y: 155,
+        width_mm: 34,
+        height_mm: 14,
+        confidence: 0.95,
+      },
+    ],
+    image_base64: null,
+    calibration: {
+      calibrated: true,
+      canvasStart: { x: 90, y: 80 },
+      robotStart: { x: 0, y: 0, z: 0, r: 0 },
+      pixelsPerMm: 1.2,
+    },
+    options: {
+      mock: true,
+    },
+  };
 }
 
 function getMeasurementDensityFromProfile(selectedProfile: ProfileModel | null): number {
@@ -128,8 +158,7 @@ function createMockPopulatedPath(
   batteries: BatteryCornersApiResponse[],
   measuringPointsPerCm: number,
 ): PathPopulatePointApiResponse[] {
-  const corners = flattenBatteryCorners(batteries);
-  if (corners.length === 0) {
+  if (batteries.length === 0) {
     return [];
   }
 
@@ -138,39 +167,44 @@ function createMockPopulatedPath(
   let globalIndex = 0;
   let measurementIndex = 0;
 
-  for (let batteryNr = 0; batteryNr < corners.length; batteryNr += 1) {
-    const current = corners[batteryNr];
-    const next = corners[batteryNr + 1];
-
-    // Add corner point
-    path.push({
-      index: `${globalIndex}`,
-      batteryNr,
-      cornerIndex: 0,
-      measurementIndex,
-      pixelX: current.x,
-      pixelY: current.y,
-    });
-    globalIndex += 1;
-    measurementIndex += 1;
-
-    if (!next || measurementCountPerSegment === 0) {
+  for (let batteryNr = 0; batteryNr < batteries.length; batteryNr += 1) {
+    const batteryCorners = batteries[batteryNr].corners;
+    if (batteryCorners.length === 0) {
       continue;
     }
 
-    // Add measurement points between corners
-    for (let step = 1; step <= measurementCountPerSegment; step += 1) {
-      const ratio = step / (measurementCountPerSegment + 1);
+    for (let cornerIndex = 0; cornerIndex < batteryCorners.length; cornerIndex += 1) {
+      const current = batteryCorners[cornerIndex];
+      const next = batteryCorners[(cornerIndex + 1) % batteryCorners.length];
+
       path.push({
         index: `${globalIndex}`,
         batteryNr,
-        cornerIndex: 0,
+        cornerIndex,
         measurementIndex,
-        pixelX: current.x + (next.x - current.x) * ratio,
-        pixelY: current.y + (next.y - current.y) * ratio,
+        pixelX: current.x,
+        pixelY: current.y,
       });
       globalIndex += 1;
       measurementIndex += 1;
+
+      if (measurementCountPerSegment === 0) {
+        continue;
+      }
+
+      for (let step = 1; step <= measurementCountPerSegment; step += 1) {
+        const ratio = step / (measurementCountPerSegment + 1);
+        path.push({
+          index: `${globalIndex}`,
+          batteryNr,
+          cornerIndex,
+          measurementIndex,
+          pixelX: current.x + (next.x - current.x) * ratio,
+          pixelY: current.y + (next.y - current.y) * ratio,
+        });
+        globalIndex += 1;
+        measurementIndex += 1;
+      }
     }
   }
 
@@ -180,8 +214,22 @@ function createMockPopulatedPath(
 function parsePopulatePath(response: {
   path?: PathPopulatePointApiResponse[];
 }): PathPopulatePointApiResponse[] {
-  // Backend returns path array with all metadata fields
-  return response.path ?? [];
+  return (response.path ?? []).filter((point) => {
+    return (
+      typeof point.pixelX === 'number' &&
+      typeof point.pixelY === 'number' &&
+      typeof point.index === 'string' &&
+      typeof point.batteryNr === 'number' &&
+      Number.isInteger(point.batteryNr) &&
+      point.batteryNr >= 0 &&
+      typeof point.cornerIndex === 'number' &&
+      Number.isInteger(point.cornerIndex) &&
+      point.cornerIndex >= 0 &&
+      typeof point.measurementIndex === 'number' &&
+      Number.isInteger(point.measurementIndex) &&
+      point.measurementIndex >= 0
+    );
+  });
 }
 
 // Transform populated path points to simple pixel coordinates for preview
@@ -302,17 +350,11 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
     }));
 
     try {
-      const detectionResponse = isMockModeEnabled()
-        ? {
-            ok: true,
-            detections: [],
-            image_base64: null,
-          }
+      const detectionResponse: PathDetectResponseApi = isMockModeEnabled()
+        ? createMockDetectionResponse()
         : await detectPath({ options: selectedProfile?.settings.options ?? {} });
 
-      const detectedBatteries = isMockModeEnabled()
-        ? createMockBatteries()
-        : detectItemsToBatteries(detectionResponse.detections ?? []);
+      const detectedBatteries = detectItemsToBatteries(detectionResponse.detections ?? []);
 
       if (detectedBatteries.length === 0) {
         throw new Error('No path points were detected.');

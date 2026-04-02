@@ -1,24 +1,55 @@
+import { JobEventApiResponse } from '../services/apiCalls';
 import { ProgressTabState } from '../types/progress.types';
 
+export const mockJobEvents: JobEventApiResponse[] = [
+  {
+    type: 'job:snapshot',
+    jobId: 'mock-job-1',
+    state: 'running',
+    lastPointProcessed: 3,
+    totalPoints: 10,
+    timestamp: '2026-04-03T14:32:15.000Z',
+  },
+  {
+    type: 'job:waypoint_completed',
+    jobId: 'mock-job-1',
+    state: 'running',
+    lastPointProcessed: 4,
+    totalPoints: 10,
+    timestamp: '2026-04-03T14:32:18.000Z',
+    measurement: {
+      waypointIndex: 4,
+      waypoint: { x: 12, y: 24, z: 0, r: 0 },
+      pixelX: 210,
+      pixelY: 160,
+      scanResult: { measuredValue: 0.87 },
+      simulated: true,
+      timestamp: '2026-04-03T14:32:18.000Z',
+    },
+  },
+  {
+    type: 'job:waypoint_started',
+    jobId: 'mock-job-1',
+    state: 'running',
+    lastPointProcessed: 4,
+    totalPoints: 10,
+    timestamp: '2026-04-03T14:32:20.000Z',
+  },
+];
+
+// Backward-compatible fixture retained for tests that compare full tab state.
 export const mockProgressTabState: ProgressTabState = {
   scan: {
     state: 'running',
-    completedPoints: 847,
-    totalPoints: 2500,
-    elapsedSeconds: 4 * 60 + 12,
-    estimatedRemainingSeconds: 8 * 60 + 15,
+    completedPoints: 4,
+    totalPoints: 10,
+    elapsedSeconds: 0,
+    estimatedRemainingSeconds: 6,
   },
   events: [
-    { id: 1, time: '14:32:15', level: 'info', message: 'Scan started successfully' },
-    { id: 2, time: '14:32:18', level: 'success', message: 'Spectrometer initialized' },
-    { id: 3, time: '14:32:20', level: 'success', message: 'Calibration verified' },
-    { id: 4, time: '14:32:25', level: 'info', message: 'Starting route navigation' },
-    { id: 5, time: '14:32:30', level: 'info', message: 'Data collection in progress' },
+    { id: 1, time: '2:32:15 PM', level: 'info', message: 'job:snapshot' },
+    { id: 2, time: '2:32:18 PM', level: 'success', message: 'job:waypoint_completed' },
+    { id: 3, time: '2:32:20 PM', level: 'info', message: 'job:waypoint_started' },
   ],
-  measurements: [
-    { id: 1, point: 'A-001', wavelength: '450nm', intensity: 0.87, status: 'complete' },
-    { id: 2, point: 'A-002', wavelength: '475nm', intensity: 0.92, status: 'complete' },
-    { id: 3, point: 'A-003', wavelength: '500nm', intensity: 0.79, status: 'complete' },
-    { id: 4, point: 'A-004', wavelength: '525nm', intensity: 0.85, status: 'processing' },
-  ],
+  measurements: [{ id: 1, point: 'WP-4', wavelength: '-', intensity: 0.87, status: 'complete' }],
 };

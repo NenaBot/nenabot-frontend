@@ -264,6 +264,40 @@ describe('useRoutePlan', () => {
     });
   });
 
+  test('filters invalid populated points that do not match metadata contract', async () => {
+    (populatePath as jest.Mock).mockResolvedValueOnce({
+      path: [
+        { index: '0', batteryNr: 0, cornerIndex: 0, measurementIndex: 0, pixelX: 5, pixelY: 15 },
+        {
+          index: '1',
+          batteryNr: 0,
+          cornerIndex: 0,
+          measurementIndex: 1,
+          pixelX: 10,
+          pixelY: 20,
+        },
+        // Invalid: missing batteryNr/cornerIndex/measurementIndex should be ignored.
+        { index: 'bad', pixelX: 99, pixelY: 99 },
+      ],
+    });
+
+    const { result } = renderHook(() => useRoutePlan({ selectedProfile }));
+
+    await waitFor(() => {
+      expect(result.current.state.isPopulating).toBe(false);
+    });
+
+    expect(result.current.state.populatedPathWithMetadata).toHaveLength(2);
+    expect(result.current.state.populatedPathWithMetadata).toEqual([
+      { index: '0', batteryNr: 0, cornerIndex: 0, measurementIndex: 0, pixelX: 5, pixelY: 15 },
+      { index: '1', batteryNr: 0, cornerIndex: 0, measurementIndex: 1, pixelX: 10, pixelY: 20 },
+    ]);
+    expect(result.current.state.populatedPath).toEqual([
+      { x: 5, y: 15 },
+      { x: 10, y: 20 },
+    ]);
+  });
+
   test('sets a user-facing error when detection returns no points', async () => {
     (detectPath as jest.Mock).mockResolvedValueOnce({
       ok: true,
@@ -279,6 +313,74 @@ describe('useRoutePlan', () => {
 
     expect(populatePath).not.toHaveBeenCalled();
     expect(result.current.state.routeError).toBe('Failed to detect route points. Please retry.');
+  });
+
+  test('parses corners when detection uses pixelX and pixelY fields', async () => {
+    (detectPath as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      detections: [
+        {
+          corners: [
+            { pixelX: 101, pixelY: 201 },
+            { pixelX: 111, pixelY: 201 },
+            { pixelX: 111, pixelY: 211 },
+            { pixelX: 101, pixelY: 211 },
+          ],
+        },
+      ],
+      image_base64: 'pixel-corners',
+    });
+
+    const { result } = renderHook(() => useRoutePlan({ selectedProfile }));
+
+    await waitFor(() => {
+      expect(populatePath).toHaveBeenCalledWith(
+        expect.objectContaining({
+          batteries: [
+            {
+              corners: [
+                { x: 101, y: 201 },
+                { x: 111, y: 201 },
+                { x: 111, y: 211 },
+                { x: 101, y: 211 },
+              ],
+            },
+          ],
+        }),
+      );
+    });
+
+    expect(result.current.state.cornerPoints).toEqual([
+      { x: 101, y: 201 },
+      { x: 111, y: 201 },
+      { x: 111, y: 211 },
+      { x: 101, y: 211 },
+    ]);
+    expect(result.current.state.imageBase64).toBe('pixel-corners');
+  });
+
+  test('in mock mode it initializes route without calling detectPath API', async () => {
+    (isMockModeEnabled as jest.Mock).mockReturnValue(true);
+
+    const { result } = renderHook(() => useRoutePlan({ selectedProfile }));
+
+    await waitFor(() => {
+      expect(result.current.state.isInitializing).toBe(false);
+      expect(result.current.state.cornerPoints.length).toBeGreaterThan(0);
+      expect(result.current.state.populatedPathWithMetadata.length).toBeGreaterThan(0);
+    });
+
+    expect(detectPath).not.toHaveBeenCalled();
+    expect(populatePath).not.toHaveBeenCalled();
+    expect(result.current.state.batteries).toHaveLength(2);
+    expect(result.current.state.cornerPoints).toEqual(
+      expect.arrayContaining([
+        { x: 90, y: 80 },
+        { x: 250, y: 80 },
+        { x: 290, y: 90 },
+        { x: 430, y: 220 },
+      ]),
+    );
   });
 
   test('returns null when creating a job without profile/path', async () => {
