@@ -167,20 +167,20 @@ function createMockPopulatedPath(
   let globalIndex = 0;
   let measurementIndex = 0;
 
-  for (let batteryNr = 0; batteryNr < batteries.length; batteryNr += 1) {
-    const batteryCorners = batteries[batteryNr].corners;
+  for (let bIndex = 0; bIndex < batteries.length; bIndex += 1) {
+    const batteryCorners = batteries[bIndex].corners;
     if (batteryCorners.length === 0) {
       continue;
     }
 
-    for (let cornerIndex = 0; cornerIndex < batteryCorners.length; cornerIndex += 1) {
-      const current = batteryCorners[cornerIndex];
-      const next = batteryCorners[(cornerIndex + 1) % batteryCorners.length];
+    for (let cIndex = 0; cIndex < batteryCorners.length; cIndex += 1) {
+      const current = batteryCorners[cIndex];
+      const next = batteryCorners[(cIndex + 1) % batteryCorners.length];
 
       path.push({
         index: `${globalIndex}`,
-        batteryNr,
-        cornerIndex,
+        batteryNr: bIndex,
+        cornerIndex: cIndex,
         measurementIndex,
         pixelX: current.x,
         pixelY: current.y,
@@ -196,8 +196,8 @@ function createMockPopulatedPath(
         const ratio = step / (measurementCountPerSegment + 1);
         path.push({
           index: `${globalIndex}`,
-          batteryNr,
-          cornerIndex,
+          batteryNr: bIndex,
+          cornerIndex: cIndex,
           measurementIndex,
           pixelX: current.x + (next.x - current.x) * ratio,
           pixelY: current.y + (next.y - current.y) * ratio,

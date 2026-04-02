@@ -373,6 +373,17 @@ describe('useRoutePlan', () => {
     expect(detectPath).not.toHaveBeenCalled();
     expect(populatePath).not.toHaveBeenCalled();
     expect(result.current.state.batteries).toHaveLength(2);
+    expect(result.current.state.populatedPathWithMetadata).toHaveLength(16);
+    expect(
+      result.current.state.populatedPathWithMetadata
+        .slice(0, 8)
+        .every((point) => point.batteryNr === 0),
+    ).toBe(true);
+    expect(
+      result.current.state.populatedPathWithMetadata
+        .slice(8)
+        .every((point) => point.batteryNr === 1),
+    ).toBe(true);
     expect(result.current.state.cornerPoints).toEqual(
       expect.arrayContaining([
         { x: 90, y: 80 },
