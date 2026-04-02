@@ -35,16 +35,35 @@ describe('useRoutePlan', () => {
     (detectPath as jest.Mock).mockResolvedValue({
       ok: true,
       detections: [
-        { center_x: 10, center_y: 20 },
-        { center_x: 30, center_y: 40 },
+        {
+          center_x: 10,
+          center_y: 20,
+          corners: [
+            { x: 5, y: 15 },
+            { x: 15, y: 15 },
+            { x: 15, y: 25 },
+            { x: 5, y: 25 },
+          ],
+        },
+        {
+          center_x: 30,
+          center_y: 40,
+          corners: [
+            { x: 25, y: 35 },
+            { x: 35, y: 35 },
+            { x: 35, y: 45 },
+            { x: 25, y: 45 },
+          ],
+        },
       ],
       image_base64: 'abc123',
     });
+    // Mock response from backend with full metadata
     (populatePath as jest.Mock).mockResolvedValue({
       path: [
-        { x: 10, y: 20, type: 'corner' },
-        { x: 20, y: 30, type: 'measurement' },
-        { x: 30, y: 40, type: 'corner' },
+        { index: '0', batteryNr: 0, cornerIndex: 0, measurementIndex: 0, pixelX: 5, pixelY: 15 },
+        { index: '1', batteryNr: 0, cornerIndex: 0, measurementIndex: 1, pixelX: 20, pixelY: 30 },
+        { index: '2', batteryNr: 1, cornerIndex: 0, measurementIndex: 2, pixelX: 25, pixelY: 35 },
       ],
     });
   });
@@ -54,28 +73,49 @@ describe('useRoutePlan', () => {
 
     await waitFor(() => {
       expect(detectPath).toHaveBeenCalledWith({ options: selectedProfile.settings.options });
+    });
+
+    // Verify populatePath was called with batteries format
+    await waitFor(() => {
       expect(populatePath).toHaveBeenCalledWith({
-        corners: [
-          { x: 10, y: 20 },
-          { x: 30, y: 40 },
+        batteries: [
+          {
+            corners: [
+              { x: 5, y: 15 },
+              { x: 15, y: 15 },
+              { x: 15, y: 25 },
+              { x: 5, y: 25 },
+            ],
+          },
+          {
+            corners: [
+              { x: 25, y: 35 },
+              { x: 35, y: 35 },
+              { x: 35, y: 45 },
+              { x: 25, y: 45 },
+            ],
+          },
         ],
-        measurementDensity: 0.7,
-        detections: [
-          { center_x: 10, center_y: 20 },
-          { center_x: 30, center_y: 40 },
-        ],
+        measuringPointsPerCm: 0.7,
         options: selectedProfile.settings.options,
       });
     });
 
-    expect(result.current.state.measurementPoints).toEqual([{ x: 20, y: 30 }]);
+    // Verify state includes all detected corners and populated measurements
     expect(result.current.state.cornerPoints).toEqual([
-      { x: 10, y: 20 },
-      { x: 30, y: 40 },
+      { x: 5, y: 15 },
+      { x: 15, y: 15 },
+      { x: 15, y: 25 },
+      { x: 5, y: 25 },
+      { x: 25, y: 35 },
+      { x: 35, y: 35 },
+      { x: 35, y: 45 },
+      { x: 25, y: 45 },
     ]);
+    expect(result.current.state.measurementPoints).toEqual([{ x: 20, y: 30 }]);
     expect(result.current.state.imageBase64).toBe('abc123');
-    expect(result.current.preview.cornerPointIds.length).toBe(2);
-    expect(result.current.preview.points.length).toBe(3);
+    expect(result.current.preview.cornerPointIds.length).toBe(8);
+    expect(result.current.preview.points.length).toBe(9);
   });
 
   test('re-populates when measurement density changes', async () => {
@@ -92,7 +132,7 @@ describe('useRoutePlan', () => {
     await waitFor(() => {
       expect(populatePath).toHaveBeenLastCalledWith(
         expect.objectContaining({
-          measurementDensity: 1.1,
+          measuringPointsPerCm: 1.1,
         }),
       );
     });
@@ -106,12 +146,87 @@ describe('useRoutePlan', () => {
     });
 
     await act(async () => {
-      result.current.moveCornerPoint('corner-1', 0.5, 0.5);
+      result.current.moveCornerPoint('battery-0-corner-0', 0.5, 0.5);
     });
 
     await waitFor(() => {
       expect(populatePath).toHaveBeenCalledTimes(2);
     });
+
+    expect(detectPath).toHaveBeenCalledTimes(1);
+    expect(populatePath).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        batteries: [
+          {
+            corners: [
+              { x: 0.5, y: 0.5 },
+              { x: 15, y: 15 },
+              { x: 15, y: 25 },
+              { x: 5, y: 25 },
+            ],
+          },
+          {
+            corners: [
+              { x: 25, y: 35 },
+              { x: 35, y: 35 },
+              { x: 35, y: 45 },
+              { x: 25, y: 45 },
+            ],
+          },
+        ],
+      }),
+    );
+  });
+
+  test('reset performs fresh detection and replaces edited batteries', async () => {
+    const { result } = renderHook(() => useRoutePlan({ selectedProfile }));
+
+    await waitFor(() => {
+      expect(detectPath).toHaveBeenCalledTimes(1);
+      expect(populatePath).toHaveBeenCalledTimes(1);
+    });
+
+    await act(async () => {
+      result.current.moveCornerPoint('battery-0-corner-0', 99, 88);
+    });
+
+    await waitFor(() => {
+      expect(populatePath).toHaveBeenCalledTimes(2);
+    });
+
+    (detectPath as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      detections: [
+        {
+          center_x: 50,
+          center_y: 60,
+          corners: [
+            { x: 45, y: 55 },
+            { x: 55, y: 55 },
+            { x: 55, y: 65 },
+            { x: 45, y: 65 },
+          ],
+        },
+      ],
+      image_base64: 'new-image',
+    });
+
+    await act(async () => {
+      await result.current.resetRoutePlan();
+    });
+
+    await waitFor(() => {
+      expect(detectPath).toHaveBeenCalledTimes(2);
+      expect(populatePath).toHaveBeenCalledTimes(3);
+    });
+
+    expect(result.current.state.cornerPoints).toEqual([
+      { x: 45, y: 55 },
+      { x: 55, y: 55 },
+      { x: 55, y: 65 },
+      { x: 45, y: 65 },
+    ]);
+    expect(result.current.state.imageBase64).toBe('new-image');
   });
 
   test('creates a scan job with populated path and dry run settings', async () => {
@@ -130,11 +245,12 @@ describe('useRoutePlan', () => {
     const jobId = await act(async () => result.current.createScanJob());
 
     expect(jobId).toBe('job-123');
+    // Job path should include metadata from backend response
     expect(createJob).toHaveBeenCalledWith({
       path: [
-        { x: 10, y: 20 },
-        { x: 20, y: 30 },
-        { x: 30, y: 40 },
+        { pixelX: 5, pixelY: 15, index: '0', batteryNr: 0, cornerIndex: 0, measurementIndex: 0 },
+        { pixelX: 20, pixelY: 30, index: '1', batteryNr: 0, cornerIndex: 0, measurementIndex: 1 },
+        { pixelX: 25, pixelY: 35, index: '2', batteryNr: 1, cornerIndex: 0, measurementIndex: 2 },
       ],
       workZ: 10,
       workR: 20,

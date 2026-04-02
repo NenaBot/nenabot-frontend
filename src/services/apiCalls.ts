@@ -63,7 +63,7 @@ export interface PathDetectRequestApi {
 }
 
 export interface PathItemApiResponse {
-  corners?: { x: number; y: number }[];
+  corners?: { x?: number; y?: number; pixelX?: number; pixelY?: number }[];
   width_mm?: number;
   height_mm?: number;
   center_x?: number;
@@ -89,30 +89,50 @@ export interface PathDetectResponseApi {
   options?: Record<string, unknown> | null;
 }
 
-export interface PathCheckResponseApi {
-  waypoints?: PixelPointApiResponse[];
+// Battery corners schema for path population
+export interface BatteryCornersApiResponse {
+  corners: PixelPointApiResponse[];
 }
 
 export interface PathPopulateRequestApi {
-  corners: PixelPointApiResponse[];
-  measurementDensity: number;
-  detections?: PathItemApiResponse[];
+  // List of battery detections, each containing corner points
+  batteries: BatteryCornersApiResponse[];
+  // Measuring points per centimeter (must be > 0 and <= 10)
+  measuringPointsPerCm: number;
   options?: Record<string, unknown> | null;
 }
 
-export interface PathPopulatePointApiResponse extends PixelPointApiResponse {
-  isCorner?: boolean;
-  type?: 'corner' | 'measurement';
+// Response point from path population - includes metadata for job creation
+export interface PathPopulatePointApiResponse {
+  // Sequential identifier for the point
+  index: string;
+  // Battery/detection number (0-based)
+  batteryNr: number;
+  // Corner index within the battery
+  cornerIndex: number;
+  // Measurement point index within the populated path
+  measurementIndex: number;
+  // Pixel coordinates
+  pixelX: number;
+  pixelY: number;
 }
 
 export interface PathPopulateResponseApi {
-  waypoints?: PathPopulatePointApiResponse[];
-  path?: PathPopulatePointApiResponse[];
-  points?: PathPopulatePointApiResponse[];
+  path: PathPopulatePointApiResponse[];
+}
+
+// Job path point with full metadata for backend processing
+export interface JobPathPointApiResponse {
+  pixelX: number;
+  pixelY: number;
+  index?: string | null;
+  batteryNr?: number | null;
+  cornerIndex?: number | null;
+  measurementIndex?: number | null;
 }
 
 export interface CreateJobRequestApi {
-  path: PixelPointApiResponse[];
+  path: JobPathPointApiResponse[];
   workZ: number;
   workR: number;
   dryRun: boolean;
@@ -174,10 +194,6 @@ export async function detectPath(
   return apiClient.post<PathDetectResponseApi>('/api/path/detect', payload);
 }
 
-export async function checkPath(waypoints: PixelPointApiResponse[]): Promise<PathCheckResponseApi> {
-  return apiClient.post<PathCheckResponseApi>('/api/path', { waypoints });
-}
-
 export async function populatePath(
   payload: PathPopulateRequestApi,
 ): Promise<PathPopulateResponseApi> {
@@ -185,7 +201,8 @@ export async function populatePath(
 }
 
 export async function createJob(payload: CreateJobRequestApi): Promise<JobApiResponse> {
-  return apiClient.post<JobApiResponse>('/api/jobs', payload);
+  // POST /api/job creates a new job and starts it
+  return apiClient.post<JobApiResponse>('/api/job', payload);
 }
 
 export async function fetchJobs(): Promise<JobApiResponse[]> {
