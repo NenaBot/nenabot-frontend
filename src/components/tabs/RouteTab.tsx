@@ -78,8 +78,8 @@ export function RouteTab({ selectedProfile, onJobCreated }: RouteTabProps) {
     }
 
     const parsed = Number(nextValue);
-    if (!Number.isFinite(parsed) || parsed < 0) {
-      setMeasurementDensityError('Enter a value greater than or equal to 0.');
+    if (!Number.isFinite(parsed) || parsed < 0 || parsed > 10) {
+      setMeasurementDensityError('Enter a value between 0 and 10.');
       return;
     }
 

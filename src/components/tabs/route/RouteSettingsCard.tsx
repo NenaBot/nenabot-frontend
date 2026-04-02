@@ -26,7 +26,7 @@ export function RouteSettingsCard({
     >
       <FormField
         label="Measurement Density"
-        tooltip="Defines how many additional measurement points are inserted between corner points."
+        tooltip="Defines how many additional measurement points are inserted between corner points. Use 0 for corners only, up to 10 for the maximum density."
       >
         <input
           type="number"
@@ -34,7 +34,7 @@ export function RouteSettingsCard({
           onChange={(event) => onMeasurementDensityInputChange(event.target.value)}
           className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)]"
           min={0}
-          max={100}
+          max={10}
           step="0.1"
           disabled={isLoading}
           aria-invalid={measurementDensityError ? 'true' : 'false'}
