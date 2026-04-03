@@ -32,6 +32,10 @@ export const POINTS_PER_CM_MAX_EXCLUSIVE = 100;
 export const POINTS_PER_CM_INPUT_MIN = POINTS_PER_CM_MIN_EXCLUSIVE;
 export const POINTS_PER_CM_INPUT_MAX = POINTS_PER_CM_MAX_EXCLUSIVE;
 
+// Measurement density (for path population API)
+export const MEASUREMENT_DENSITY_MIN = 0;
+export const MEASUREMENT_DENSITY_MAX = 10;
+
 const DEFAULT_POINTS_PER_CM = 25;
 const DEFAULT_ESTIMATE_SECONDS = 12 * 60;
 const DEFAULT_ESTIMATE_POINTS = 2500;
@@ -81,6 +85,28 @@ export function getPointsPerCmValidationError(value: string): string | null {
   }
 
   return null;
+}
+
+export function getMeasurementDensityValidationError(value: string): string | null {
+  if (value.trim().length === 0) {
+    return 'Measurement density is required.';
+  }
+
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed)) {
+    return 'Measurement density must be a number.';
+  }
+
+  if (parsed < MEASUREMENT_DENSITY_MIN || parsed > MEASUREMENT_DENSITY_MAX) {
+    return `Enter a value between ${MEASUREMENT_DENSITY_MIN} and ${MEASUREMENT_DENSITY_MAX}.`;
+  }
+
+  return null;
+}
+
+export function isMeasurementDensityInRange(value: number): boolean {
+  return value >= MEASUREMENT_DENSITY_MIN && value <= MEASUREMENT_DENSITY_MAX;
 }
 
 export function parsePointsPerCm(value: string): number | null {

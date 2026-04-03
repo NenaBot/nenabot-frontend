@@ -12,6 +12,11 @@ import {
 } from '../services/apiCalls';
 import { ProfileModel } from '../types/profile.types';
 import { isMockModeEnabled } from '../state/mockMode';
+import {
+  isMeasurementDensityInRange,
+  MEASUREMENT_DENSITY_MAX,
+  MEASUREMENT_DENSITY_MIN,
+} from '../types/route.types';
 import { RoutePreviewCoordinate, RoutePreviewPoint } from '../types/routePreview.types';
 
 interface UseRoutePlanOptions {
@@ -113,6 +118,10 @@ function createMockDetectionResponse(): PathDetectResponseApi {
   };
 }
 
+function clampMeasurementDensity(value: number): number {
+  return Math.min(MEASUREMENT_DENSITY_MAX, Math.max(MEASUREMENT_DENSITY_MIN, value));
+}
+
 function getMeasurementDensityFromProfile(selectedProfile: ProfileModel | null): number {
   const options = selectedProfile?.settings.options;
   const densityOption =
@@ -120,7 +129,8 @@ function getMeasurementDensityFromProfile(selectedProfile: ProfileModel | null):
     (options?.pointsPerCm as number | undefined);
 
   if (typeof densityOption === 'number' && Number.isFinite(densityOption) && densityOption >= 0) {
-    return densityOption;
+    // Clamp profile-derived values defensively to prevent backend errors
+    return clampMeasurementDensity(densityOption);
   }
 
   return 0.5;
@@ -404,6 +414,10 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
   }, [initializeRoute, selectedProfile]);
 
   const setMeasurementDensity = (value: number) => {
+    if (!isMeasurementDensityInRange(value)) {
+      return;
+    }
+
     setState((prev) => ({ ...prev, measurementDensity: value }));
     void runPopulate(state.batteries, value);
   };

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { RoutePreviewPanel } from '../shared/RoutePreviewPanel';
 import { useRoutePlan } from '../../hooks/useRoutePlan';
 import { ProfileModel } from '../../types/profile.types';
+import { getMeasurementDensityValidationError } from '../../types/route.types';
 import { RouteSettingsCard } from './route/RouteSettingsCard';
 
 interface RouteTabProps {
@@ -33,9 +34,10 @@ export function RouteTab({ selectedProfile, onJobCreated }: RouteTabProps) {
   const [measurementDensityError, setMeasurementDensityError] = useState<string | null>(null);
   const detectedPoints = state.cornerPoints.length;
   const checkedWaypoints = detectedPoints > 0 ? state.measurementPoints.length : 0;
+  const allowsCornersOnlyRoute = state.measurementDensity === 0;
   const isRouteReady =
     detectedPoints > 0 &&
-    checkedWaypoints > 0 &&
+    (checkedWaypoints > 0 || allowsCornersOnlyRoute) &&
     preview.routePath.length > 0 &&
     !state.isInitializing &&
     !state.isPopulating;
@@ -72,19 +74,14 @@ export function RouteTab({ selectedProfile, onJobCreated }: RouteTabProps) {
   const handleMeasurementDensityChange = (nextValue: string) => {
     setMeasurementDensityInput(nextValue);
 
-    if (nextValue.trim().length === 0) {
-      setMeasurementDensityError('Measurement density is required.');
-      return;
-    }
-
-    const parsed = Number(nextValue);
-    if (!Number.isFinite(parsed) || parsed < 0 || parsed > 10) {
-      setMeasurementDensityError('Enter a value between 0 and 10.');
+    const validationError = getMeasurementDensityValidationError(nextValue);
+    if (validationError) {
+      setMeasurementDensityError(validationError);
       return;
     }
 
     setMeasurementDensityError(null);
-    setPendingMeasurementDensity(parsed);
+    setPendingMeasurementDensity(Number(nextValue));
   };
 
   const handleCornerPointDragEnd = (pointId: string, normalizedX: number, normalizedY: number) => {

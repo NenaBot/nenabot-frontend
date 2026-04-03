@@ -127,6 +127,42 @@ describe('useProgressData', () => {
     });
   });
 
+  test('stays loading until progress events arrive', async () => {
+    (useJobEvents as jest.Mock).mockReturnValue({
+      events: [],
+      error: null,
+    });
+
+    const { result, rerender } = renderHook(({ jobId }) => useProgressData(jobId), {
+      initialProps: { jobId: 'job-4' as string | null },
+    });
+
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.progressState).toBeNull();
+
+    (useJobEvents as jest.Mock).mockReturnValue({
+      events: [
+        {
+          type: 'job:started',
+          state: 'running',
+          totalPoints: 8,
+          lastPointProcessed: 0,
+          timestamp: '2026-03-18T10:00:00.000Z',
+        },
+      ],
+      error: null,
+    });
+
+    rerender({ jobId: 'job-4' });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.progressState?.scan.state).toBe('running');
+    expect(result.current.progressState?.scan.totalPoints).toBe(8);
+  });
+
   test('uses mock progress state when mock mode is enabled', async () => {
     (isMockModeEnabled as jest.Mock).mockReturnValue(true);
 

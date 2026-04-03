@@ -11,9 +11,10 @@ export function useJobEvents(jobId: string | null): UseJobEventsResult {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setEvents([]);
+    setError(null);
+
     if (!jobId) {
-      setEvents([]);
-      setError(null);
       return;
     }
 

@@ -97,7 +97,7 @@ export interface BatteryCornersApiResponse {
 export interface PathPopulateRequestApi {
   // List of battery detections, each containing corner points
   batteries: BatteryCornersApiResponse[];
-  // Measuring points per centimeter (must be >= 0 and <= 10)
+  // Measurement density: number of interpolated points per cm between corners [0, 10]
   measuringPointsPerCm: number;
   options?: Record<string, unknown> | null;
 }

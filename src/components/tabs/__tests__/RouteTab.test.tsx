@@ -1,0 +1,140 @@
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { RouteTab } from '../RouteTab';
+import { useRoutePlan } from '../../../hooks/useRoutePlan';
+import { ProfileModel } from '../../../types/profile.types';
+import { MEASUREMENT_DENSITY_MAX } from '../../../types/route.types';
+
+jest.mock('../../../hooks/useRoutePlan', () => ({
+  useRoutePlan: jest.fn(),
+}));
+
+const selectedProfile: ProfileModel = {
+  name: 'default-profile',
+  description: 'test profile',
+  settings: {
+    workZ: 10,
+    workR: 20,
+    options: {},
+  },
+};
+
+describe('RouteTab', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  test('allows starting a corners-only route when measurement density is zero', async () => {
+    const createScanJob = jest.fn().mockResolvedValue('job-corners-only');
+
+    (useRoutePlan as jest.Mock).mockReturnValue({
+      state: {
+        measurementDensity: 0,
+        dryRun: false,
+        isInitializing: false,
+        isPopulating: false,
+        isCreatingJob: false,
+        imageBase64: null,
+        routeError: null,
+        cornerPoints: [
+          { x: 0, y: 0 },
+          { x: 10, y: 0 },
+          { x: 10, y: 10 },
+          { x: 0, y: 10 },
+        ],
+        measurementPoints: [],
+        populatedPath: [
+          { x: 0, y: 0 },
+          { x: 10, y: 0 },
+          { x: 10, y: 10 },
+          { x: 0, y: 10 },
+        ],
+        populatedPathWithMetadata: [],
+        batteries: [],
+      },
+      preview: {
+        routePath: [
+          { x: 0, y: 0 },
+          { x: 1, y: 0 },
+          { x: 1, y: 1 },
+          { x: 0, y: 1 },
+        ],
+        points: [],
+        cornerPointIds: ['battery-0-corner-0'],
+        draggablePointIds: ['battery-0-corner-0'],
+        bounds: {
+          minX: 0,
+          maxX: 10,
+          minY: 0,
+          maxY: 10,
+        },
+      },
+      setDryRun: jest.fn(),
+      setMeasurementDensity: jest.fn(),
+      moveCornerPoint: jest.fn(),
+      resetRoutePlan: jest.fn(),
+      createScanJob,
+    });
+
+    const onJobCreated = jest.fn();
+
+    render(<RouteTab selectedProfile={selectedProfile} onJobCreated={onJobCreated} />);
+
+    const startButton = screen.getByRole('button', { name: 'Start Scan Job' });
+    expect(startButton).not.toBeDisabled();
+
+    fireEvent.click(startButton);
+
+    await waitFor(() => {
+      expect(createScanJob).toHaveBeenCalledTimes(1);
+      expect(onJobCreated).toHaveBeenCalledWith('job-corners-only');
+    });
+  });
+
+  test('rejects measurement density values above the maximum with validation error', async () => {
+    const setMeasurementDensity = jest.fn();
+
+    (useRoutePlan as jest.Mock).mockReturnValue({
+      state: {
+        measurementDensity: 0,
+        dryRun: false,
+        isInitializing: false,
+        isPopulating: false,
+        isCreatingJob: false,
+        imageBase64: null,
+        routeError: null,
+        cornerPoints: [],
+        measurementPoints: [],
+        populatedPath: [],
+        populatedPathWithMetadata: [],
+        batteries: [],
+      },
+      preview: {
+        routePath: [],
+        points: [],
+        cornerPointIds: [],
+        draggablePointIds: [],
+        bounds: { minX: 0, maxX: 10, minY: 0, maxY: 10 },
+      },
+      setDryRun: jest.fn(),
+      setMeasurementDensity,
+      moveCornerPoint: jest.fn(),
+      resetRoutePlan: jest.fn(),
+      createScanJob: jest.fn(),
+    });
+
+    const onJobCreated = jest.fn();
+    render(<RouteTab selectedProfile={selectedProfile} onJobCreated={onJobCreated} />);
+
+    const input = screen.getByRole('spinbutton', { name: /measurement density/i });
+    fireEvent.change(input, { target: { value: '42' } });
+
+    // Verify validation error is displayed
+    const errorText = screen.getByText(
+      new RegExp(`Enter a value between 0 and ${MEASUREMENT_DENSITY_MAX}\\.`, 'i'),
+    );
+    expect(errorText).toBeInTheDocument();
+
+    // Verify setMeasurementDensity was NOT called (invalid value rejected)
+    expect(setMeasurementDensity).not.toHaveBeenCalled();
+  });
+});

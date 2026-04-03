@@ -117,6 +117,7 @@ export function useProgressData(jobId: string | null) {
   const { events: jobEvents, error: streamError } = useJobEvents(
     isMockModeEnabled() ? null : jobId,
   );
+  const hasEvents = jobEvents.length > 0;
 
   useEffect(() => {
     if (isMockModeEnabled()) {
@@ -126,18 +127,23 @@ export function useProgressData(jobId: string | null) {
       return;
     }
 
-    setProgressState(null);
     setError(null);
 
     if (!jobId) {
+      setProgressState(null);
       setError('No active job selected.');
       setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
+    if (!hasEvents && !streamError) {
+      setProgressState(null);
+      setIsLoading(true);
+      return;
+    }
+
     setIsLoading(false);
-  }, [jobId]);
+  }, [hasEvents, jobId, streamError]);
 
   const mappedState = useMemo<ProgressTabState | null>(() => {
     if (isMockModeEnabled()) {
@@ -148,8 +154,12 @@ export function useProgressData(jobId: string | null) {
       return null;
     }
 
+    if (!hasEvents && !streamError) {
+      return null;
+    }
+
     return mapEventsToProgressState(jobEvents);
-  }, [jobEvents, jobId]);
+  }, [hasEvents, jobEvents, jobId, streamError]);
 
   useEffect(() => {
     setProgressState(mappedState);
@@ -158,6 +168,7 @@ export function useProgressData(jobId: string | null) {
   useEffect(() => {
     if (streamError) {
       setError(streamError);
+      setIsLoading(false);
       return;
     }
 

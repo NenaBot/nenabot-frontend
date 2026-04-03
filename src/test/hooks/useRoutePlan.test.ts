@@ -3,6 +3,7 @@ import { useRoutePlan } from '../../hooks/useRoutePlan';
 import { createJob, detectPath, populatePath } from '../../services/apiCalls';
 import { isMockModeEnabled } from '../../state/mockMode';
 import { ProfileModel } from '../../types/profile.types';
+import { MEASUREMENT_DENSITY_MAX } from '../../types/route.types';
 
 jest.mock('../../services/apiCalls', () => ({
   detectPath: jest.fn(),
@@ -116,6 +117,31 @@ describe('useRoutePlan', () => {
     expect(result.current.state.imageBase64).toBe('abc123');
     expect(result.current.preview.cornerPointIds.length).toBe(8);
     expect(result.current.preview.points.length).toBe(9);
+  });
+
+  test('clamps profile measurement density above max before populating', async () => {
+    const highDensityProfile: ProfileModel = {
+      ...selectedProfile,
+      settings: {
+        ...selectedProfile.settings,
+        options: {
+          ...selectedProfile.settings.options,
+          measurementDensity: 42,
+        },
+      },
+    };
+
+    const { result } = renderHook(() => useRoutePlan({ selectedProfile: highDensityProfile }));
+
+    await waitFor(() => {
+      expect(populatePath).toHaveBeenCalledWith(
+        expect.objectContaining({
+          measuringPointsPerCm: MEASUREMENT_DENSITY_MAX,
+        }),
+      );
+    });
+
+    expect(result.current.state.measurementDensity).toBe(MEASUREMENT_DENSITY_MAX);
   });
 
   test('re-populates when measurement density changes', async () => {
