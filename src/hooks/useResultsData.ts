@@ -33,15 +33,17 @@ export function useResultsData(initialScanId?: string | null): UseResultsDataRet
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const loadLatestResult = useCallback(async () => {
+    console.log(`[ResultsData] Loading latest scan result`);
     setIsLoading(true);
     setErrorMessage(null);
 
     try {
       const latestResult = await getLatestScanResult();
+      console.log(`[ResultsData] Latest result loaded: ${latestResult.scanId}`);
       setScanResult(latestResult);
       setSelectedScanId(latestResult.scanId);
     } catch (error) {
-      console.error('Failed to load latest scan result:', error);
+      console.error('[ResultsData] Failed to load latest scan result:', error);
       setErrorMessage('Failed to load the latest scan result.');
       setScanResult(null);
     } finally {
@@ -50,13 +52,15 @@ export function useResultsData(initialScanId?: string | null): UseResultsDataRet
   }, []);
 
   const loadScanSummaries = useCallback(async () => {
+    console.log(`[ResultsData] Loading scan summaries`);
     setIsLoadingScanList(true);
 
     try {
       const summaries = await getAvailableScanResultSummaries();
+      console.log(`[ResultsData] Loaded ${summaries.length} scan summaries`);
       setScanSummaries(summaries);
     } catch (error) {
-      console.error('Failed to load available scan results:', error);
+      console.error('[ResultsData] Failed to load available scan results:', error);
       setScanSummaries([]);
       setErrorMessage('Failed to load scan list.');
     } finally {
@@ -65,22 +69,26 @@ export function useResultsData(initialScanId?: string | null): UseResultsDataRet
   }, []);
 
   const refresh = useCallback(async () => {
+    console.log(`[ResultsData] Refreshing all data`);
     await Promise.all([loadLatestResult(), loadScanSummaries()]);
   }, [loadLatestResult, loadScanSummaries]);
 
   const loadSelectedScan = useCallback(async () => {
     if (selectedScanId.trim().length === 0) {
+      console.log(`[ResultsData] No scan ID selected, skipping load`);
       return;
     }
 
+    console.log(`[ResultsData] Loading selected scan: ${selectedScanId}`);
     setIsLoading(true);
     setErrorMessage(null);
 
     try {
       const loadedResult = await getScanResult(selectedScanId);
+      console.log(`[ResultsData] Scan ${selectedScanId} loaded successfully`);
       setScanResult(loadedResult);
     } catch (error) {
-      console.error('Failed to load selected scan result:', error);
+      console.error(`[ResultsData] Failed to load selected scan ${selectedScanId}:`, error);
       setErrorMessage(`Failed to load scan ${selectedScanId}.`);
     } finally {
       setIsLoading(false);
@@ -90,16 +98,19 @@ export function useResultsData(initialScanId?: string | null): UseResultsDataRet
   const downloadCurrentScan = useCallback(
     async (format: ExportFormat) => {
       if (!scanResult) {
+        console.log(`[ResultsData] No scan result available for download`);
         return;
       }
 
+      console.log(`[ResultsData] Downloading scan ${scanResult.scanId} in ${format} format`);
       setIsDownloading(true);
       setErrorMessage(null);
 
       try {
         await exportScanResult(scanResult.scanId, format);
+        console.log(`[ResultsData] Scan ${scanResult.scanId} exported successfully`);
       } catch (error) {
-        console.error('Failed to export scan result:', error);
+        console.error(`[ResultsData] Failed to export scan ${scanResult.scanId}:`, error);
         setErrorMessage('Failed to export scan result.');
       } finally {
         setIsDownloading(false);

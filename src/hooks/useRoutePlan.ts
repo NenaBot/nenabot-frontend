@@ -198,6 +198,7 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
       detectItems: PathItemApiResponse[],
     ) => {
       if (cornerPoints.length === 0) {
+        console.log(`[RoutePlan] Populate cancelled: no corner points`);
         setState((prev) => ({
           ...prev,
           isPopulating: false,
@@ -210,6 +211,10 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
       const requestId = populateRequestCounterRef.current + 1;
       populateRequestCounterRef.current = requestId;
       setState((prev) => ({ ...prev, isPopulating: true, routeError: null }));
+
+      console.log(
+        `[RoutePlan] Populating path (request ${requestId}): ${cornerPoints.length} corners, density ${measurementDensity}`,
+      );
 
       try {
         const populateResponse = isMockModeEnabled()
@@ -224,6 +229,7 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
             });
 
         if (populateRequestCounterRef.current !== requestId) {
+          console.log(`[RoutePlan] Request ${requestId} superseded by newer request`);
           return;
         }
 
@@ -237,6 +243,10 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
         const pathPoints = populated.length > 0 ? populated : cornerPoints;
         const split = splitCornersAndMeasurements(pathPoints, cornerPoints);
 
+        console.log(
+          `[RoutePlan] Path populated successfully: ${split.corners.length} corners, ${split.measurements.length} measurements`,
+        );
+
         setState((prev) => ({
           ...prev,
           isPopulating: false,
@@ -246,7 +256,7 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
           populatedPath: pathPoints.map(({ x, y }) => ({ x, y })),
         }));
       } catch (error) {
-        console.error('Path populate failed:', error);
+        console.error('[RoutePlan] Path populate failed:', error);
         if (populateRequestCounterRef.current === requestId) {
           setState((prev) => ({
             ...prev,

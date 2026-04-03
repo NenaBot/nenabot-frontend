@@ -19,34 +19,37 @@ export default function App() {
   const goToProgress = () => setActiveTab('progress');
   const goToResults = () => setActiveTab('results');
 
+  const handleProfileChange = (profile: ProfileModel | null) => {
+    console.log(`[App] Profile changed:`, profile?.name || 'none');
+    setSelectedProfile(profile);
+  };
+
+  const handleJobCreated = (jobId: string) => {
+    console.log(`[App] Job created: ${jobId}`);
+    setCurrentJobId(jobId);
+    goToProgress();
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'setup':
         return (
           <SetupTab
             selectedProfile={selectedProfile}
-            onProfileChange={setSelectedProfile}
+            onProfileChange={handleProfileChange}
             onNext={goToCamera}
           />
         );
       case 'camera':
         return <CameraTab onNext={goToRoute} />;
       case 'route':
-        return (
-          <RouteTab
-            selectedProfile={selectedProfile}
-            onJobCreated={(jobId) => {
-              setCurrentJobId(jobId);
-              goToProgress();
-            }}
-          />
-        );
+        return <RouteTab selectedProfile={selectedProfile} onJobCreated={handleJobCreated} />;
       case 'progress':
         return <ProgressTab jobId={currentJobId} onNext={goToResults} />;
       case 'results':
         return <ResultsTab initialJobId={currentJobId} />;
       default:
-        return <SetupTab selectedProfile={selectedProfile} onProfileChange={setSelectedProfile} />;
+        return <SetupTab selectedProfile={selectedProfile} onProfileChange={handleProfileChange} />;
     }
   };
 
