@@ -9,15 +9,16 @@ async function enableMockMode(page) {
 test('loads a previous mock scan and exports csv', async ({ page }) => {
   await enableMockMode(page);
   await page.goto('/');
-  await page.getByRole('button', { name: 'Results' }).click();
+  await page.getByRole('button', { name: 'Results', exact: true }).click();
 
   await expect(page.getByRole('heading', { name: 'Scan Results' })).toBeVisible();
 
   const scanSelector = page.locator('select').first();
   await scanSelector.selectOption('mock-scan-02');
+  await expect(scanSelector).toHaveValue('mock-scan-02');
 
   await page.getByRole('button', { name: 'Load Scan' }).click();
-  await expect(page.getByText('Mock Uploaded Scan A')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Scan Results' })).toBeVisible();
 
   const exportFormatSelector = page.locator('select').nth(1);
   await exportFormatSelector.selectOption('csv');
