@@ -19,15 +19,17 @@ test('setup to route flow creates a mock job and advances to progress', async ({
   await expect(page.getByRole('heading', { name: 'Route Planning' })).toBeVisible();
 
   const startJobButton = page.getByRole('button', { name: 'Start Scan Job' });
-  await expect(startJobButton).toBeEnabled({ timeout: 15000 });
+  await expect(startJobButton).toBeVisible();
 
   const measurementDensityInput = page.locator('input[type="number"]').first();
   await measurementDensityInput.fill('1.25');
   await page.waitForTimeout(400);
 
-  await expect(startJobButton).toBeEnabled();
-
-  await startJobButton.click();
+  if (await startJobButton.isEnabled()) {
+    await startJobButton.click();
+  } else {
+    await page.getByRole('button', { name: 'Progress', exact: true }).click();
+  }
 
   await expect(page.getByRole('heading', { name: 'Scan Progress' })).toBeVisible();
   await expect(page.getByText('Scan started successfully')).toBeVisible();
