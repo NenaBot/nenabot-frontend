@@ -20,14 +20,13 @@ test('results tab supports threshold, point navigation, and filtering controls',
   await thresholdInput.fill('1.15');
   await expect(thresholdInput).toHaveValue('1.15');
 
-  const selectedPointCard = page.locator('div').filter({ hasText: 'Selected Point' }).first();
-  const selectedPointLabel = selectedPointCard.getByRole('heading');
+  const selectedPointLabel = page.getByRole('heading', { name: /^P-\d{3}$/ }).first();
   await expect(selectedPointLabel).toHaveText('P-001');
 
-  await selectedPointCard.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Next' }).first().click();
   await expect(selectedPointLabel).toHaveText('P-002');
 
-  await selectedPointCard.getByRole('button', { name: 'Previous' }).click();
+  await page.getByRole('button', { name: 'Previous' }).first().click();
   await expect(selectedPointLabel).toHaveText('P-001');
 
   const tableSearch = page.getByPlaceholder('Filter by id, label or comment');
