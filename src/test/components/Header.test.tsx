@@ -30,7 +30,7 @@ describe('Header', () => {
     fireEvent.click(screen.getByLabelText('Open settings panel'));
 
     await waitFor(() => {
-      expect(screen.getByRole('dialog', { name: 'Settings panel' })).toBeInTheDocument();
+      expect(screen.getByLabelText('Settings panel')).toBeInTheDocument();
     });
 
     expect(screen.getByText('Mock Data')).toBeInTheDocument();
@@ -68,22 +68,22 @@ describe('Header', () => {
     fireEvent.click(trigger);
 
     await waitFor(() => {
-      expect(screen.getByRole('dialog', { name: 'Settings panel' })).toBeInTheDocument();
+      expect(screen.getByLabelText('Settings panel')).toBeInTheDocument();
     });
 
     fireEvent.mouseDown(document.body);
     await waitFor(() => {
-      expect(screen.queryByRole('dialog', { name: 'Settings panel' })).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Settings panel')).not.toBeInTheDocument();
     });
 
     fireEvent.click(trigger);
     await waitFor(() => {
-      expect(screen.getByRole('dialog', { name: 'Settings panel' })).toBeInTheDocument();
+      expect(screen.getByLabelText('Settings panel')).toBeInTheDocument();
     });
 
     fireEvent.keyDown(document, { key: 'Escape' });
     await waitFor(() => {
-      expect(screen.queryByRole('dialog', { name: 'Settings panel' })).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('Settings panel')).not.toBeInTheDocument();
     });
   });
 });

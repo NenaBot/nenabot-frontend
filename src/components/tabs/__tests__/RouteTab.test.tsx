@@ -90,6 +90,73 @@ describe('RouteTab', () => {
     });
   });
 
+  test('allows starting when route path exists with low non-zero density and zero measurements', async () => {
+    const createScanJob = jest.fn().mockResolvedValue('job-low-density');
+
+    (useRoutePlan as jest.Mock).mockReturnValue({
+      state: {
+        measurementDensity: 0.1,
+        dryRun: false,
+        isInitializing: false,
+        isPopulating: false,
+        isCreatingJob: false,
+        imageBase64: null,
+        routeError: null,
+        cornerPoints: [
+          { x: 0, y: 0 },
+          { x: 10, y: 0 },
+          { x: 10, y: 10 },
+          { x: 0, y: 10 },
+        ],
+        measurementPoints: [],
+        populatedPath: [
+          { x: 0, y: 0 },
+          { x: 10, y: 0 },
+          { x: 10, y: 10 },
+          { x: 0, y: 10 },
+        ],
+        populatedPathWithMetadata: [],
+        batteries: [{ corners: [{ x: 0, y: 0 }] }],
+      },
+      preview: {
+        routePath: [
+          { x: 0, y: 0 },
+          { x: 1, y: 0 },
+          { x: 1, y: 1 },
+          { x: 0, y: 1 },
+        ],
+        points: [],
+        cornerPointIds: ['battery-0-corner-0'],
+        draggablePointIds: ['battery-0-corner-0'],
+        bounds: {
+          minX: 0,
+          maxX: 10,
+          minY: 0,
+          maxY: 10,
+        },
+      },
+      setDryRun: jest.fn(),
+      setMeasurementDensity: jest.fn(),
+      moveCornerPoint: jest.fn(),
+      resetRoutePlan: jest.fn(),
+      createScanJob,
+    });
+
+    const onJobCreated = jest.fn();
+
+    render(<RouteTab selectedProfile={selectedProfile} onJobCreated={onJobCreated} />);
+
+    const startButton = screen.getByRole('button', { name: 'Start Scan Job' });
+    expect(startButton).not.toBeDisabled();
+
+    fireEvent.click(startButton);
+
+    await waitFor(() => {
+      expect(createScanJob).toHaveBeenCalledTimes(1);
+      expect(onJobCreated).toHaveBeenCalledWith('job-low-density');
+    });
+  });
+
   test('rejects measurement density values above the maximum with validation error', async () => {
     const setMeasurementDensity = jest.fn();
 

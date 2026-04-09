@@ -324,6 +324,27 @@ describe('useRoutePlan', () => {
     ]);
   });
 
+  test('sets explicit error when backend returns only invalid populated path metadata', async () => {
+    (populatePath as jest.Mock).mockResolvedValueOnce({
+      path: [
+        { index: 'bad-1', pixelX: 99, pixelY: 99 },
+        { index: 'bad-2', pixelX: 100, pixelY: 100 },
+      ],
+    });
+
+    const { result } = renderHook(() => useRoutePlan({ selectedProfile }));
+
+    await waitFor(() => {
+      expect(result.current.state.isPopulating).toBe(false);
+    });
+
+    expect(result.current.state.populatedPathWithMetadata).toEqual([]);
+    expect(result.current.state.populatedPath).toEqual([]);
+    expect(result.current.state.routeError).toBe(
+      'Received invalid route metadata from backend. Please retry.',
+    );
+  });
+
   test('sets a user-facing error when detection returns no points', async () => {
     (detectPath as jest.Mock).mockResolvedValueOnce({
       ok: true,

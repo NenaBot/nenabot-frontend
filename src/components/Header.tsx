@@ -63,7 +63,6 @@ export function Header() {
               className="p-2 rounded-full hover:bg-[var(--md-sys-color-surface-variant)] transition-colors"
               title="System Settings"
               onClick={() => setIsSettingsOpen((prev) => !prev)}
-              aria-haspopup="dialog"
               aria-expanded={isSettingsOpen}
               aria-controls="settings-panel"
               aria-label="Open settings panel"
@@ -74,7 +73,6 @@ export function Header() {
               <div
                 id="settings-panel"
                 className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface-container)] p-2 shadow-lg z-20"
-                role="dialog"
                 aria-label="Settings panel"
               >
                 <label className="flex items-center justify-between gap-3 px-2 py-2 rounded-lg text-sm hover:bg-[var(--md-sys-color-surface-variant)] cursor-pointer">

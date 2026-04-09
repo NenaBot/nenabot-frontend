@@ -316,6 +316,10 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
         }
 
         const populatedWithMetadata = parsePopulatePath(populateResponse);
+        if ((populateResponse.path?.length ?? 0) > 0 && populatedWithMetadata.length === 0) {
+          throw new Error('INVALID_PATH_METADATA');
+        }
+
         const populatedPixels = populatedPathToPixels(populatedWithMetadata);
         const currentCornerPoints = flattenBatteryCorners(batteries);
         const cornerSet = new Set(currentCornerPoints.map((point) => `${point.x}:${point.y}`));
@@ -336,10 +340,15 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
       } catch (error) {
         console.error('Path populate failed:', error);
         if (populateRequestCounterRef.current === requestId) {
+          const routeError =
+            error instanceof Error && error.message === 'INVALID_PATH_METADATA'
+              ? 'Received invalid route metadata from backend. Please retry.'
+              : 'Failed to update route preview. Please retry.';
+
           setState((prev) => ({
             ...prev,
             isPopulating: false,
-            routeError: 'Failed to update route preview. Please retry.',
+            routeError,
           }));
         }
       }
