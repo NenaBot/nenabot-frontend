@@ -1,21 +1,21 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { useProgressData } from '../../hooks/useProgressData';
 import { useJobEvents } from '../../hooks/useJobEvents';
-import { isMockModeEnabled } from '../../state/mockMode';
+import { useMockMode } from '../../hooks/useMockMode';
 import { mockJobEvents } from '../../mocks/progressMocks';
 
 jest.mock('../../hooks/useJobEvents', () => ({
   useJobEvents: jest.fn(),
 }));
 
-jest.mock('../../state/mockMode', () => ({
-  isMockModeEnabled: jest.fn(),
+jest.mock('../../hooks/useMockMode', () => ({
+  useMockMode: jest.fn(),
 }));
 
 describe('useProgressData', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (isMockModeEnabled as jest.Mock).mockReturnValue(false);
+    (useMockMode as jest.Mock).mockReturnValue([false, jest.fn()]);
     (useJobEvents as jest.Mock).mockReturnValue({
       events: [],
       error: null,
@@ -164,7 +164,7 @@ describe('useProgressData', () => {
   });
 
   test('uses mock progress state when mock mode is enabled', async () => {
-    (isMockModeEnabled as jest.Mock).mockReturnValue(true);
+    (useMockMode as jest.Mock).mockReturnValue([true, jest.fn()]);
 
     const { result } = renderHook(() => useProgressData('job-3'));
 

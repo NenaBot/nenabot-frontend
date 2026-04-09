@@ -32,11 +32,11 @@ export function RouteTab({ selectedProfile, onJobCreated }: RouteTabProps) {
     state.measurementDensity,
   );
   const [measurementDensityError, setMeasurementDensityError] = useState<string | null>(null);
-  const detectedPoints = state.cornerPoints.length;
-  const checkedWaypoints = detectedPoints > 0 ? state.measurementPoints.length : 0;
+  const detectedBatteries = state.batteries.length;
+  const checkedWaypoints = state.cornerPoints.length > 0 ? state.measurementPoints.length : 0;
   const allowsCornersOnlyRoute = state.measurementDensity === 0;
   const isRouteReady =
-    detectedPoints > 0 &&
+    state.cornerPoints.length > 0 &&
     (checkedWaypoints > 0 || allowsCornersOnlyRoute) &&
     preview.routePath.length > 0 &&
     !state.isInitializing &&
@@ -182,7 +182,7 @@ export function RouteTab({ selectedProfile, onJobCreated }: RouteTabProps) {
       </div>
 
       <div className="flex items-center justify-between text-sm text-[var(--md-sys-color-on-surface-variant)] border border-[var(--md-sys-color-outline-variant)] rounded-lg px-3 py-2">
-        <span>Detected points: {detectedPoints}</span>
+        <span>Detected batteries: {detectedBatteries}</span>
         <span>Checked waypoints: {checkedWaypoints}</span>
       </div>
 

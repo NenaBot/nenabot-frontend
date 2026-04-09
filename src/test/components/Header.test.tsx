@@ -27,10 +27,10 @@ describe('Header', () => {
     expect(screen.queryByText('Mock Data')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Toggle dark mode')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByLabelText('Open settings menu'));
+    fireEvent.click(screen.getByLabelText('Open settings panel'));
 
     await waitFor(() => {
-      expect(screen.getByRole('menu', { name: 'Settings menu' })).toBeInTheDocument();
+      expect(screen.getByRole('dialog', { name: 'Settings panel' })).toBeInTheDocument();
     });
 
     expect(screen.getByText('Mock Data')).toBeInTheDocument();
@@ -42,7 +42,7 @@ describe('Header', () => {
   test('updates dark mode when settings toggle is clicked', async () => {
     render(<Header />);
 
-    fireEvent.click(screen.getByLabelText('Open settings menu'));
+    fireEvent.click(screen.getByLabelText('Open settings panel'));
 
     const darkToggle = await screen.findByLabelText('Toggle dark mode');
     fireEvent.click(darkToggle);
@@ -53,7 +53,7 @@ describe('Header', () => {
   test('updates mock mode when settings toggle is clicked', async () => {
     render(<Header />);
 
-    fireEvent.click(screen.getByLabelText('Open settings menu'));
+    fireEvent.click(screen.getByLabelText('Open settings panel'));
 
     const toggle = await screen.findByLabelText('Toggle mock data');
     fireEvent.click(toggle);
@@ -64,26 +64,26 @@ describe('Header', () => {
   test('closes settings menu on outside click and escape', async () => {
     render(<Header />);
 
-    const trigger = screen.getByLabelText('Open settings menu');
+    const trigger = screen.getByLabelText('Open settings panel');
     fireEvent.click(trigger);
 
     await waitFor(() => {
-      expect(screen.getByRole('menu', { name: 'Settings menu' })).toBeInTheDocument();
+      expect(screen.getByRole('dialog', { name: 'Settings panel' })).toBeInTheDocument();
     });
 
     fireEvent.mouseDown(document.body);
     await waitFor(() => {
-      expect(screen.queryByRole('menu', { name: 'Settings menu' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('dialog', { name: 'Settings panel' })).not.toBeInTheDocument();
     });
 
     fireEvent.click(trigger);
     await waitFor(() => {
-      expect(screen.getByRole('menu', { name: 'Settings menu' })).toBeInTheDocument();
+      expect(screen.getByRole('dialog', { name: 'Settings panel' })).toBeInTheDocument();
     });
 
     fireEvent.keyDown(document, { key: 'Escape' });
     await waitFor(() => {
-      expect(screen.queryByRole('menu', { name: 'Settings menu' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('dialog', { name: 'Settings panel' })).not.toBeInTheDocument();
     });
   });
 });

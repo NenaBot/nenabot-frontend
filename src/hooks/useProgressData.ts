@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { mockJobEvents } from '../mocks/progressMocks';
 import { JobEventApiResponse } from '../services/apiCalls';
 import { ProgressEvent, ProgressTabState, ScanLifecycleState } from '../types/progress.types';
-import { isMockModeEnabled } from '../state/mockMode';
 import { useJobEvents } from './useJobEvents';
+import { useMockMode } from './useMockMode';
 
 function toLifecycleState(state: string | undefined): ScanLifecycleState {
   if (state === 'completed' || state === 'failed' || state === 'stopped' || state === 'running') {
@@ -111,16 +111,15 @@ function mapEventsToProgressState(events: JobEventApiResponse[]): ProgressTabSta
 }
 
 export function useProgressData(jobId: string | null) {
+  const [mockMode] = useMockMode();
   const [progressState, setProgressState] = useState<ProgressTabState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { events: jobEvents, error: streamError } = useJobEvents(
-    isMockModeEnabled() ? null : jobId,
-  );
+  const { events: jobEvents, error: streamError } = useJobEvents(mockMode ? null : jobId);
   const hasEvents = jobEvents.length > 0;
 
   useEffect(() => {
-    if (isMockModeEnabled()) {
+    if (mockMode) {
       setProgressState(mapEventsToProgressState(mockJobEvents));
       setError(null);
       setIsLoading(false);
@@ -143,10 +142,10 @@ export function useProgressData(jobId: string | null) {
     }
 
     setIsLoading(false);
-  }, [hasEvents, jobId, streamError]);
+  }, [hasEvents, jobId, mockMode, streamError]);
 
   const mappedState = useMemo<ProgressTabState | null>(() => {
-    if (isMockModeEnabled()) {
+    if (mockMode) {
       return mapEventsToProgressState(mockJobEvents);
     }
 
@@ -159,7 +158,7 @@ export function useProgressData(jobId: string | null) {
     }
 
     return mapEventsToProgressState(jobEvents);
-  }, [hasEvents, jobEvents, jobId, streamError]);
+  }, [hasEvents, jobEvents, jobId, mockMode, streamError]);
 
   useEffect(() => {
     setProgressState(mappedState);

@@ -14,6 +14,6 @@ test('setup to camera to route flow initializes route and enables job action', a
   const startJobButton = page.getByRole('button', { name: 'Start Scan Job' });
   await expect(startJobButton).toBeEnabled();
 
-  await expect(page.getByText(/Detected points:\s*[1-9]\d*/)).toBeVisible();
+  await expect(page.getByText(/Detected batteries:\s*[1-9]\d*/)).toBeVisible();
   await expect(page.getByText(/Checked waypoints:\s*[1-9]\d*/)).toBeVisible();
 });
