@@ -32,14 +32,19 @@ export function ProgressTab({ jobId, onNext }: ProgressTabProps) {
       !progressState ||
       isTerminalScanState(progressState.scan.state)
     ) {
+      console.log(
+        `[ProgressTab] Abort cancelled: jobId=${jobId}, mockMode=${isMockModeEnabled()}, terminalState=${progressState ? isTerminalScanState(progressState.scan.state) : 'no progress state'}`,
+      );
       return;
     }
 
+    console.log(`[ProgressTab] Aborting job ${jobId}`);
     setIsAborting(true);
     try {
       await deleteJob(jobId);
+      console.log(`[ProgressTab] Job ${jobId} aborted successfully`);
     } catch (abortError) {
-      console.error('Failed to abort job:', abortError);
+      console.error(`[ProgressTab] Failed to abort job ${jobId}:`, abortError);
     } finally {
       setIsAborting(false);
     }
@@ -52,6 +57,9 @@ export function ProgressTab({ jobId, onNext }: ProgressTabProps) {
 
     // Auto-advance to results when scan completes
     if (isTerminalScanState(progressState.scan.state) && scanProgress === 100 && onNext) {
+      console.log(
+        `[ProgressTab] Scan completed (${scanProgress}%), auto-advancing to results in 1s`,
+      );
       const timer = setTimeout(onNext, 1000); // 1s delay for visual feedback
       return () => clearTimeout(timer);
     }

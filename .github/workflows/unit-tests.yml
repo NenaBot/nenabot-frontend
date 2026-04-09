@@ -1,4 +1,4 @@
-name: Run Unit Tests
+﻿name: Run Unit Tests
 
 on:
   push:
@@ -14,6 +14,10 @@ jobs:
   unit-tests:
     timeout-minutes: 10
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
     steps:
       - uses: actions/checkout@v5
 
@@ -21,7 +25,7 @@ jobs:
         uses: actions/setup-node@v6.2.0
         with:
           node-version: 20
-          cache: 'npm'
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
@@ -138,6 +142,15 @@ jobs:
                 body,
               });
             }
+
+      - name: Run Jest coverage report action
+        uses: ArtiomTr/jest-coverage-report-action@v2
+        with:
+          test-script: npm test
+          package-manager: npm
+          output: comment
+          annotations: none
+          custom-title: 'Jest coverage report'
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v5
