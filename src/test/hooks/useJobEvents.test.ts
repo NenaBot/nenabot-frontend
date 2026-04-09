@@ -131,15 +131,30 @@ describe('useJobEvents', () => {
   });
 
   test('closes previous EventSource when job id changes', () => {
-    const { rerender } = renderHook(({ jobId }: { jobId: string | null }) => useJobEvents(jobId), {
-      initialProps: { jobId: 'job-10' },
-    });
+    const { result, rerender } = renderHook(
+      ({ jobId }: { jobId: string | null }) => useJobEvents(jobId),
+      {
+        initialProps: { jobId: 'job-10' },
+      },
+    );
 
     const firstSource = MockEventSource.instances[0];
+
+    act(() => {
+      firstSource.emit('job:started', {
+        type: 'job:started',
+        jobId: 'job-10',
+        state: 'running',
+      });
+    });
+
+    expect(result.current.events).toHaveLength(1);
 
     rerender({ jobId: 'job-11' });
 
     expect(firstSource.closed).toBe(true);
     expect(MockEventSource.instances).toHaveLength(2);
+    expect(result.current.events).toEqual([]);
+    expect(result.current.error).toBeNull();
   });
 });

@@ -1,4 +1,5 @@
-import { Microscope, Github, HelpCircle, Settings, Sun, Moon } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Microscope, Github, HelpCircle, Settings } from 'lucide-react';
 import { appConfig } from '../config/app.config';
 import { useDarkMode } from '../hooks/useDarkMode';
 import { useMockMode } from '../hooks/useMockMode';
@@ -6,6 +7,34 @@ import { useMockMode } from '../hooks/useMockMode';
 export function Header() {
   const [dark, setDark] = useDarkMode();
   const [mockMode, setMockMode] = useMockMode();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const settingsMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isSettingsOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!settingsMenuRef.current?.contains(event.target as Node)) {
+        setIsSettingsOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsSettingsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isSettingsOpen]);
 
   return (
     <header className="border-b border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface)] shadow-sm theme-transition">
@@ -22,18 +51,6 @@ export function Header() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {import.meta.env.DEV && (
-            <label className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[var(--md-sys-color-outline)] text-xs">
-              <input
-                type="checkbox"
-                checked={mockMode}
-                onChange={(event) => setMockMode(event.target.checked)}
-                className="w-4 h-4 accent-[var(--md-sys-color-primary)]"
-              />
-              <span>Mock Data</span>
-            </label>
-          )}
-
           <button
             className="p-2 rounded-full hover:bg-[var(--md-sys-color-surface-variant)] transition-colors"
             title="Help & Documentation"
@@ -41,25 +58,46 @@ export function Header() {
             <HelpCircle className="w-5 h-5 text-[var(--md-sys-color-on-surface-variant)]" />
           </button>
 
-          <button
-            className="p-2 rounded-full hover:bg-[var(--md-sys-color-surface-variant)] transition-colors"
-            title="System Settings"
-          >
-            <Settings className="w-5 h-5 text-[var(--md-sys-color-on-surface-variant)]" />
-          </button>
-
-          <button
-            className="p-2 rounded-full hover:bg-[var(--md-sys-color-surface-variant)] transition-colors"
-            title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-            onClick={() => setDark((d) => !d)}
-            aria-label="Toggle dark mode"
-          >
-            {dark ? (
-              <Sun className="w-5 h-5 text-[var(--md-sys-color-on-surface-variant)]" />
-            ) : (
-              <Moon className="w-5 h-5 text-[var(--md-sys-color-on-surface-variant)]" />
+          <div className="relative" ref={settingsMenuRef}>
+            <button
+              className="p-2 rounded-full hover:bg-[var(--md-sys-color-surface-variant)] transition-colors"
+              title="System Settings"
+              onClick={() => setIsSettingsOpen((prev) => !prev)}
+              aria-expanded={isSettingsOpen}
+              aria-controls="settings-panel"
+              aria-label="Open settings panel"
+            >
+              <Settings className="w-5 h-5 text-[var(--md-sys-color-on-surface-variant)]" />
+            </button>
+            {isSettingsOpen && (
+              <div
+                id="settings-panel"
+                className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface-container)] p-2 shadow-lg z-20"
+                aria-label="Settings panel"
+              >
+                <label className="flex items-center justify-between gap-3 px-2 py-2 rounded-lg text-sm hover:bg-[var(--md-sys-color-surface-variant)] cursor-pointer">
+                  <span className="text-[var(--md-sys-color-on-surface)]">Dark Mode</span>
+                  <input
+                    type="checkbox"
+                    checked={dark}
+                    onChange={(event) => setDark(event.target.checked)}
+                    className="w-4 h-4 accent-[var(--md-sys-color-primary)]"
+                    aria-label="Toggle dark mode"
+                  />
+                </label>
+                <label className="flex items-center justify-between gap-3 px-2 py-2 rounded-lg text-sm hover:bg-[var(--md-sys-color-surface-variant)] cursor-pointer">
+                  <span className="text-[var(--md-sys-color-on-surface)]">Mock Data</span>
+                  <input
+                    type="checkbox"
+                    checked={mockMode}
+                    onChange={(event) => setMockMode(event.target.checked)}
+                    className="w-4 h-4 accent-[var(--md-sys-color-primary)]"
+                    aria-label="Toggle mock data"
+                  />
+                </label>
+              </div>
             )}
-          </button>
+          </div>
 
           {appConfig.repository.enabled && (
             <a

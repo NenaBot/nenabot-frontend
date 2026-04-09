@@ -11,12 +11,11 @@ export function useJobEvents(jobId: string | null): UseJobEventsResult {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log(`[JobEvents] Setting up SSE for jobId: ${jobId}`);
+    // Reset stream state whenever the job changes to avoid mixing histories.
+    setEvents([]);
+    setError(null);
 
     if (!jobId) {
-      console.log(`[JobEvents] No jobId provided, clearing events`);
-      setEvents([]);
-      setError(null);
       return;
     }
 

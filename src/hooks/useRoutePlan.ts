@@ -2,13 +2,21 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   createJob,
   detectPath,
+  PathDetectResponseApi,
   PathItemApiResponse,
   PathPopulatePointApiResponse,
   populatePath,
   PixelPointApiResponse,
+  BatteryCornersApiResponse,
+  JobPathPointApiResponse,
 } from '../services/apiCalls';
 import { ProfileModel } from '../types/profile.types';
 import { isMockModeEnabled } from '../state/mockMode';
+import {
+  isMeasurementDensityInRange,
+  MEASUREMENT_DENSITY_MAX,
+  MEASUREMENT_DENSITY_MIN,
+} from '../types/route.types';
 import { RoutePreviewCoordinate, RoutePreviewPoint } from '../types/routePreview.types';
 
 interface UseRoutePlanOptions {
@@ -26,7 +34,9 @@ interface DetectState {
   cornerPoints: PixelPointApiResponse[];
   measurementPoints: PixelPointApiResponse[];
   populatedPath: PixelPointApiResponse[];
-  detectItems: PathItemApiResponse[];
+  // Full path with metadata from backend for job creation
+  populatedPathWithMetadata: PathPopulatePointApiResponse[];
+  batteries: BatteryCornersApiResponse[];
 }
 
 interface PreviewData {
@@ -64,15 +74,52 @@ function normalizeToUnit(
   };
 }
 
-function createMockDetectedPoints(): PixelPointApiResponse[] {
-  return [
-    { x: 90, y: 80 },
-    { x: 250, y: 80 },
-    { x: 410, y: 80 },
-    { x: 410, y: 210 },
-    { x: 250, y: 210 },
-    { x: 90, y: 210 },
-  ];
+function createMockDetectionResponse(): PathDetectResponseApi {
+  return {
+    ok: true,
+    detections: [
+      {
+        corners: [
+          { x: 90, y: 80 },
+          { x: 250, y: 80 },
+          { x: 250, y: 210 },
+          { x: 90, y: 210 },
+        ],
+        center_x: 170,
+        center_y: 145,
+        width_mm: 34,
+        height_mm: 14,
+        confidence: 0.98,
+      },
+      {
+        corners: [
+          { pixelX: 290, pixelY: 90 },
+          { pixelX: 430, pixelY: 90 },
+          { pixelX: 430, pixelY: 220 },
+          { pixelX: 290, pixelY: 220 },
+        ],
+        center_x: 360,
+        center_y: 155,
+        width_mm: 34,
+        height_mm: 14,
+        confidence: 0.95,
+      },
+    ],
+    image_base64: null,
+    calibration: {
+      calibrated: true,
+      canvasStart: { x: 90, y: 80 },
+      robotStart: { x: 0, y: 0, z: 0, r: 0 },
+      pixelsPerMm: 1.2,
+    },
+    options: {
+      mock: true,
+    },
+  };
+}
+
+function clampMeasurementDensity(value: number): number {
+  return Math.min(MEASUREMENT_DENSITY_MAX, Math.max(MEASUREMENT_DENSITY_MIN, value));
 }
 
 function getMeasurementDensityFromProfile(selectedProfile: ProfileModel | null): number {
@@ -82,55 +129,92 @@ function getMeasurementDensityFromProfile(selectedProfile: ProfileModel | null):
     (options?.pointsPerCm as number | undefined);
 
   if (typeof densityOption === 'number' && Number.isFinite(densityOption) && densityOption >= 0) {
-    return densityOption;
+    // Clamp profile-derived values defensively to prevent backend errors
+    return clampMeasurementDensity(densityOption);
   }
 
   return 0.5;
 }
 
-function detectItemsToPoints(items: PathItemApiResponse[]): PixelPointApiResponse[] {
+function detectItemsToBatteries(items: PathItemApiResponse[]): BatteryCornersApiResponse[] {
   return items
     .map((item) => {
-      if (typeof item.center_x !== 'number' || typeof item.center_y !== 'number') {
+      const corners = (item.corners ?? [])
+        .map((corner) => {
+          const x = (corner as { x?: number; pixelX?: number }).x ?? corner.pixelX;
+          const y = (corner as { y?: number; pixelY?: number }).y ?? corner.pixelY;
+          if (typeof x !== 'number' || typeof y !== 'number') {
+            return null;
+          }
+
+          return { x, y };
+        })
+        .filter((corner): corner is PixelPointApiResponse => corner !== null);
+
+      if (corners.length === 0) {
         return null;
       }
 
-      return {
-        x: item.center_x,
-        y: item.center_y,
-      };
+      return { corners };
     })
-    .filter((item): item is PixelPointApiResponse => item !== null);
+    .filter((battery): battery is BatteryCornersApiResponse => battery !== null);
+}
+
+function flattenBatteryCorners(batteries: BatteryCornersApiResponse[]): PixelPointApiResponse[] {
+  return batteries.flatMap((battery) => battery.corners);
 }
 
 function createMockPopulatedPath(
-  corners: PixelPointApiResponse[],
-  measurementDensity: number,
+  batteries: BatteryCornersApiResponse[],
+  measuringPointsPerCm: number,
 ): PathPopulatePointApiResponse[] {
-  if (corners.length === 0) {
+  if (batteries.length === 0) {
     return [];
   }
 
-  const measurementCountPerSegment = Math.max(0, Math.round(measurementDensity * 2));
+  const measurementCountPerSegment = Math.max(0, Math.round(measuringPointsPerCm * 2));
   const path: PathPopulatePointApiResponse[] = [];
+  let globalIndex = 0;
+  let measurementIndex = 0;
 
-  for (let index = 0; index < corners.length; index += 1) {
-    const current = corners[index];
-    const next = corners[index + 1];
-
-    path.push({ ...current, type: 'corner', isCorner: true });
-
-    if (!next || measurementCountPerSegment === 0) {
+  for (let bIndex = 0; bIndex < batteries.length; bIndex += 1) {
+    const batteryCorners = batteries[bIndex].corners;
+    if (batteryCorners.length === 0) {
       continue;
     }
 
-    for (let step = 1; step <= measurementCountPerSegment; step += 1) {
-      const ratio = step / (measurementCountPerSegment + 1);
+    for (let cIndex = 0; cIndex < batteryCorners.length; cIndex += 1) {
+      const current = batteryCorners[cIndex];
+      const next = batteryCorners[(cIndex + 1) % batteryCorners.length];
+
       path.push({
-        x: current.x + (next.x - current.x) * ratio,
-        y: current.y + (next.y - current.y) * ratio,
-        type: 'measurement',
+        index: `${globalIndex}`,
+        batteryNr: bIndex,
+        cornerIndex: cIndex,
+        measurementIndex,
+        pixelX: current.x,
+        pixelY: current.y,
       });
+      globalIndex += 1;
+      measurementIndex += 1;
+
+      if (measurementCountPerSegment === 0) {
+        continue;
+      }
+
+      for (let step = 1; step <= measurementCountPerSegment; step += 1) {
+        const ratio = step / (measurementCountPerSegment + 1);
+        path.push({
+          index: `${globalIndex}`,
+          batteryNr: bIndex,
+          cornerIndex: cIndex,
+          measurementIndex,
+          pixelX: current.x + (next.x - current.x) * ratio,
+          pixelY: current.y + (next.y - current.y) * ratio,
+        });
+        globalIndex += 1;
+        measurementIndex += 1;
+      }
     }
   }
 
@@ -138,39 +222,44 @@ function createMockPopulatedPath(
 }
 
 function parsePopulatePath(response: {
-  waypoints?: PathPopulatePointApiResponse[];
   path?: PathPopulatePointApiResponse[];
-  points?: PathPopulatePointApiResponse[];
 }): PathPopulatePointApiResponse[] {
-  return response.path ?? response.waypoints ?? response.points ?? [];
+  return (response.path ?? []).filter((point) => {
+    return (
+      typeof point.pixelX === 'number' &&
+      typeof point.pixelY === 'number' &&
+      typeof point.index === 'string' &&
+      typeof point.batteryNr === 'number' &&
+      Number.isInteger(point.batteryNr) &&
+      point.batteryNr >= 0 &&
+      typeof point.cornerIndex === 'number' &&
+      Number.isInteger(point.cornerIndex) &&
+      point.cornerIndex >= 0 &&
+      typeof point.measurementIndex === 'number' &&
+      Number.isInteger(point.measurementIndex) &&
+      point.measurementIndex >= 0
+    );
+  });
 }
 
-function splitCornersAndMeasurements(
-  points: PathPopulatePointApiResponse[],
-  corners: PixelPointApiResponse[],
-): { corners: PixelPointApiResponse[]; measurements: PixelPointApiResponse[] } {
-  const cornerSet = new Set(corners.map((point) => `${point.x}:${point.y}`));
+// Transform populated path points to simple pixel coordinates for preview
+function populatedPathToPixels(points: PathPopulatePointApiResponse[]): PixelPointApiResponse[] {
+  return points.map((p) => ({
+    x: p.pixelX,
+    y: p.pixelY,
+  }));
+}
 
-  const mapped = points.map((point) => ({ x: point.x, y: point.y, meta: point }));
-  const parsedCorners = mapped
-    .filter((point) => point.meta.type === 'corner' || point.meta.isCorner)
-    .map((point) => ({ x: point.x, y: point.y }));
-
-  if (parsedCorners.length > 0) {
-    return {
-      corners: parsedCorners,
-      measurements: mapped
-        .filter((point) => !(point.meta.type === 'corner' || point.meta.isCorner))
-        .map((point) => ({ x: point.x, y: point.y })),
-    };
-  }
-
-  return {
-    corners,
-    measurements: mapped
-      .filter((point) => !cornerSet.has(`${point.x}:${point.y}`))
-      .map((point) => ({ x: point.x, y: point.y })),
-  };
+// Transform populated path points to job path format with metadata
+function populatedPathToJobPath(points: PathPopulatePointApiResponse[]): JobPathPointApiResponse[] {
+  return points.map((p) => ({
+    pixelX: p.pixelX,
+    pixelY: p.pixelY,
+    index: p.index,
+    batteryNr: p.batteryNr,
+    cornerIndex: p.cornerIndex,
+    measurementIndex: p.measurementIndex,
+  }));
 }
 
 export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
@@ -187,23 +276,22 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
     cornerPoints: [],
     measurementPoints: [],
     populatedPath: [],
-    detectItems: [],
+    populatedPathWithMetadata: [],
+    batteries: [],
   });
   const populateRequestCounterRef = useRef(0);
 
   const runPopulate = useCallback(
-    async (
-      cornerPoints: PixelPointApiResponse[],
-      measurementDensity: number,
-      detectItems: PathItemApiResponse[],
-    ) => {
-      if (cornerPoints.length === 0) {
-        console.log(`[RoutePlan] Populate cancelled: no corner points`);
+    async (batteries: BatteryCornersApiResponse[], measurementDensity: number) => {
+      if (batteries.length === 0) {
         setState((prev) => ({
           ...prev,
           isPopulating: false,
+          cornerPoints: [],
           measurementPoints: [],
           populatedPath: [],
+          populatedPathWithMetadata: [],
+          batteries: [],
         }));
         return;
       }
@@ -212,56 +300,55 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
       populateRequestCounterRef.current = requestId;
       setState((prev) => ({ ...prev, isPopulating: true, routeError: null }));
 
-      console.log(
-        `[RoutePlan] Populating path (request ${requestId}): ${cornerPoints.length} corners, density ${measurementDensity}`,
-      );
-
       try {
         const populateResponse = isMockModeEnabled()
           ? {
-              path: createMockPopulatedPath(cornerPoints, measurementDensity),
+              path: createMockPopulatedPath(batteries, measurementDensity),
             }
           : await populatePath({
-              corners: cornerPoints,
-              measurementDensity,
-              detections: detectItems,
+              batteries,
+              measuringPointsPerCm: measurementDensity,
               options: selectedProfile?.settings.options ?? {},
             });
 
         if (populateRequestCounterRef.current !== requestId) {
-          console.log(`[RoutePlan] Request ${requestId} superseded by newer request`);
           return;
         }
 
-        const populated = parsePopulatePath(populateResponse).map((point) => ({
-          x: point.x,
-          y: point.y,
-          type: point.type,
-          isCorner: point.isCorner,
-        }));
+        const populatedWithMetadata = parsePopulatePath(populateResponse);
+        if ((populateResponse.path?.length ?? 0) > 0 && populatedWithMetadata.length === 0) {
+          throw new Error('INVALID_PATH_METADATA');
+        }
 
-        const pathPoints = populated.length > 0 ? populated : cornerPoints;
-        const split = splitCornersAndMeasurements(pathPoints, cornerPoints);
-
-        console.log(
-          `[RoutePlan] Path populated successfully: ${split.corners.length} corners, ${split.measurements.length} measurements`,
+        const populatedPixels = populatedPathToPixels(populatedWithMetadata);
+        const currentCornerPoints = flattenBatteryCorners(batteries);
+        const cornerSet = new Set(currentCornerPoints.map((point) => `${point.x}:${point.y}`));
+        const separatedMeasurements = populatedPixels.filter(
+          (point) => !cornerSet.has(`${point.x}:${point.y}`),
         );
 
         setState((prev) => ({
           ...prev,
           isPopulating: false,
           routeError: null,
-          cornerPoints: split.corners,
-          measurementPoints: split.measurements,
-          populatedPath: pathPoints.map(({ x, y }) => ({ x, y })),
+          cornerPoints: currentCornerPoints,
+          measurementPoints: separatedMeasurements,
+          populatedPath: populatedPixels,
+          populatedPathWithMetadata: populatedWithMetadata,
+          batteries,
         }));
       } catch (error) {
-        console.error('[RoutePlan] Path populate failed:', error);
+        console.error('Path populate failed:', error);
         if (populateRequestCounterRef.current === requestId) {
+          const routeError =
+            error instanceof Error && error.message === 'INVALID_PATH_METADATA'
+              ? 'Received invalid route metadata from backend. Please retry.'
+              : 'Failed to update route preview. Please retry.';
+
           setState((prev) => ({
             ...prev,
             isPopulating: false,
-            routeError: 'Failed to update route preview. Please retry.',
+            routeError,
           }));
         }
       }
@@ -282,32 +369,30 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
     }));
 
     try {
-      const detectionResponse = isMockModeEnabled()
-        ? {
-            ok: true,
-            detections: [],
-            image_base64: null,
-          }
+      const detectionResponse: PathDetectResponseApi = isMockModeEnabled()
+        ? createMockDetectionResponse()
         : await detectPath({ options: selectedProfile?.settings.options ?? {} });
 
-      const detectItems = detectionResponse.detections ?? [];
-      const detectedPoints = isMockModeEnabled()
-        ? createMockDetectedPoints()
-        : detectItemsToPoints(detectItems);
+      const detectedBatteries = detectItemsToBatteries(detectionResponse.detections ?? []);
 
-      if (detectedPoints.length === 0) {
+      if (detectedBatteries.length === 0) {
         throw new Error('No path points were detected.');
       }
+
+      const detectedPoints = flattenBatteryCorners(detectedBatteries);
 
       setState((prev) => ({
         ...prev,
         isInitializing: false,
         cornerPoints: detectedPoints,
-        detectItems,
+        measurementPoints: [],
+        populatedPath: [],
+        populatedPathWithMetadata: [],
+        batteries: detectedBatteries,
         imageBase64: detectionResponse.image_base64 ?? null,
       }));
 
-      await runPopulate(detectedPoints, defaultMeasurementDensity, detectItems);
+      await runPopulate(detectedBatteries, defaultMeasurementDensity);
     } catch (error) {
       console.error('Path detection failed:', error);
       setState((prev) => ({
@@ -327,6 +412,8 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
         cornerPoints: [],
         measurementPoints: [],
         populatedPath: [],
+        populatedPathWithMetadata: [],
+        batteries: [],
         imageBase64: null,
       }));
       return;
@@ -336,32 +423,82 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
   }, [initializeRoute, selectedProfile]);
 
   const setMeasurementDensity = (value: number) => {
+    if (!isMeasurementDensityInRange(value)) {
+      return;
+    }
+
     setState((prev) => ({ ...prev, measurementDensity: value }));
-    void runPopulate(state.cornerPoints, value, state.detectItems);
+    void runPopulate(state.batteries, value);
   };
 
   const moveCornerPoint = (pointId: string, x: number, y: number) => {
-    const cornerIndex = Number(pointId.replace('corner-', '')) - 1;
+    const match = /^battery-(\d+)-corner-(\d+)$/.exec(pointId);
+    if (!match) {
+      return;
+    }
+
+    const batteryIndex = Number(match[1]);
+    const cornerIndex = Number(match[2]);
     if (
+      !Number.isInteger(batteryIndex) ||
       !Number.isInteger(cornerIndex) ||
+      batteryIndex < 0 ||
       cornerIndex < 0 ||
-      cornerIndex >= state.cornerPoints.length
+      batteryIndex >= state.batteries.length ||
+      cornerIndex >= state.batteries[batteryIndex].corners.length
     ) {
       return;
     }
 
-    const updatedCorners = state.cornerPoints.map((point, index) =>
-      index === cornerIndex ? { x, y } : point,
-    );
+    const updatedBatteries = state.batteries.map((battery, bIndex) => {
+      if (bIndex !== batteryIndex) {
+        return battery;
+      }
 
-    setState((prev) => ({ ...prev, cornerPoints: updatedCorners }));
-    void runPopulate(updatedCorners, state.measurementDensity, state.detectItems);
+      return {
+        ...battery,
+        corners: battery.corners.map((corner, cIndex) =>
+          cIndex === cornerIndex ? { x, y } : corner,
+        ),
+      };
+    });
+
+    setState((prev) => ({
+      ...prev,
+      batteries: updatedBatteries,
+      cornerPoints: flattenBatteryCorners(updatedBatteries),
+    }));
+    void runPopulate(updatedBatteries, state.measurementDensity);
   };
 
   const createScanJob = async (): Promise<string | null> => {
-    const path = state.populatedPath.length > 0 ? state.populatedPath : state.cornerPoints;
+    // Use populated path with metadata if available, otherwise fall back to simple pixel points
+    let jobPath: JobPathPointApiResponse[];
 
-    if (path.length === 0) {
+    if (state.populatedPathWithMetadata.length > 0) {
+      // Backend provided metadata, use it
+      jobPath = populatedPathToJobPath(state.populatedPathWithMetadata);
+    } else if (state.populatedPath.length > 0) {
+      // Fallback: convert pixel points to job path format without metadata
+      jobPath = state.populatedPath.map((point, index) => ({
+        pixelX: point.x,
+        pixelY: point.y,
+        index: `${index}`,
+        batteryNr: undefined,
+        cornerIndex: undefined,
+        measurementIndex: undefined,
+      }));
+    } else if (state.cornerPoints.length > 0) {
+      // Last resort: use corners only
+      jobPath = state.cornerPoints.map((point, index) => ({
+        pixelX: point.x,
+        pixelY: point.y,
+        index: `${index}`,
+        batteryNr: undefined,
+        cornerIndex: undefined,
+        measurementIndex: undefined,
+      }));
+    } else {
       return null;
     }
 
@@ -375,7 +512,7 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
       }
 
       const response = await createJob({
-        path,
+        path: jobPath,
         workZ: selectedProfile?.settings.workZ ?? 0,
         workR: selectedProfile?.settings.workR ?? 0,
         dryRun: state.dryRun,
@@ -427,11 +564,13 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
     };
 
     const normalizedRoutePath = routePoints.map((point) => normalizeToUnit(point, bounds));
-    const normalizedCorners = state.cornerPoints.map((point, index) => ({
-      id: `corner-${index + 1}`,
-      label: `C${index + 1}`,
-      ...normalizeToUnit(point, bounds),
-    }));
+    const normalizedCorners = state.batteries.flatMap((battery, bIndex) =>
+      battery.corners.map((point, cIndex) => ({
+        id: `battery-${bIndex}-corner-${cIndex}`,
+        label: `B${bIndex + 1}C${cIndex + 1}`,
+        ...normalizeToUnit(point, bounds),
+      })),
+    );
     const normalizedMeasurements = state.measurementPoints.map((point, index) => ({
       id: `measurement-${index + 1}`,
       label: `M${index + 1}`,
@@ -446,7 +585,23 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
       draggablePointIds: cornerPointIds,
       bounds,
     };
-  }, [state.cornerPoints, state.measurementPoints, state.populatedPath]);
+  }, [state.batteries, state.cornerPoints, state.measurementPoints, state.populatedPath]);
+
+  const resetRoutePlan = useCallback(async () => {
+    setState((prev) => ({
+      ...prev,
+      isInitializing: true,
+      isPopulating: false,
+      routeError: null,
+      imageBase64: null,
+      cornerPoints: [],
+      measurementPoints: [],
+      populatedPath: [],
+      populatedPathWithMetadata: [],
+      batteries: [],
+    }));
+    await initializeRoute();
+  }, [initializeRoute]);
 
   return {
     state,
@@ -454,7 +609,7 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
     setDryRun: (value: boolean) => setState((prev) => ({ ...prev, dryRun: value })),
     setMeasurementDensity,
     moveCornerPoint,
-    resetRoutePlan: initializeRoute,
+    resetRoutePlan,
     createScanJob,
   };
 }

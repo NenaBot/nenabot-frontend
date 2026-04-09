@@ -1,21 +1,21 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { useProgressData } from '../../hooks/useProgressData';
 import { useJobEvents } from '../../hooks/useJobEvents';
-import { isMockModeEnabled } from '../../state/mockMode';
-import { mockProgressTabState } from '../../mocks/progressMocks';
+import { useMockMode } from '../../hooks/useMockMode';
+import { mockJobEvents } from '../../mocks/progressMocks';
 
 jest.mock('../../hooks/useJobEvents', () => ({
   useJobEvents: jest.fn(),
 }));
 
-jest.mock('../../state/mockMode', () => ({
-  isMockModeEnabled: jest.fn(),
+jest.mock('../../hooks/useMockMode', () => ({
+  useMockMode: jest.fn(),
 }));
 
 describe('useProgressData', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (isMockModeEnabled as jest.Mock).mockReturnValue(false);
+    (useMockMode as jest.Mock).mockReturnValue([false, jest.fn()]);
     (useJobEvents as jest.Mock).mockReturnValue({
       events: [],
       error: null,
@@ -73,6 +73,42 @@ describe('useProgressData', () => {
     expect(result.current.progressState?.measurements[0]).toEqual(
       expect.objectContaining({
         point: 'WP-4',
+        intensity: 0,
+        status: 'complete',
+      }),
+    );
+  });
+
+  test('extracts measured intensity from measurement scanResult', async () => {
+    (useJobEvents as jest.Mock).mockReturnValue({
+      events: [
+        {
+          type: 'job:waypoint_completed',
+          state: 'running',
+          totalPoints: 12,
+          lastPointProcessed: 5,
+          timestamp: '2026-03-18T10:00:01.000Z',
+          measurement: {
+            waypointIndex: 5,
+            scanResult: {
+              measuredValue: 0.63,
+            },
+          },
+        },
+      ],
+      error: null,
+    });
+
+    const { result } = renderHook(() => useProgressData('job-1'));
+
+    await waitFor(() => {
+      expect(result.current.progressState?.measurements).toHaveLength(1);
+    });
+
+    expect(result.current.progressState?.measurements[0]).toEqual(
+      expect.objectContaining({
+        point: 'WP-5',
+        intensity: 0.63,
         status: 'complete',
       }),
     );
@@ -91,8 +127,44 @@ describe('useProgressData', () => {
     });
   });
 
+  test('stays loading until progress events arrive', async () => {
+    (useJobEvents as jest.Mock).mockReturnValue({
+      events: [],
+      error: null,
+    });
+
+    const { result, rerender } = renderHook(({ jobId }) => useProgressData(jobId), {
+      initialProps: { jobId: 'job-4' as string | null },
+    });
+
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.progressState).toBeNull();
+
+    (useJobEvents as jest.Mock).mockReturnValue({
+      events: [
+        {
+          type: 'job:started',
+          state: 'running',
+          totalPoints: 8,
+          lastPointProcessed: 0,
+          timestamp: '2026-03-18T10:00:00.000Z',
+        },
+      ],
+      error: null,
+    });
+
+    rerender({ jobId: 'job-4' });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.progressState?.scan.state).toBe('running');
+    expect(result.current.progressState?.scan.totalPoints).toBe(8);
+  });
+
   test('uses mock progress state when mock mode is enabled', async () => {
-    (isMockModeEnabled as jest.Mock).mockReturnValue(true);
+    (useMockMode as jest.Mock).mockReturnValue([true, jest.fn()]);
 
     const { result } = renderHook(() => useProgressData('job-3'));
 
@@ -100,7 +172,17 @@ describe('useProgressData', () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(result.current.progressState).toEqual(mockProgressTabState);
+    expect(result.current.progressState?.scan.state).toBe('running');
+    expect(result.current.progressState?.scan.totalPoints).toBe(10);
+    expect(result.current.progressState?.scan.completedPoints).toBe(4);
+    expect(result.current.progressState?.events).toHaveLength(mockJobEvents.length);
+    expect(result.current.progressState?.measurements[0]).toEqual(
+      expect.objectContaining({
+        point: 'WP-4',
+        intensity: 0.87,
+        status: 'complete',
+      }),
+    );
     expect(result.current.error).toBeNull();
     expect(useJobEvents).toHaveBeenCalledWith(null);
   });

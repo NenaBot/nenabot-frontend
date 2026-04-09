@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('setup to camera to route flow keeps job action guarded', async ({ page }) => {
+test('setup to camera to route flow initializes route and enables job action', async ({ page }) => {
   await page.goto('/');
 
   await expect(page.getByRole('heading', { name: 'Profile Setup' })).toBeVisible();
@@ -12,8 +12,8 @@ test('setup to camera to route flow keeps job action guarded', async ({ page }) 
   await expect(page.getByRole('heading', { name: 'Route Planning' })).toBeVisible();
 
   const startJobButton = page.getByRole('button', { name: 'Start Scan Job' });
-  await expect(startJobButton).toBeDisabled();
+  await expect(startJobButton).toBeEnabled();
 
-  await expect(page.getByText('Detected points: 0')).toBeVisible();
-  await expect(page.getByText('Checked waypoints: 0')).toBeVisible();
+  await expect(page.getByText(/Detected batteries:\s*[1-9]\d*/)).toBeVisible();
+  await expect(page.getByText(/Checked waypoints:\s*[1-9]\d*/)).toBeVisible();
 });

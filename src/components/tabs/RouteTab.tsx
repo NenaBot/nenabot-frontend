@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { RoutePreviewPanel } from '../shared/RoutePreviewPanel';
 import { useRoutePlan } from '../../hooks/useRoutePlan';
 import { ProfileModel } from '../../types/profile.types';
+import { getMeasurementDensityValidationError } from '../../types/route.types';
 import { RouteSettingsCard } from './route/RouteSettingsCard';
 
 interface RouteTabProps {
@@ -31,11 +32,15 @@ export function RouteTab({ selectedProfile, onJobCreated }: RouteTabProps) {
     state.measurementDensity,
   );
   const [measurementDensityError, setMeasurementDensityError] = useState<string | null>(null);
-  const detectedPoints = state.detectItems.length;
-  const checkedWaypoints = detectedPoints > 0 ? state.measurementPoints.length : 0;
+  const detectedBatteries = state.batteries.length;
+  const checkedWaypoints =
+    state.cornerPoints.length > 0
+      ? state.populatedPath.length > 0
+        ? state.populatedPath.length
+        : state.cornerPoints.length
+      : 0;
   const isRouteReady =
-    detectedPoints > 0 &&
-    checkedWaypoints > 0 &&
+    state.cornerPoints.length > 0 &&
     preview.routePath.length > 0 &&
     !state.isInitializing &&
     !state.isPopulating;
@@ -72,19 +77,14 @@ export function RouteTab({ selectedProfile, onJobCreated }: RouteTabProps) {
   const handleMeasurementDensityChange = (nextValue: string) => {
     setMeasurementDensityInput(nextValue);
 
-    if (nextValue.trim().length === 0) {
-      setMeasurementDensityError('Measurement density is required.');
-      return;
-    }
-
-    const parsed = Number(nextValue);
-    if (!Number.isFinite(parsed) || parsed < 0) {
-      setMeasurementDensityError('Enter a value greater than or equal to 0.');
+    const validationError = getMeasurementDensityValidationError(nextValue);
+    if (validationError) {
+      setMeasurementDensityError(validationError);
       return;
     }
 
     setMeasurementDensityError(null);
-    setPendingMeasurementDensity(parsed);
+    setPendingMeasurementDensity(Number(nextValue));
   };
 
   const handleCornerPointDragEnd = (pointId: string, normalizedX: number, normalizedY: number) => {
@@ -185,7 +185,7 @@ export function RouteTab({ selectedProfile, onJobCreated }: RouteTabProps) {
       </div>
 
       <div className="flex items-center justify-between text-sm text-[var(--md-sys-color-on-surface-variant)] border border-[var(--md-sys-color-outline-variant)] rounded-lg px-3 py-2">
-        <span>Detected points: {detectedPoints}</span>
+        <span>Detected batteries: {detectedBatteries}</span>
         <span>Checked waypoints: {checkedWaypoints}</span>
       </div>
 

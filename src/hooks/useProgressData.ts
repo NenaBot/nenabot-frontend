@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { mockProgressTabState } from '../mocks/progressMocks';
+import { mockJobEvents } from '../mocks/progressMocks';
+import { JobEventApiResponse } from '../services/apiCalls';
 import { ProgressEvent, ProgressTabState, ScanLifecycleState } from '../types/progress.types';
-import { isMockModeEnabled } from '../state/mockMode';
 import { useJobEvents } from './useJobEvents';
+import { useMockMode } from './useMockMode';
 
 function toLifecycleState(state: string | undefined): ScanLifecycleState {
   if (state === 'completed' || state === 'failed' || state === 'stopped' || state === 'running') {
@@ -41,102 +42,123 @@ function normalizeEventTime(timestamp: unknown): string {
   return parsed.toLocaleTimeString();
 }
 
+function toMeasurementIntensity(event: JobEventApiResponse): number {
+  const scanResult = event.measurement?.scanResult;
+  if (!scanResult || typeof scanResult !== 'object') {
+    return 0;
+  }
+
+  const intensityCandidate =
+    (scanResult as { measuredValue?: unknown }).measuredValue ??
+    (scanResult as { value?: unknown }).value ??
+    (scanResult as { intensity?: unknown }).intensity;
+
+  return typeof intensityCandidate === 'number' && Number.isFinite(intensityCandidate)
+    ? intensityCandidate
+    : 0;
+}
+
+function mapEventsToProgressState(events: JobEventApiResponse[]): ProgressTabState {
+  if (events.length === 0) {
+    return {
+      scan: {
+        state: 'created',
+        completedPoints: 0,
+        totalPoints: 0,
+        elapsedSeconds: 0,
+        estimatedRemainingSeconds: 0,
+      },
+      events: [],
+      measurements: [],
+    };
+  }
+
+  const lastEvent = events[events.length - 1];
+  const totalPoints =
+    typeof lastEvent.totalPoints === 'number' && Number.isFinite(lastEvent.totalPoints)
+      ? Math.max(0, Math.round(lastEvent.totalPoints))
+      : 0;
+  const completedPoints =
+    typeof lastEvent.lastPointProcessed === 'number' &&
+    Number.isFinite(lastEvent.lastPointProcessed)
+      ? Math.max(0, Math.round(lastEvent.lastPointProcessed))
+      : 0;
+
+  return {
+    scan: {
+      state: toLifecycleState(lastEvent.state),
+      completedPoints,
+      totalPoints,
+      elapsedSeconds: 0,
+      estimatedRemainingSeconds: Math.max(0, totalPoints - completedPoints),
+    },
+    events: events.map((event, index) => ({
+      id: index + 1,
+      time: normalizeEventTime(event.timestamp),
+      level: toEventLevel(normalizeEventType(event.type)),
+      message: normalizeEventType(event.type),
+    })),
+    measurements: events
+      .filter((event) => Boolean(event.measurement))
+      .map((event, index) => ({
+        id: index + 1,
+        point: `WP-${event.measurement?.waypointIndex ?? index + 1}`,
+        wavelength: '-',
+        intensity: toMeasurementIntensity(event),
+        status: normalizeEventType(event.type).includes('completed') ? 'complete' : 'processing',
+      })),
+  };
+}
+
 export function useProgressData(jobId: string | null) {
+  const [mockMode] = useMockMode();
   const [progressState, setProgressState] = useState<ProgressTabState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { events: jobEvents, error: streamError } = useJobEvents(
-    isMockModeEnabled() ? null : jobId,
-  );
+  const { events: jobEvents, error: streamError } = useJobEvents(mockMode ? null : jobId);
+  const hasEvents = jobEvents.length > 0;
 
   useEffect(() => {
-    console.log(
-      `[ProgressData] Initializing for jobId: ${jobId}, mockMode: ${isMockModeEnabled()}`,
-    );
-
-    if (isMockModeEnabled()) {
-      console.log(`[ProgressData] Using mock data`);
-      setProgressState(mockProgressTabState);
+    if (mockMode) {
+      setProgressState(mapEventsToProgressState(mockJobEvents));
       setError(null);
       setIsLoading(false);
       return;
     }
 
-    setProgressState(null);
     setError(null);
 
     if (!jobId) {
-      console.log(`[ProgressData] No job ID provided`);
+      setProgressState(null);
       setError('No active job selected.');
       setIsLoading(false);
       return;
     }
 
-    console.log(`[ProgressData] Loading progress for job ${jobId}`);
-    setIsLoading(true);
+    if (!hasEvents && !streamError) {
+      setProgressState(null);
+      setIsLoading(true);
+      return;
+    }
+
     setIsLoading(false);
-  }, [jobId]);
+  }, [hasEvents, jobId, mockMode, streamError]);
 
   const mappedState = useMemo<ProgressTabState | null>(() => {
-    if (isMockModeEnabled()) {
-      return mockProgressTabState;
+    if (mockMode) {
+      return mapEventsToProgressState(mockJobEvents);
     }
 
     if (!jobId) {
       return null;
     }
 
-    if (jobEvents.length === 0) {
-      console.log(`[ProgressData] No events yet for job ${jobId}`);
-      return {
-        scan: {
-          state: 'created',
-          completedPoints: 0,
-          totalPoints: 0,
-          elapsedSeconds: 0,
-          estimatedRemainingSeconds: 0,
-        },
-        events: [],
-        measurements: [],
-      };
+    if (!hasEvents && !streamError) {
+      return null;
     }
 
-    const lastEvent = jobEvents[jobEvents.length - 1];
-    const totalPoints =
-      typeof lastEvent.totalPoints === 'number' && Number.isFinite(lastEvent.totalPoints)
-        ? Math.max(0, Math.round(lastEvent.totalPoints))
-        : 0;
-    const completedPoints =
-      typeof lastEvent.lastPointProcessed === 'number' &&
-      Number.isFinite(lastEvent.lastPointProcessed)
-        ? Math.max(0, Math.round(lastEvent.lastPointProcessed))
-        : 0;
-
-    return {
-      scan: {
-        state: toLifecycleState(lastEvent.state),
-        completedPoints,
-        totalPoints,
-        elapsedSeconds: 0,
-        estimatedRemainingSeconds: Math.max(0, totalPoints - completedPoints),
-      },
-      events: jobEvents.map((event, index) => ({
-        id: index + 1,
-        time: normalizeEventTime(event.timestamp),
-        level: toEventLevel(normalizeEventType(event.type)),
-        message: normalizeEventType(event.type),
-      })),
-      measurements: jobEvents
-        .filter((event) => Boolean(event.measurement))
-        .map((event, index) => ({
-          id: index + 1,
-          point: `WP-${event.measurement?.waypointIndex ?? index + 1}`,
-          wavelength: '-',
-          intensity: 0,
-          status: normalizeEventType(event.type).includes('completed') ? 'complete' : 'processing',
-        })),
-    };
-  }, [jobEvents, jobId]);
+    return mapEventsToProgressState(jobEvents);
+  }, [hasEvents, jobEvents, jobId, mockMode, streamError]);
 
   useEffect(() => {
     setProgressState(mappedState);
@@ -145,6 +167,7 @@ export function useProgressData(jobId: string | null) {
   useEffect(() => {
     if (streamError) {
       setError(streamError);
+      setIsLoading(false);
       return;
     }
 
