@@ -255,6 +255,71 @@ describe('useRoutePlan', () => {
     expect(result.current.state.imageBase64).toBe('new-image');
   });
 
+  test('reset clears stale image and sets initializing state before new detection resolves', async () => {
+    const { result } = renderHook(() => useRoutePlan({ selectedProfile }));
+
+    await waitFor(() => {
+      expect(detectPath).toHaveBeenCalledTimes(1);
+      expect(populatePath).toHaveBeenCalledTimes(1);
+      expect(result.current.state.imageBase64).toBe('abc123');
+    });
+
+    type DetectionResult = {
+      ok: boolean;
+      detections: Array<{
+        center_x: number;
+        center_y: number;
+        corners: Array<{ x: number; y: number }>;
+      }>;
+      image_base64: string;
+    };
+
+    let resolveDetection: ((value: DetectionResult) => void) | null = null;
+
+    const pendingDetection = new Promise<DetectionResult>((resolve) => {
+      resolveDetection = resolve;
+    });
+
+    (detectPath as jest.Mock).mockImplementationOnce(() => pendingDetection);
+
+    let resetPromise: Promise<void> | null = null;
+    await act(async () => {
+      resetPromise = result.current.resetRoutePlan();
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.isInitializing).toBe(true);
+      expect(result.current.state.imageBase64).toBeNull();
+    });
+
+    expect(resolveDetection).not.toBeNull();
+    resolveDetection?.({
+      ok: true,
+      detections: [
+        {
+          center_x: 12,
+          center_y: 22,
+          corners: [
+            { x: 10, y: 20 },
+            { x: 14, y: 20 },
+            { x: 14, y: 24 },
+            { x: 10, y: 24 },
+          ],
+        },
+      ],
+      image_base64: 'fresh-image',
+    });
+
+    await act(async () => {
+      await resetPromise;
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.isInitializing).toBe(false);
+      expect(result.current.state.imageBase64).toBe('fresh-image');
+    });
+  });
+
   test('creates a scan job with populated path and dry run settings', async () => {
     (createJob as jest.Mock).mockResolvedValue({ id: 'job-123' });
 

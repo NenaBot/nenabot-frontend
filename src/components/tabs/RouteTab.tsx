@@ -33,7 +33,12 @@ export function RouteTab({ selectedProfile, onJobCreated }: RouteTabProps) {
   );
   const [measurementDensityError, setMeasurementDensityError] = useState<string | null>(null);
   const detectedBatteries = state.batteries.length;
-  const checkedWaypoints = state.cornerPoints.length > 0 ? state.measurementPoints.length : 0;
+  const checkedWaypoints =
+    state.cornerPoints.length > 0
+      ? state.populatedPath.length > 0
+        ? state.populatedPath.length
+        : state.cornerPoints.length
+      : 0;
   const isRouteReady =
     state.cornerPoints.length > 0 &&
     preview.routePath.length > 0 &&

@@ -16,8 +16,6 @@ export function useJobEvents(jobId: string | null): UseJobEventsResult {
     setError(null);
 
     if (!jobId) {
-      setEvents([]);
-      setError(null);
       return;
     }
 

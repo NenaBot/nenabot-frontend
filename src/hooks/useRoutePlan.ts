@@ -590,7 +590,10 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
   const resetRoutePlan = useCallback(async () => {
     setState((prev) => ({
       ...prev,
+      isInitializing: true,
+      isPopulating: false,
       routeError: null,
+      imageBase64: null,
       cornerPoints: [],
       measurementPoints: [],
       populatedPath: [],

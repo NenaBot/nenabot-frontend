@@ -81,6 +81,7 @@ describe('RouteTab', () => {
 
     const startButton = screen.getByRole('button', { name: 'Start Scan Job' });
     expect(startButton).not.toBeDisabled();
+    expect(screen.getByText('Checked waypoints: 4')).toBeInTheDocument();
 
     fireEvent.click(startButton);
 
@@ -148,6 +149,7 @@ describe('RouteTab', () => {
 
     const startButton = screen.getByRole('button', { name: 'Start Scan Job' });
     expect(startButton).not.toBeDisabled();
+    expect(screen.getByText('Checked waypoints: 4')).toBeInTheDocument();
 
     fireEvent.click(startButton);
 
