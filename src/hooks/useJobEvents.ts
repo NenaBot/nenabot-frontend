@@ -11,6 +11,10 @@ export function useJobEvents(jobId: string | null): UseJobEventsResult {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Reset stream state whenever the job changes to avoid mixing histories.
+    setEvents([]);
+    setError(null);
+
     if (!jobId) {
       setEvents([]);
       setError(null);
