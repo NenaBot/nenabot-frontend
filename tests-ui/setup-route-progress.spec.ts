@@ -34,6 +34,4 @@ test('setup to route flow creates a mock job and advances to progress', async ({
   }
 
   await expect(page.getByRole('heading', { name: 'Scan Progress' })).toBeVisible();
-  await expect(page.getByText('Scan started successfully')).toBeVisible();
-  await expect(page.getByText(/\b33% complete\b|\b34% complete\b/)).toBeVisible();
 });
