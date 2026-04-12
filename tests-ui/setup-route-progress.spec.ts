@@ -26,11 +26,7 @@ test('setup to route flow creates a mock job and advances to progress', async ({
   const measurementDensityInput = page.locator('input[type="number"]').first();
   await measurementDensityInput.fill('1.25');
 
-  if (await startJobButton.isEnabled()) {
-    await startJobButton.click();
-  } else {
-    await page.getByRole('button', { name: 'Progress', exact: true }).click();
-  }
+  await startJobButton.click();
 
   await expect(page.getByRole('heading', { name: 'Scan Progress' })).toBeVisible();
 });
