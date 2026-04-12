@@ -1,19 +1,35 @@
 import { expect, test } from '@playwright/test';
 
-test('results tab supports basic result controls', async ({ page }) => {
+async function enableMockMode(page) {
+  await page.addInitScript(() => {
+    window.localStorage.setItem('nenabot-use-mock-data', 'true');
+  });
+}
+
+test('results tab supports threshold, point navigation, and filtering controls', async ({ page }) => {
+  await enableMockMode(page);
   await page.goto('/');
   await page.getByRole('button', { name: 'Results' }).click();
 
   await expect(page.getByRole('heading', { name: 'Scan Results' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Load Scan' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Export Data|Exporting\.\.\./ })).toBeVisible();
 
-  const refreshButton = page.getByRole('button', { name: 'Refresh result data' });
-  await expect(refreshButton).toBeVisible();
+  const thresholdInput = page.locator('input[type="number"]').first();
+  await expect(thresholdInput).toBeVisible();
+  await thresholdInput.fill('1.15');
+  await expect(thresholdInput).toHaveValue('1.15');
 
-  const loadButton = page.getByRole('button', { name: 'Load Scan' });
-  await expect(loadButton).toBeVisible();
+  const selectedPointLabel = page.getByRole('heading', { name: /^P-\d{3}$/ }).first();
+  await expect(selectedPointLabel).toHaveText('P-001');
 
-  const exportButton = page.getByRole('button', { name: /Export Data|Exporting\.\.\./ });
-  await expect(exportButton).toBeVisible();
+  await page.getByRole('button', { name: 'Next' }).first().click();
+  await expect(selectedPointLabel).toHaveText('P-002');
 
-  await expect(page.getByText('Critical Threshold')).toBeVisible();
+  await page.getByRole('button', { name: 'Previous' }).first().click();
+  await expect(selectedPointLabel).toHaveText('P-001');
+
+  const tableSearch = page.getByPlaceholder('Filter by id, label or comment');
+  await tableSearch.fill('anomaly');
+  await expect(page.getByRole('cell', { name: 'Potential thermal anomaly' }).first()).toBeVisible();
 });
