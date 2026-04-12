@@ -1,5 +1,8 @@
-import { polylineFromPoints } from './geometry';
+import { clamp, polylineFromPoints } from './geometry';
 import { RoutePreviewCoordinate, RoutePreviewPoint } from '../../../types/routePreview.types';
+
+const EDGE_PADDING_SVG = 3.4;
+const EDGE_PADDING_NORMALIZED = EDGE_PADDING_SVG / 100;
 
 interface RoutePreviewSvgLayerProps {
   routePath: RoutePreviewCoordinate[];
@@ -46,12 +49,26 @@ export function RoutePreviewSvgLayer({
   onWheel,
   getDisplayPosition,
 }: RoutePreviewSvgLayerProps) {
+  const clampToVisibleSvg = (value: number) =>
+    clamp(value, EDGE_PADDING_SVG, 100 - EDGE_PADDING_SVG);
+
   const renderedPoints = measurementPoints.map((point) => ({
     point,
-    displayPos: getDisplayPosition(point),
+    displayPos: (() => {
+      const pos = getDisplayPosition(point);
+      return {
+        x: clampToVisibleSvg(pos.x),
+        y: clampToVisibleSvg(pos.y),
+      };
+    })(),
   }));
   // Draw the route only from backend-populated ordered path data.
-  const polyline = polylineFromPoints(routePath);
+  const polyline = polylineFromPoints(
+    routePath.map((point) => ({
+      x: clamp(point.x, EDGE_PADDING_NORMALIZED, 1 - EDGE_PADDING_NORMALIZED),
+      y: clamp(point.y, EDGE_PADDING_NORMALIZED, 1 - EDGE_PADDING_NORMALIZED),
+    })),
+  );
 
   return (
     <svg
@@ -68,15 +85,27 @@ export function RoutePreviewSvgLayer({
       style={{ cursor: draggedPointId ? 'grabbing' : isPanning ? 'grabbing' : 'default' }}
     >
       {polyline.length > 0 && (
-        <polyline
-          points={polyline}
-          fill="none"
-          stroke="var(--md-sys-color-primary)"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          vectorEffect="non-scaling-stroke"
-        />
+        <>
+          <polyline
+            points={polyline}
+            fill="none"
+            stroke="var(--md-sys-color-surface)"
+            strokeOpacity="0.55"
+            strokeWidth="3.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
+          />
+          <polyline
+            points={polyline}
+            fill="none"
+            stroke="var(--md-sys-color-primary)"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
+          />
+        </>
       )}
 
       {renderedPoints.map(({ point, displayPos }) => {
@@ -106,7 +135,7 @@ export function RoutePreviewSvgLayer({
             <circle
               cx={displayPos.x}
               cy={displayPos.y}
-              r={isSelected ? 2.8 : 2.2}
+              r={isSelected ? 3.4 : 2.8}
               fill={
                 isSelected
                   ? 'var(--md-sys-color-tertiary)'
@@ -116,8 +145,8 @@ export function RoutePreviewSvgLayer({
                       ? 'var(--md-sys-color-primary)'
                       : 'var(--md-sys-color-secondary)'
               }
-              stroke="var(--md-sys-color-on-surface)"
-              strokeWidth={isDragging ? '0.8' : '0.5'}
+              stroke="var(--md-sys-color-surface)"
+              strokeWidth={isDragging ? '0.8' : '1.0'}
               vectorEffect="non-scaling-stroke"
               opacity={isDragging ? 0.8 : 1}
               className={disablePointSelection ? '' : 'cursor-pointer'}
@@ -126,14 +155,23 @@ export function RoutePreviewSvgLayer({
                   onSelectPoint(point.id);
                 }
               }}
-            />
+            >
+              {isSelected && (
+                <animate
+                  attributeName="opacity"
+                  values="1;0.65;1"
+                  dur="1.6s"
+                  repeatCount="indefinite"
+                />
+              )}
+            </circle>
             {isLabelVisible && (
               <text
                 x={displayPos.x}
                 y={displayPos.y}
                 dominantBaseline="middle"
                 textAnchor="middle"
-                fontSize="2.0"
+                fontSize="2.3"
                 fontWeight="600"
                 fill="var(--md-sys-color-on-surface)"
                 pointerEvents="none"

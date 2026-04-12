@@ -41,23 +41,6 @@ function getStatusText(status: HardwareStatus) {
   }
 }
 
-function getStatusColor(status: HardwareStatus) {
-  switch (status) {
-    case 'online':
-      return 'text-green-600';
-    case 'warning':
-      return 'text-yellow-600';
-    case 'error':
-      return 'text-red-600';
-    case 'offline':
-      return 'text-gray-400';
-    case 'idle':
-      return 'text-blue-600';
-    default:
-      return 'text-gray-600';
-  }
-}
-
 function getHardwareIcon(type: HardwareData['type']) {
   const className = 'text-xl text-(--md-sys-color-on-primary-container)';
 
@@ -75,63 +58,95 @@ function getHardwareIcon(type: HardwareData['type']) {
 
 function StatusCard({ data }: StatusCardProps) {
   return (
-    <div className="border border-(--md-sys-color-outline-variant) rounded-2xl p-5 bg-(--md-sys-color-surface-container-low) hover:shadow-md transition-all">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-start gap-3">
-          <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-linear-to-br from-[var(--md-sys-color-primary-container)] to-[var(--md-sys-color-surface-container-highest)]">
-            {getHardwareIcon(data.type)}
-          </div>
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="font-semibold text-lg text-(--md-sys-color-on-surface)">
-                {data.title}
-              </span>
-              {getStatusIcon(data.status)}
+    <div className="group relative rounded-2xl p-5 overflow-hidden transition-all duration-300 hover:scale-105 hover:-translate-y-1 border border-[var(--md-sys-color-outline-variant)]/50 bg-[var(--md-sys-color-surface-container-low)] hover:shadow-xl">
+      {/* Gradient background overlay */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity bg-gradient-to-br from-[var(--md-sys-color-primary)] to-transparent pointer-events-none" />
+
+      {/* Glow effect on hover */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity blur-2xl pointer-events-none">
+        <div
+          className="absolute inset-0 rounded-2xl"
+          style={{
+            boxShadow: 'var(--glow-primary)',
+          }}
+        />
+      </div>
+
+      <div className="relative z-10">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-start gap-3">
+            {/* Icon container with gradient */}
+            <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-gradient-to-br from-[var(--md-sys-color-primary)] to-[var(--md-sys-color-secondary)] shadow-lg group-hover:shadow-xl transition-all">
+              {getHardwareIcon(data.type)}
             </div>
-            <div className="text-xs text-(--md-sys-color-on-surface-variant)">
-              {getStatusText(data.status)}
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-bold text-lg text-[var(--md-sys-color-on-surface)]">
+                  {data.title}
+                </span>
+                {getStatusIcon(data.status)}
+              </div>
+              <div className="text-xs text-[var(--md-sys-color-on-surface-variant)] font-medium">
+                {getStatusText(data.status)}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="space-y-2">
-        {data.metrics.map((metric, index) => (
-          <div key={index} className="flex items-center justify-between text-xs">
-            <span className="text-(--md-sys-color-on-surface-variant)">{metric.label}</span>
-            {metric.percentage !== undefined ? (
-              <div className="flex items-center gap-2">
-                <div className="w-16 h-1.5 bg-(--md-sys-color-surface-variant) rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all ${
-                      metric.percentage >= 80
-                        ? 'bg-green-600'
-                        : metric.percentage >= 50
-                          ? 'bg-yellow-600'
-                          : 'bg-red-600'
-                    }`}
-                    style={{ width: `${metric.percentage}%` }}
-                  />
+        <div className="space-y-3">
+          {data.metrics.map((metric, index) => (
+            <div key={index} className="flex items-center justify-between text-xs">
+              <span className="text-[var(--md-sys-color-on-surface-variant)] font-medium">
+                {metric.label}
+              </span>
+              {metric.percentage !== undefined ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-16 h-2 bg-[var(--md-sys-color-surface-variant)] rounded-full overflow-hidden border border-[var(--md-sys-color-outline-variant)]/30">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 shadow-lg ${
+                        metric.percentage >= 80
+                          ? 'bg-gradient-to-r from-green-500 to-green-600'
+                          : metric.percentage >= 50
+                            ? 'bg-gradient-to-r from-yellow-500 to-yellow-600'
+                            : 'bg-gradient-to-r from-red-500 to-red-600'
+                      }`}
+                      style={{ width: `${metric.percentage}%` }}
+                    />
+                  </div>
+                  <span className="text-[var(--md-sys-color-on-surface)] font-bold min-w-12 text-right">
+                    {metric.value}
+                    {metric.unit}
+                  </span>
                 </div>
-                <span className="text-(--md-sys-color-on-surface)">
+              ) : (
+                <span className="text-[var(--md-sys-color-on-surface)] font-bold">
                   {metric.value}
                   {metric.unit}
                 </span>
-              </div>
-            ) : (
-              <span className="text-(--md-sys-color-on-surface)">
-                {metric.value}
-                {metric.unit}
-              </span>
-            )}
+              )}
+            </div>
+          ))}
+          <div className="flex items-center justify-between text-xs border-t border-[var(--md-sys-color-outline-variant)]/30 pt-3 mt-3">
+            <span className="text-[var(--md-sys-color-on-surface-variant)] font-medium">
+              Device Status
+            </span>
+            <span
+              className={`flex items-center gap-1.5 font-bold px-2 py-1 rounded-full ${
+                data.status === 'online'
+                  ? 'bg-green-500/20 text-green-600'
+                  : data.status === 'warning'
+                    ? 'bg-yellow-500/20 text-yellow-600'
+                    : data.status === 'error'
+                      ? 'bg-red-500/20 text-red-600'
+                      : data.status === 'idle'
+                        ? 'bg-blue-500/20 text-blue-600'
+                        : 'bg-gray-500/20 text-gray-600'
+              }`}
+            >
+              <Activity className="w-3 h-3" />
+              {getStatusText(data.status)}
+            </span>
           </div>
-        ))}
-        <div className="flex items-center justify-between text-xs border-t border-(--md-sys-color-outline-variant) pt-2 mt-2">
-          <span className="text-(--md-sys-color-on-surface-variant)">Device Status</span>
-          <span className={`flex items-center gap-1 ${getStatusColor(data.status)}`}>
-            <Activity className="w-3 h-3" />
-            {getStatusText(data.status)}
-          </span>
         </div>
       </div>
     </div>
@@ -140,18 +155,18 @@ function StatusCard({ data }: StatusCardProps) {
 
 function StatusCardSkeleton() {
   return (
-    <div className="border border-(--md-sys-color-outline-variant) rounded-2xl p-5 bg-(--md-sys-color-surface-container-low) animate-pulse">
-      <div className="flex items-start gap-3 mb-4">
-        <div className="w-12 h-12 rounded-xl bg-(--md-sys-color-surface-variant)" />
+    <div className="rounded-2xl p-5 overflow-hidden border border-[var(--md-sys-color-outline-variant)]/50 bg-[var(--md-sys-color-surface-container-low)]">
+      <div className="flex items-start gap-3 mb-4 animate-pulse">
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--md-sys-color-surface-variant)] to-[var(--md-sys-color-outline-variant)]" />
         <div className="space-y-2 flex-1">
-          <div className="h-4 w-28 rounded bg-(--md-sys-color-surface-variant)" />
-          <div className="h-3 w-24 rounded bg-(--md-sys-color-surface-variant)" />
+          <div className="h-4 w-28 rounded-lg bg-[var(--md-sys-color-surface-variant)]" />
+          <div className="h-3 w-24 rounded-lg bg-[var(--md-sys-color-outline-variant)]" />
         </div>
       </div>
-      <div className="space-y-3">
-        <div className="h-3 w-full rounded bg-(--md-sys-color-surface-variant)" />
-        <div className="h-3 w-5/6 rounded bg-(--md-sys-color-surface-variant)" />
-        <div className="h-3 w-4/6 rounded bg-(--md-sys-color-surface-variant)" />
+      <div className="space-y-3 animate-pulse">
+        <div className="h-3 w-full rounded-lg bg-[var(--md-sys-color-surface-variant)]" />
+        <div className="h-3 w-5/6 rounded-lg bg-[var(--md-sys-color-surface-variant)]" />
+        <div className="h-3 w-4/6 rounded-lg bg-[var(--md-sys-color-surface-variant)]" />
       </div>
     </div>
   );

@@ -72,7 +72,7 @@ export function RoutePreviewPanel({
         onZoomOut={camera.zoomOut}
       />
 
-      <div className="w-full aspect-video bg-[var(--md-sys-color-surface-variant)] relative overflow-hidden">
+      <div className="w-full aspect-video matrix-canvas relative overflow-hidden">
         {imageUrl ? (
           <img
             src={imageUrl}
@@ -116,14 +116,12 @@ export function RoutePreviewPanel({
         />
 
         {showGridOverlay && (
-          <div
-            className="absolute inset-0 opacity-8 pointer-events-none"
-            style={{
-              backgroundImage:
-                'linear-gradient(var(--md-sys-color-on-surface) 1px, transparent 1px), linear-gradient(90deg, var(--md-sys-color-on-surface) 1px, transparent 1px)',
-              backgroundSize: '56px 56px',
-            }}
-          />
+          <>
+            <div className="absolute inset-0 pointer-events-none opacity-30 matrix-grid-fine" />
+            <div className="absolute inset-0 pointer-events-none opacity-40 matrix-grid-major" />
+            <div className="absolute inset-0 pointer-events-none opacity-25 matrix-vignette" />
+            <div className="absolute inset-0 pointer-events-none opacity-20 matrix-scanline" />
+          </>
         )}
 
         {!hasOverlayData && !imageUrl && (

@@ -4,6 +4,7 @@ import { clamp, SVG_SIZE } from '../geometry';
 const ZOOM_MIN = 1;
 const ZOOM_MAX = 3;
 const ZOOM_STEP = 0.25;
+const WHEEL_ZOOM_STEP = 0.18;
 
 interface CameraState {
   zoom: number;
@@ -102,7 +103,10 @@ export function useRoutePreviewCamera(): RoutePreviewCamera {
 
   const handleWheel = (event: React.WheelEvent<SVGSVGElement>) => {
     event.preventDefault();
-    setZoom(camera.zoom + (event.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP));
+    const wheelDirection = event.deltaY < 0 ? 1 : -1;
+    const wheelFactor = clamp(Math.abs(event.deltaY) / 120, 0.4, 1.25);
+    const delta = WHEEL_ZOOM_STEP * wheelFactor * wheelDirection;
+    setZoom(camera.zoom + delta);
   };
 
   return {
