@@ -372,33 +372,73 @@ button:disabled {
 
 .matrix-canvas {
   background:
-    radial-gradient(circle at 20% 18%, color-mix(in srgb, var(--md-sys-color-primary) 18%, transparent), transparent 42%),
-    radial-gradient(circle at 78% 80%, color-mix(in srgb, var(--md-sys-color-secondary) 15%, transparent), transparent 46%),
-    linear-gradient(180deg, color-mix(in srgb, var(--md-sys-color-surface-container) 72%, var(--md-sys-color-surface-variant)) 0%, var(--md-sys-color-surface-variant) 100%);
+    radial-gradient(
+      circle at 20% 18%,
+      color-mix(in srgb, var(--md-sys-color-primary) 18%, transparent),
+      transparent 42%
+    ),
+    radial-gradient(
+      circle at 78% 80%,
+      color-mix(in srgb, var(--md-sys-color-secondary) 15%, transparent),
+      transparent 46%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(
+          in srgb,
+          var(--md-sys-color-surface-container) 72%,
+          var(--md-sys-color-surface-variant)
+        )
+        0%,
+      var(--md-sys-color-surface-variant) 100%
+    );
 }
 
 .matrix-grid-fine {
   background-image:
-    linear-gradient(color-mix(in srgb, var(--md-sys-color-primary) 24%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--md-sys-color-primary) 24%, transparent) 1px, transparent 1px);
+    linear-gradient(
+      color-mix(in srgb, var(--md-sys-color-primary) 24%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--md-sys-color-primary) 24%, transparent) 1px,
+      transparent 1px
+    );
   background-size: 20px 20px;
   animation: matrixDrift 22s linear infinite;
 }
 
 .matrix-grid-major {
   background-image:
-    linear-gradient(color-mix(in srgb, var(--md-sys-color-secondary) 34%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--md-sys-color-secondary) 34%, transparent) 1px, transparent 1px);
+    linear-gradient(
+      color-mix(in srgb, var(--md-sys-color-secondary) 34%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--md-sys-color-secondary) 34%, transparent) 1px,
+      transparent 1px
+    );
   background-size: 56px 56px;
   animation: matrixDrift 34s linear infinite reverse;
 }
 
 .matrix-vignette {
-  background: radial-gradient(circle at center, transparent 52%, color-mix(in srgb, var(--md-sys-color-background) 28%, transparent) 100%);
+  background: radial-gradient(
+    circle at center,
+    transparent 52%,
+    color-mix(in srgb, var(--md-sys-color-background) 28%, transparent) 100%
+  );
 }
 
 .matrix-scanline {
-  background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--neon-cyan) 32%, transparent) 50%, transparent 100%);
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--neon-cyan) 32%, transparent) 50%,
+    transparent 100%
+  );
   animation: scanSweep 4.8s ease-in-out infinite;
 }
 
