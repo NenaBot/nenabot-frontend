@@ -25,7 +25,6 @@ test('setup to route flow creates a mock job and advances to progress', async ({
   await expect(page.getByText(/Checked waypoints:\s*[1-9]\d*/)).toBeVisible();
   const measurementDensityInput = page.locator('input[type="number"]').first();
   await measurementDensityInput.fill('1.25');
-  await page.waitForTimeout(400);
 
   if (await startJobButton.isEnabled()) {
     await startJobButton.click();
