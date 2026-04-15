@@ -9,9 +9,10 @@ import { RouteSettingsCard } from './route/RouteSettingsCard';
 interface RouteTabProps {
   selectedProfile: ProfileModel | null;
   onJobCreated: (jobId: string) => void;
+  isActive?: boolean;
 }
 
-export function RouteTab({ selectedProfile, onJobCreated }: RouteTabProps) {
+export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: RouteTabProps) {
   const {
     state,
     preview,
@@ -22,6 +23,7 @@ export function RouteTab({ selectedProfile, onJobCreated }: RouteTabProps) {
     createScanJob,
   } = useRoutePlan({
     selectedProfile,
+    isActive,
   });
 
   const imageUrl = state.imageBase64 ? `data:image/jpeg;base64,${state.imageBase64}` : null;

@@ -11,12 +11,13 @@ import { isMockModeEnabled } from '../../state/mockMode';
 interface ProgressTabProps {
   jobId: string | null;
   onNext?: () => void;
+  isActive?: boolean;
 }
 
 const LIVE_TERMINAL_EVENT_TYPES = new Set(['job:completed', 'job:failed', 'job:stopped']);
 
-export function ProgressTab({ jobId, onNext }: ProgressTabProps) {
-  const { progressState, isLoading, error } = useProgressData(jobId);
+export function ProgressTab({ jobId, onNext, isActive = true }: ProgressTabProps) {
+  const { progressState, isLoading, error } = useProgressData(jobId, isActive);
   const [isAborting, setIsAborting] = useState(false);
   const scanProgress = useMemo(() => {
     if (!progressState) {
@@ -53,7 +54,7 @@ export function ProgressTab({ jobId, onNext }: ProgressTabProps) {
   };
 
   useEffect(() => {
-    if (!progressState || !onNext) {
+    if (!progressState || !onNext || !isActive) {
       return undefined;
     }
 
@@ -70,7 +71,7 @@ export function ProgressTab({ jobId, onNext }: ProgressTabProps) {
       return () => clearTimeout(timer);
     }
     return undefined;
-  }, [progressState, scanProgress, onNext]);
+  }, [isActive, progressState, scanProgress, onNext]);
 
   if (isLoading) {
     return <div className="text-sm text-[var(--md-sys-color-on-surface-variant)]">Loading...</div>;
@@ -109,7 +110,12 @@ export function ProgressTab({ jobId, onNext }: ProgressTabProps) {
 
         {/* Right Panel - Live Camera Feed */}
         <div className="lg:col-span-2">
-          <CameraView title="Live Camera Feed" showStatus={true} height="full" />
+          <CameraView
+            title="Live Camera Feed"
+            showStatus={true}
+            height="full"
+            isActive={isActive}
+          />
 
           {isTerminal && (
             <div className="mt-4 p-4 border border-[var(--md-sys-color-outline-variant)] rounded-xl bg-[var(--md-sys-color-surface-container-low)]">

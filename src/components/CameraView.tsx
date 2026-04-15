@@ -8,6 +8,7 @@ interface CameraViewProps {
   showStatus?: boolean;
   height?: 'compact' | 'standard' | 'full';
   streamKind?: 'camera' | 'detection';
+  isActive?: boolean;
 }
 
 const DEFAULT_RETRY_INTERVAL = 5000; // 5 seconds
@@ -17,12 +18,14 @@ export function CameraView({
   showStatus = true,
   height = 'standard',
   streamKind = 'camera',
+  isActive = true,
 }: CameraViewProps) {
   const retryInterval = DEFAULT_RETRY_INTERVAL;
   const streamUrl = getStreamUrl(streamKind);
   const { streamStatus, streamSrc, showPlaceholder, handleLoad, handleError } = useCameraStream(
     streamUrl,
     retryInterval,
+    isActive,
   );
 
   useEffect(() => {
@@ -33,8 +36,9 @@ export function CameraView({
       streamUrl,
       streamStatus,
       streamSrc,
+      isActive,
     });
-  }, [streamKind, streamSrc, streamStatus, streamUrl, title]);
+  }, [isActive, streamKind, streamSrc, streamStatus, streamUrl, title]);
 
   const onImageLoad = () => {
     console.info('[CameraView] img onLoad fired', {
@@ -103,13 +107,15 @@ export function CameraView({
       {/* Camera Feed / Placeholder */}
       <div className={`${heightMap[height]} w-full relative overflow-hidden`}>
         {/* MJPEG Stream */}
-        <img
-          src={streamSrc}
-          alt="Live camera stream"
-          className={`w-full h-full object-cover ${showPlaceholder ? 'hidden' : 'block'}`}
-          onLoad={onImageLoad}
-          onError={onImageError}
-        />
+        {isActive && (
+          <img
+            src={streamSrc}
+            alt="Live camera stream"
+            className={`w-full h-full object-cover ${showPlaceholder ? 'hidden' : 'block'}`}
+            onLoad={onImageLoad}
+            onError={onImageError}
+          />
+        )}
 
         {/* Placeholder - shown when stream unavailable */}
         {showPlaceholder && (

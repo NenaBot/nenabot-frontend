@@ -21,6 +21,7 @@ import { RoutePreviewCoordinate, RoutePreviewPoint } from '../types/routePreview
 
 interface UseRoutePlanOptions {
   selectedProfile: ProfileModel | null;
+  isActive?: boolean;
 }
 
 interface DetectState {
@@ -277,7 +278,7 @@ function logRoutePlanError(event: string, error: unknown, details: Record<string
   });
 }
 
-export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
+export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanOptions) {
   const [state, setState] = useState<DetectState>({
     isInitializing: false,
     isPopulating: false,
@@ -456,6 +457,10 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
   }, [runPopulate, selectedProfile]);
 
   useEffect(() => {
+    if (!isActive) {
+      return;
+    }
+
     if (!selectedProfile) {
       setState((prev) => ({
         ...prev,
@@ -471,7 +476,7 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
     }
 
     void initializeRoute();
-  }, [initializeRoute, selectedProfile]);
+  }, [initializeRoute, isActive, selectedProfile]);
 
   const setMeasurementDensity = (value: number) => {
     if (!isMeasurementDensityInRange(value)) {

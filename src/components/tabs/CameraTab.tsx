@@ -3,9 +3,10 @@ import { CameraView } from '../CameraView';
 
 interface CameraTabProps {
   onNext?: () => void;
+  isActive?: boolean;
 }
 
-export function CameraTab({ onNext }: CameraTabProps) {
+export function CameraTab({ onNext, isActive = true }: CameraTabProps) {
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -22,6 +23,7 @@ export function CameraTab({ onNext }: CameraTabProps) {
         showStatus={true}
         height="standard"
         streamKind="detection"
+        isActive={isActive}
       />
 
       {/* Verification Checklist - Grid Layout */}

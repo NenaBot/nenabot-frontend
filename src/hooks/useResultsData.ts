@@ -23,7 +23,10 @@ interface UseResultsDataReturn {
   downloadCurrentScan: (format: ExportFormat) => Promise<void>;
 }
 
-export function useResultsData(initialScanId?: string | null): UseResultsDataReturn {
+export function useResultsData(
+  initialScanId?: string | null,
+  isActive = true,
+): UseResultsDataReturn {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [scanSummaries, setScanSummaries] = useState<ScanResultSummary[]>([]);
   const [selectedScanId, setSelectedScanId] = useState('');
@@ -120,8 +123,12 @@ export function useResultsData(initialScanId?: string | null): UseResultsDataRet
   );
 
   useEffect(() => {
+    if (!isActive) {
+      return;
+    }
+
     void refresh();
-  }, [refresh]);
+  }, [isActive, refresh]);
 
   useEffect(() => {
     if (initialScanId && initialScanId.trim().length > 0) {

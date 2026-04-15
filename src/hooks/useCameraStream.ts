@@ -9,19 +9,25 @@ function logCameraStream(event: string, details: Record<string, unknown>): void 
   });
 }
 
-export function useCameraStream(streamUrl: string, retryInterval: number) {
+export function useCameraStream(streamUrl: string, retryInterval: number, isActive = true) {
   const [streamStatus, setStreamStatus] = useState<StreamStatus>('loading');
   const [streamSrc, setStreamSrc] = useState(streamUrl);
   const retryTimeoutRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
+    if (!isActive) {
+      clearTimeout(retryTimeoutRef.current);
+      setStreamStatus('disconnected');
+      return;
+    }
+
     logCameraStream('Stream URL changed, resetting state', {
       streamUrl,
       retryInterval,
     });
     setStreamSrc(streamUrl);
     setStreamStatus('loading');
-  }, [streamUrl]);
+  }, [isActive, retryInterval, streamUrl]);
 
   useEffect(() => {
     logCameraStream('Stream status updated', {
@@ -34,7 +40,7 @@ export function useCameraStream(streamUrl: string, retryInterval: number) {
   useEffect(() => {
     clearTimeout(retryTimeoutRef.current);
 
-    if (streamStatus !== 'disconnected' || retryInterval <= 0) {
+    if (!isActive || streamStatus !== 'disconnected' || retryInterval <= 0) {
       return;
     }
 
@@ -61,7 +67,7 @@ export function useCameraStream(streamUrl: string, retryInterval: number) {
       });
       clearTimeout(retryTimeoutRef.current);
     };
-  }, [retryInterval, streamStatus, streamUrl]);
+  }, [isActive, retryInterval, streamStatus, streamUrl]);
 
   const handleLoad = useCallback(() => {
     logCameraStream('Stream image loaded', {

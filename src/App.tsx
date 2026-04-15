@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { Header } from './components/Header';
 import { StatusCards } from './components/StatusCards';
 import { TabNavigation } from './components/TabNavigation';
@@ -9,8 +9,10 @@ import { ProgressTab } from './components/tabs/ProgressTab';
 import { ResultsTab } from './components/tabs/ResultsTab';
 import { ProfileModel } from './types/profile.types';
 
+type TabId = 'setup' | 'camera' | 'route' | 'progress' | 'results';
+
 export default function App() {
-  const [activeTab, setActiveTab] = useState('setup');
+  const [activeTab, setActiveTab] = useState<TabId>('setup');
   const [selectedProfile, setSelectedProfile] = useState<ProfileModel | null>(null);
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
 
@@ -30,27 +32,20 @@ export default function App() {
     goToProgress();
   };
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case 'setup':
-        return (
-          <SetupTab
-            selectedProfile={selectedProfile}
-            onProfileChange={handleProfileChange}
-            onNext={goToCamera}
-          />
-        );
-      case 'camera':
-        return <CameraTab onNext={goToRoute} />;
-      case 'route':
-        return <RouteTab selectedProfile={selectedProfile} onJobCreated={handleJobCreated} />;
-      case 'progress':
-        return <ProgressTab jobId={currentJobId} onNext={goToResults} />;
-      case 'results':
-        return <ResultsTab initialJobId={currentJobId} />;
-      default:
-        return <SetupTab selectedProfile={selectedProfile} onProfileChange={handleProfileChange} />;
-    }
+  const renderPanel = (tabId: TabId, content: ReactNode) => {
+    const isActive = activeTab === tabId;
+
+    return (
+      <section
+        key={tabId}
+        role="tabpanel"
+        hidden={!isActive}
+        aria-hidden={!isActive}
+        className={isActive ? 'block' : 'hidden'}
+      >
+        {content}
+      </section>
+    );
   };
 
   return (
@@ -58,8 +53,41 @@ export default function App() {
       <Header />
       <main className="max-w-7xl mx-auto px-6 py-6">
         <StatusCards />
-        <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-        <div className="mt-6">{renderTabContent()}</div>
+        <TabNavigation activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab as TabId)} />
+        <div className="mt-6">
+          {renderPanel(
+            'setup',
+            <SetupTab
+              selectedProfile={selectedProfile}
+              onProfileChange={handleProfileChange}
+              onNext={goToCamera}
+            />,
+          )}
+          {renderPanel(
+            'camera',
+            <CameraTab onNext={goToRoute} isActive={activeTab === 'camera'} />,
+          )}
+          {renderPanel(
+            'route',
+            <RouteTab
+              selectedProfile={selectedProfile}
+              onJobCreated={handleJobCreated}
+              isActive={activeTab === 'route'}
+            />,
+          )}
+          {renderPanel(
+            'progress',
+            <ProgressTab
+              jobId={currentJobId}
+              onNext={goToResults}
+              isActive={activeTab === 'progress'}
+            />,
+          )}
+          {renderPanel(
+            'results',
+            <ResultsTab initialJobId={currentJobId} isActive={activeTab === 'results'} />,
+          )}
+        </div>
       </main>
     </div>
   );
