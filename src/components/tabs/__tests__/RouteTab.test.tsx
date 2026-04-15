@@ -216,6 +216,130 @@ describe('RouteTab', () => {
 
     // Verify setMeasurementDensity was NOT called (invalid value rejected)
     expect(setMeasurementDensity).not.toHaveBeenCalled();
+
+    const populateButton = screen.getByRole('button', { name: 'Populate Path' });
+    expect(populateButton).toBeDisabled();
+  });
+
+  test('disables Populate Path while route is populating', () => {
+    (useRoutePlan as jest.Mock).mockReturnValue({
+      state: {
+        measurementDensity: 0.5,
+        dryRun: false,
+        isInitializing: false,
+        isPopulating: true,
+        isCreatingJob: false,
+        imageBase64: null,
+        routeError: null,
+        cornerPoints: [
+          { x: 0, y: 0 },
+          { x: 10, y: 0 },
+          { x: 10, y: 10 },
+          { x: 0, y: 10 },
+        ],
+        measurementPoints: [],
+        populatedPath: [
+          { x: 0, y: 0 },
+          { x: 10, y: 0 },
+          { x: 10, y: 10 },
+          { x: 0, y: 10 },
+        ],
+        populatedPathWithMetadata: [],
+        batteries: [{ corners: [{ x: 0, y: 0 }] }],
+      },
+      preview: {
+        routePath: [
+          { x: 0, y: 0 },
+          { x: 1, y: 0 },
+          { x: 1, y: 1 },
+          { x: 0, y: 1 },
+        ],
+        points: [],
+        cornerPointIds: ['battery-0-corner-0'],
+        draggablePointIds: ['battery-0-corner-0'],
+        bounds: {
+          minX: 0,
+          maxX: 10,
+          minY: 0,
+          maxY: 10,
+        },
+      },
+      setDryRun: jest.fn(),
+      setMeasurementDensity: jest.fn(),
+      moveCornerPoint: jest.fn(),
+      resetRoutePlan: jest.fn(),
+      createScanJob: jest.fn(),
+    });
+
+    render(<RouteTab selectedProfile={selectedProfile} onJobCreated={jest.fn()} />);
+
+    const populateButton = screen.getByRole('button', { name: 'Populate Path' });
+    expect(populateButton).toBeDisabled();
+  });
+
+  test('applies measurement density only when Populate Path is clicked', () => {
+    const setMeasurementDensity = jest.fn();
+
+    (useRoutePlan as jest.Mock).mockReturnValue({
+      state: {
+        measurementDensity: 0.5,
+        dryRun: false,
+        isInitializing: false,
+        isPopulating: false,
+        isCreatingJob: false,
+        imageBase64: null,
+        routeError: null,
+        cornerPoints: [
+          { x: 0, y: 0 },
+          { x: 10, y: 0 },
+          { x: 10, y: 10 },
+          { x: 0, y: 10 },
+        ],
+        measurementPoints: [],
+        populatedPath: [
+          { x: 0, y: 0 },
+          { x: 10, y: 0 },
+          { x: 10, y: 10 },
+          { x: 0, y: 10 },
+        ],
+        populatedPathWithMetadata: [],
+        batteries: [{ corners: [{ x: 0, y: 0 }] }],
+      },
+      preview: {
+        routePath: [
+          { x: 0, y: 0 },
+          { x: 1, y: 0 },
+          { x: 1, y: 1 },
+          { x: 0, y: 1 },
+        ],
+        points: [],
+        cornerPointIds: ['battery-0-corner-0'],
+        draggablePointIds: ['battery-0-corner-0'],
+        bounds: {
+          minX: 0,
+          maxX: 10,
+          minY: 0,
+          maxY: 10,
+        },
+      },
+      setDryRun: jest.fn(),
+      setMeasurementDensity,
+      moveCornerPoint: jest.fn(),
+      resetRoutePlan: jest.fn(),
+      createScanJob: jest.fn(),
+    });
+
+    render(<RouteTab selectedProfile={selectedProfile} onJobCreated={jest.fn()} />);
+
+    const input = screen.getByRole('spinbutton', { name: /measurement density/i });
+    fireEvent.change(input, { target: { value: '1.7' } });
+
+    expect(setMeasurementDensity).not.toHaveBeenCalled();
+
+    const populateButton = screen.getByRole('button', { name: 'Populate Path' });
+    fireEvent.click(populateButton);
+
+    expect(setMeasurementDensity).toHaveBeenCalledWith(1.7);
   });
 
   test('maps point ids to unique route indices when coordinates repeat', () => {
