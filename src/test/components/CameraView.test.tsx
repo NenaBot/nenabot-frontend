@@ -1,12 +1,13 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { CameraView } from '../../components/CameraView';
 
-jest.mock('../../services/apiClient', () => ({
-  apiClient: {
-    getVideoStreamUrl: jest.fn(() => 'http://localhost:8000/api/camera/stream'),
-    getBaseUrl: jest.fn(() => 'http://localhost:8000'),
-  },
+jest.mock('../../services/apiCalls', () => ({
+  getStreamUrl: jest.fn(() => 'http://localhost:8000/api/stream/camera/feed'),
 }));
+
+const { getStreamUrl } = jest.requireMock('../../services/apiCalls') as {
+  getStreamUrl: jest.Mock;
+};
 
 describe('CameraView', () => {
   beforeEach(() => {
@@ -66,5 +67,12 @@ describe('CameraView', () => {
 
     const cameraContainer = container.querySelector('[class*="h-[600px]"]');
     expect(cameraContainer).toBeInTheDocument();
+  });
+
+  test('skips stream URL resolution when inactive', () => {
+    render(<CameraView isActive={false} />);
+
+    expect(getStreamUrl).not.toHaveBeenCalled();
+    expect(screen.queryByAltText('Live camera stream')).not.toBeInTheDocument();
   });
 });

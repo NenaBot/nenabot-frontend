@@ -21,7 +21,7 @@ export function CameraView({
   isActive = true,
 }: CameraViewProps) {
   const retryInterval = DEFAULT_RETRY_INTERVAL;
-  const streamUrl = getStreamUrl(streamKind);
+  const streamUrl = isActive ? getStreamUrl(streamKind) : '';
   const { streamStatus, streamSrc, showPlaceholder, handleLoad, handleError } = useCameraStream(
     streamUrl,
     retryInterval,
@@ -29,6 +29,10 @@ export function CameraView({
   );
 
   useEffect(() => {
+    if (!isActive) {
+      return;
+    }
+
     console.info('[CameraView] Rendered camera view', {
       timestamp: new Date().toISOString(),
       title,
@@ -94,12 +98,12 @@ export function CameraView({
   };
 
   return (
-    <div className="border border-[var(--md-sys-color-outline-variant)] rounded-2xl overflow-hidden bg-[var(--md-sys-color-surface-container-lowest)]">
+    <div className="border border-(--md-sys-color-outline-variant) rounded-2xl overflow-hidden bg-(--md-sys-color-surface-container-lowest)">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface)]">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-(--md-sys-color-outline-variant) bg-(--md-sys-color-surface)">
         <div className="flex items-center gap-2">
-          <Camera className="w-4 h-4 text-[var(--md-sys-color-on-surface-variant)]" />
-          <h3 className="text-sm font-medium text-[var(--md-sys-color-on-surface)]">{title}</h3>
+          <Camera className="w-4 h-4 text-(--md-sys-color-on-surface-variant)" />
+          <h3 className="text-sm font-medium text-(--md-sys-color-on-surface)">{title}</h3>
         </div>
         {showStatus && getStatusBadge()}
       </div>

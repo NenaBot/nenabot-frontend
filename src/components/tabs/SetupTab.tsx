@@ -39,6 +39,23 @@ function parseJsonOptions(value: string): Record<string, unknown> {
   return {};
 }
 
+function getWorkSettingError(rawValue: string): string | null {
+  if (rawValue.trim().length === 0) {
+    return 'Invalid input';
+  }
+
+  if (rawValue === '-' || rawValue === '.' || rawValue === '-.') {
+    return 'Invalid input';
+  }
+
+  const parsed = Number(rawValue);
+  if (!Number.isFinite(parsed)) {
+    return 'Invalid input';
+  }
+
+  return null;
+}
+
 export function SetupTab({ selectedProfile, onProfileChange, onNext }: SetupTabProps) {
   const [profiles, setProfiles] = useState<ProfileModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -124,18 +141,15 @@ export function SetupTab({ selectedProfile, onProfileChange, onNext }: SetupTabP
 
     setWorkText((previous) => ({ ...previous, [key]: rawValue }));
 
-    if (rawValue === '' || rawValue === '-' || rawValue === '.' || rawValue === '-.') {
-      setWorkError((previous) => ({ ...previous, [key]: null }));
-      return;
-    }
-
-    const parsed = Number(rawValue);
-    if (!Number.isFinite(parsed)) {
-      setWorkError((previous) => ({ ...previous, [key]: 'Invalid input' }));
+    const error = getWorkSettingError(rawValue);
+    if (error) {
+      setWorkError((previous) => ({ ...previous, [key]: error }));
       return;
     }
 
     setWorkError((previous) => ({ ...previous, [key]: null }));
+
+    const parsed = Number(rawValue);
 
     onProfileChange({
       ...selectedProfile,
@@ -150,18 +164,14 @@ export function SetupTab({ selectedProfile, onProfileChange, onNext }: SetupTabP
     if (!selectedProfile) return;
 
     const currentText = workText[key].trim();
-    if (currentText === '' || currentText === '-' || currentText === '.' || currentText === '-.') {
-      setWorkError((previous) => ({ ...previous, [key]: 'Invalid input' }));
-      return;
-    }
-
-    const parsed = Number(currentText);
-    if (!Number.isFinite(parsed)) {
-      setWorkError((previous) => ({ ...previous, [key]: 'Invalid input' }));
+    const error = getWorkSettingError(currentText);
+    if (error) {
+      setWorkError((previous) => ({ ...previous, [key]: error }));
       return;
     }
 
     setWorkError((previous) => ({ ...previous, [key]: null }));
+    const parsed = Number(currentText);
     setWorkText((previous) => ({ ...previous, [key]: String(parsed) }));
   };
 

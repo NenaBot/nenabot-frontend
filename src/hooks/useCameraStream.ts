@@ -10,7 +10,9 @@ function logCameraStream(event: string, details: Record<string, unknown>): void 
 }
 
 export function useCameraStream(streamUrl: string, retryInterval: number, isActive = true) {
-  const [streamStatus, setStreamStatus] = useState<StreamStatus>('loading');
+  const [streamStatus, setStreamStatus] = useState<StreamStatus>(
+    isActive ? 'loading' : 'disconnected',
+  );
   const [streamSrc, setStreamSrc] = useState(streamUrl);
   const retryTimeoutRef = useRef<number | undefined>(undefined);
 
@@ -30,6 +32,10 @@ export function useCameraStream(streamUrl: string, retryInterval: number, isActi
   }, [isActive, retryInterval, streamUrl]);
 
   useEffect(() => {
+    if (!isActive) {
+      return;
+    }
+
     logCameraStream('Stream status updated', {
       streamStatus,
       streamSrc,
@@ -50,15 +56,23 @@ export function useCameraStream(streamUrl: string, retryInterval: number, isActi
     });
 
     retryTimeoutRef.current = window.setTimeout(() => {
-      const url = new URL(streamUrl);
-      url.searchParams.set('t', Date.now().toString());
-      const retryUrl = url.toString();
-      logCameraStream('Applying cache-busted retry URL', {
-        streamUrl,
-        retryUrl,
-      });
-      setStreamSrc(retryUrl);
-      setStreamStatus('loading');
+      try {
+        const url = new URL(streamUrl);
+        url.searchParams.set('t', Date.now().toString());
+        const retryUrl = url.toString();
+        logCameraStream('Applying cache-busted retry URL', {
+          streamUrl,
+          retryUrl,
+        });
+        setStreamSrc(retryUrl);
+        setStreamStatus('loading');
+      } catch (error) {
+        logCameraStream('Skipping reconnect because stream URL is invalid', {
+          streamUrl,
+          error,
+        });
+        setStreamStatus('error');
+      }
     }, retryInterval);
 
     return () => {
@@ -70,20 +84,28 @@ export function useCameraStream(streamUrl: string, retryInterval: number, isActi
   }, [isActive, retryInterval, streamStatus, streamUrl]);
 
   const handleLoad = useCallback(() => {
+    if (!isActive) {
+      return;
+    }
+
     logCameraStream('Stream image loaded', {
       streamSrc,
       streamUrl,
     });
     setStreamStatus('connected');
-  }, [streamSrc, streamUrl]);
+  }, [isActive, streamSrc, streamUrl]);
 
   const handleError = useCallback(() => {
+    if (!isActive) {
+      return;
+    }
+
     logCameraStream('Stream image errored', {
       streamSrc,
       streamUrl,
     });
     setStreamStatus('disconnected');
-  }, [streamSrc, streamUrl]);
+  }, [isActive, streamSrc, streamUrl]);
 
   return {
     streamStatus,
