@@ -119,6 +119,31 @@ describe('useRoutePlan', () => {
     expect(result.current.preview.points.length).toBe(9);
   });
 
+  test('keeps preview bounds anchored to corner points instead of measurement outliers', async () => {
+    (populatePath as jest.Mock).mockResolvedValueOnce({
+      path: [
+        { index: '0', batteryNr: 0, cornerIndex: 0, measurementIndex: 0, pixelX: 5, pixelY: 15 },
+        {
+          index: '1',
+          batteryNr: 0,
+          cornerIndex: 0,
+          measurementIndex: 1,
+          pixelX: 1000,
+          pixelY: 1200,
+        },
+      ],
+    });
+
+    const { result } = renderHook(() => useRoutePlan({ selectedProfile }));
+
+    await waitFor(() => {
+      expect(result.current.state.isPopulating).toBe(false);
+    });
+
+    expect(result.current.preview.bounds.maxX).toBeLessThan(100);
+    expect(result.current.preview.bounds.maxY).toBeLessThan(100);
+  });
+
   test('clamps profile measurement density above max before populating', async () => {
     const highDensityProfile: ProfileModel = {
       ...selectedProfile,

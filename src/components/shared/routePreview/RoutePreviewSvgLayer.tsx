@@ -10,6 +10,7 @@ interface RoutePreviewSvgLayerProps {
   draggablePointIds: string[];
   disablePointSelection: boolean;
   enablePointDragging: boolean;
+  alwaysShowLabels?: boolean;
   viewBox: string;
   draggedPointId: string | null;
   hoveredPointId: string | null;
@@ -33,6 +34,7 @@ export function RoutePreviewSvgLayer({
   draggablePointIds,
   disablePointSelection,
   enablePointDragging,
+  alwaysShowLabels = false,
   viewBox,
   draggedPointId,
   hoveredPointId,
@@ -97,7 +99,8 @@ export function RoutePreviewSvgLayer({
         const isCorner = cornerPointIds.includes(point.id);
         const isDraggable = enablePointDragging && draggablePointIds.includes(point.id);
         const isDragging = draggedPointId === point.id;
-        const isLabelVisible = isSelected || isDragging || hoveredPointId === point.id;
+        const isLabelVisible =
+          alwaysShowLabels || isSelected || isDragging || hoveredPointId === point.id;
 
         return (
           <g

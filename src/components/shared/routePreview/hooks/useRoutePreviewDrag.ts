@@ -25,6 +25,7 @@ export interface RoutePreviewDragModel {
  */
 export function useRoutePreviewDrag(
   enabled: boolean,
+  onDragMove?: (pointId: string, x: number, y: number) => void,
   onDragEnd?: (pointId: string, x: number, y: number) => void,
 ): RoutePreviewDragModel {
   const [dragState, setDragState] = useState<DragState>({
@@ -59,6 +60,10 @@ export function useRoutePreviewDrag(
       x: svgToNormalized(svgPoint.x),
       y: svgToNormalized(svgPoint.y),
     });
+
+    if (onDragMove) {
+      onDragMove(dragState.pointId, svgToNormalized(svgPoint.x), svgToNormalized(svgPoint.y));
+    }
   };
 
   const completeDrag = () => {

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { RoutePreviewPanel, RoutePreviewPoint } from '../RoutePreviewPanel';
 
 describe('RoutePreviewPanel', () => {
@@ -20,11 +20,10 @@ describe('RoutePreviewPanel', () => {
       expect(screen.getByText('Custom Title')).toBeInTheDocument();
     });
 
-    it('should render zoom controls', () => {
+    it('should render the fixed-frame preview subtitle', () => {
       render(<RoutePreviewPanel measurementPoints={mockPoints} />);
 
-      expect(screen.getByLabelText('Zoom in')).toBeInTheDocument();
-      expect(screen.getByLabelText('Zoom out')).toBeInTheDocument();
+      expect(screen.getByText('Fixed-frame route preview')).toBeInTheDocument();
     });
 
     it('should show empty state when no overlay data and no image', () => {
@@ -45,6 +44,17 @@ describe('RoutePreviewPanel', () => {
 
       const img = screen.getByAltText('Scan area preview');
       expect(img).toHaveAttribute('src', imageUrl);
+    });
+
+    it('should align SVG overlay with the image container', () => {
+      const imageUrl = 'data:image/jpeg;base64,test==';
+      const { container } = render(<RoutePreviewPanel imageUrl={imageUrl} />);
+
+      const img = screen.getByAltText('Scan area preview');
+      expect(img).toHaveClass('absolute', 'inset-0', 'w-full', 'h-full', 'object-contain');
+
+      const svg = container.querySelector('svg[aria-label="Route preview"]');
+      expect(svg).toHaveClass('absolute', 'inset-0', 'w-full', 'h-full');
     });
   });
 
@@ -113,47 +123,6 @@ describe('RoutePreviewPanel', () => {
     });
   });
 
-  describe('zoom controls', () => {
-    it('should disable zoom in button at max zoom', async () => {
-      render(<RoutePreviewPanel measurementPoints={mockPoints} />);
-
-      const zoomInBtn = screen.getByLabelText('Zoom in');
-
-      // Click zoom in multiple times to reach max
-      for (let i = 0; i < 10; i++) {
-        fireEvent.click(zoomInBtn);
-      }
-
-      await waitFor(() => {
-        expect(zoomInBtn).toBeDisabled();
-      });
-    });
-
-    it('should disable zoom out button at min zoom', () => {
-      render(<RoutePreviewPanel measurementPoints={mockPoints} />);
-
-      const zoomOutBtn = screen.getByLabelText('Zoom out');
-
-      // At min zoom, should be disabled
-      expect(zoomOutBtn).toBeDisabled();
-    });
-
-    it('should enable both zoom buttons at intermediate zoom level', async () => {
-      render(<RoutePreviewPanel measurementPoints={mockPoints} />);
-
-      const zoomInBtn = screen.getByLabelText('Zoom in');
-      const zoomOutBtn = screen.getByLabelText('Zoom out');
-
-      // Zoom in once
-      fireEvent.click(zoomInBtn);
-
-      await waitFor(() => {
-        expect(zoomInBtn).not.toBeDisabled();
-        expect(zoomOutBtn).not.toBeDisabled();
-      });
-    });
-  });
-
   describe('dragging', () => {
     it('should not drag when dragging disabled', () => {
       const onPointDragEnd = jest.fn();
@@ -204,33 +173,6 @@ describe('RoutePreviewPanel', () => {
     });
   });
 
-  describe('wheel zoom', () => {
-    it('should zoom in on negative wheel delta', () => {
-      const { container } = render(<RoutePreviewPanel measurementPoints={mockPoints} />);
-
-      const svg = container.querySelector('svg') as SVGSVGElement;
-
-      if (svg) {
-        fireEvent.wheel(svg, { deltaY: -100 });
-
-        // SVG should have updated viewBox (harder to test exact value due to mocking)
-        expect(svg).toBeInTheDocument();
-      }
-    });
-
-    it('should zoom out on positive wheel delta', () => {
-      const { container } = render(<RoutePreviewPanel measurementPoints={mockPoints} />);
-
-      const svg = container.querySelector('svg') as SVGSVGElement;
-
-      if (svg) {
-        fireEvent.wheel(svg, { deltaY: 100 });
-
-        expect(svg).toBeInTheDocument();
-      }
-    });
-  });
-
   describe('grid overlay', () => {
     it('should show grid when no image', () => {
       const { container } = render(<RoutePreviewPanel measurementPoints={mockPoints} />);
@@ -259,26 +201,12 @@ describe('RoutePreviewPanel', () => {
     });
   });
 
-  describe('viewBox updates', () => {
-    it('should update SVG viewBox when zooming', async () => {
+  describe('viewBox', () => {
+    it('should keep a fixed preview viewBox', () => {
       const { container } = render(<RoutePreviewPanel measurementPoints={mockPoints} />);
 
-      // Get the main route preview SVG, not the toolbar icon SVG
       const svg = container.querySelector('svg[aria-label="Route preview"]') as SVGSVGElement;
-
-      if (!svg) {
-        throw new Error('Route preview SVG not found');
-      }
-
-      const initialViewBox = svg.getAttribute('viewBox');
-
-      const zoomInBtn = screen.getByLabelText('Zoom in');
-      fireEvent.click(zoomInBtn);
-
-      await waitFor(() => {
-        const newViewBox = svg.getAttribute('viewBox');
-        expect(newViewBox).not.toBe(initialViewBox);
-      });
+      expect(svg).toHaveAttribute('viewBox', '0 0 100 100');
     });
   });
 });

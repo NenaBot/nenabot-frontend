@@ -296,6 +296,18 @@ export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanO
     batteries: [],
   });
   const populateRequestCounterRef = useRef(0);
+  const batteriesRef = useRef<BatteryCornersApiResponse[]>([]);
+  const measurementDensityRef = useRef<number>(
+    isMockModeEnabled() ? 0.5 : getMeasurementDensityFromProfile(selectedProfile),
+  );
+
+  useEffect(() => {
+    batteriesRef.current = state.batteries;
+  }, [state.batteries]);
+
+  useEffect(() => {
+    measurementDensityRef.current = state.measurementDensity;
+  }, [state.measurementDensity]);
 
   const runPopulate = useCallback(
     async (batteries: BatteryCornersApiResponse[], measurementDensity: number) => {
@@ -485,11 +497,12 @@ export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanO
 
     logRoutePlan('density:update', {
       value,
-      batteryCount: state.batteries.length,
+      batteryCount: batteriesRef.current.length,
       mockMode: isMockModeEnabled(),
     });
     setState((prev) => ({ ...prev, measurementDensity: value }));
-    void runPopulate(state.batteries, value);
+    measurementDensityRef.current = value;
+    void runPopulate(batteriesRef.current, value);
   };
 
   const moveCornerPoint = (pointId: string, x: number, y: number) => {
@@ -505,8 +518,8 @@ export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanO
       !Number.isInteger(cornerIndex) ||
       batteryIndex < 0 ||
       cornerIndex < 0 ||
-      batteryIndex >= state.batteries.length ||
-      cornerIndex >= state.batteries[batteryIndex].corners.length
+      batteryIndex >= batteriesRef.current.length ||
+      cornerIndex >= batteriesRef.current[batteryIndex].corners.length
     ) {
       return;
     }
@@ -517,10 +530,10 @@ export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanO
       cornerIndex,
       x,
       y,
-      measurementDensity: state.measurementDensity,
+      measurementDensity: measurementDensityRef.current,
     });
 
-    const updatedBatteries = state.batteries.map((battery, bIndex) => {
+    const updatedBatteries = batteriesRef.current.map((battery, bIndex) => {
       if (bIndex !== batteryIndex) {
         return battery;
       }
@@ -538,7 +551,8 @@ export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanO
       batteries: updatedBatteries,
       cornerPoints: flattenBatteryCorners(updatedBatteries),
     }));
-    void runPopulate(updatedBatteries, state.measurementDensity);
+    batteriesRef.current = updatedBatteries;
+    void runPopulate(updatedBatteries, measurementDensityRef.current);
   };
 
   const createScanJob = async (): Promise<string | null> => {
@@ -629,9 +643,9 @@ export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanO
 
   const preview = useMemo<PreviewData>(() => {
     const routePoints = state.populatedPath.length > 0 ? state.populatedPath : state.cornerPoints;
-    const allPoints = [...state.cornerPoints, ...state.measurementPoints];
+    const boundsSource = state.cornerPoints.length > 0 ? state.cornerPoints : routePoints;
 
-    if (routePoints.length === 0 && allPoints.length === 0) {
+    if (routePoints.length === 0 && boundsSource.length === 0) {
       return {
         routePath: [] as RoutePreviewCoordinate[],
         points: [] as RoutePreviewPoint[],
@@ -646,12 +660,20 @@ export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanO
       };
     }
 
-    const source = [...routePoints, ...allPoints];
+    const source = boundsSource.length > 0 ? boundsSource : routePoints;
+    const minX = Math.min(...source.map((point) => point.x));
+    const maxX = Math.max(...source.map((point) => point.x));
+    const minY = Math.min(...source.map((point) => point.y));
+    const maxY = Math.max(...source.map((point) => point.y));
+    const spanX = Math.max(maxX - minX, 1);
+    const spanY = Math.max(maxY - minY, 1);
+    const paddingX = spanX * 0.12;
+    const paddingY = spanY * 0.12;
     const bounds: PreviewBounds = {
-      minX: Math.min(...source.map((point) => point.x)),
-      maxX: Math.max(...source.map((point) => point.x)),
-      minY: Math.min(...source.map((point) => point.y)),
-      maxY: Math.max(...source.map((point) => point.y)),
+      minX: minX - paddingX,
+      maxX: maxX + paddingX,
+      minY: minY - paddingY,
+      maxY: maxY + paddingY,
     };
 
     const normalizedRoutePath = routePoints.map((point) => normalizeToUnit(point, bounds));

@@ -1,8 +1,6 @@
 import { Grid3x3 } from 'lucide-react';
 import { RoutePreviewCoordinate, RoutePreviewPoint } from '../../types/routePreview.types';
 import { RoutePreviewSvgLayer } from './routePreview/RoutePreviewSvgLayer';
-import { RoutePreviewToolbar } from './routePreview/RoutePreviewToolbar';
-import { useRoutePreviewCamera } from './routePreview/hooks/useRoutePreviewCamera';
 import { useRoutePreviewDrag } from './routePreview/hooks/useRoutePreviewDrag';
 
 interface RoutePreviewPanelProps {
@@ -17,6 +15,8 @@ interface RoutePreviewPanelProps {
   onSelectPoint?: (pointId: string) => void;
   disablePointSelection?: boolean;
   enablePointDragging?: boolean;
+  alwaysShowLabels?: boolean;
+  onPointDragMove?: (pointId: string, newX: number, newY: number) => void;
   onPointDragEnd?: (pointId: string, newX: number, newY: number) => void;
 }
 
@@ -34,43 +34,28 @@ export function RoutePreviewPanel({
   onSelectPoint,
   disablePointSelection = false,
   enablePointDragging = false,
+  alwaysShowLabels = false,
+  onPointDragMove,
   onPointDragEnd,
 }: RoutePreviewPanelProps) {
-  const camera = useRoutePreviewCamera();
-  const drag = useRoutePreviewDrag(enablePointDragging, onPointDragEnd);
+  const drag = useRoutePreviewDrag(enablePointDragging, onPointDragMove, onPointDragEnd);
   const hasOverlayData = routePath.length > 0 || measurementPoints.length > 0;
   const showGridOverlay = !imageUrl;
 
-  const handleSvgMouseDown = (event: React.MouseEvent<SVGSVGElement>) => {
-    // Start panning only from the empty canvas area, not from point elements.
-    if (event.target !== event.currentTarget || drag.isDragging) {
-      return;
-    }
-    camera.beginPan(event);
-  };
-
-  const handleSvgMouseMove = (event: React.MouseEvent<SVGSVGElement>) => {
-    if (drag.isDragging) {
-      drag.updateDrag(event);
-      return;
-    }
-    camera.movePan(event);
-  };
-
   const handleSvgMouseUp = () => {
     drag.completeDrag();
-    camera.endPan();
   };
 
   return (
-    <div className="border border-[var(--md-sys-color-outline-variant)] rounded-2xl overflow-hidden bg-[var(--md-sys-color-surface-container-lowest)]">
-      <RoutePreviewToolbar
-        title={title}
-        canZoomIn={camera.canZoomIn}
-        canZoomOut={camera.canZoomOut}
-        onZoomIn={camera.zoomIn}
-        onZoomOut={camera.zoomOut}
-      />
+    <div className="border border-(--md-sys-color-outline-variant) rounded-2xl overflow-hidden bg-(--md-sys-color-surface-container-lowest)">
+      <div className="border-b border-(--md-sys-color-outline-variant) px-4 py-3 flex items-center justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-medium text-(--md-sys-color-on-surface)">{title}</h3>
+          <p className="text-xs text-(--md-sys-color-on-surface-variant)">
+            Fixed-frame route preview
+          </p>
+        </div>
+      </div>
 
       <div className="w-full aspect-video matrix-canvas relative overflow-hidden">
         {imageUrl ? (
@@ -82,10 +67,10 @@ export function RoutePreviewPanel({
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center p-6">
-              <div className="w-16 h-16 bg-[var(--md-sys-color-primary-container)] rounded-full flex items-center justify-center mx-auto mb-3">
-                <Grid3x3 className="w-8 h-8 text-[var(--md-sys-color-on-primary-container)]" />
+              <div className="w-16 h-16 bg-(--md-sys-color-primary-container) rounded-full flex items-center justify-center mx-auto mb-3">
+                <Grid3x3 className="w-8 h-8 text-(--md-sys-color-on-primary-container)" />
               </div>
-              <h4 className="text-base font-medium text-[var(--md-sys-color-on-surface)] mb-1">
+              <h4 className="text-base font-medium text-(--md-sys-color-on-surface) mb-1">
                 Map Preview
               </h4>
             </div>
@@ -101,17 +86,18 @@ export function RoutePreviewPanel({
           draggablePointIds={draggablePointIds}
           disablePointSelection={disablePointSelection}
           enablePointDragging={enablePointDragging}
-          viewBox={camera.viewBox}
+          alwaysShowLabels={alwaysShowLabels}
+          viewBox="0 0 100 100"
           draggedPointId={drag.draggedPointId}
           hoveredPointId={drag.hoveredPointId}
-          isPanning={camera.isPanning}
+          isPanning={false}
           onPointMouseDown={drag.beginDrag}
           onPointHover={drag.setHoveredPointId}
           onSelectPoint={onSelectPoint}
-          onMouseMove={handleSvgMouseMove}
+          onMouseMove={drag.updateDrag}
           onMouseUp={handleSvgMouseUp}
-          onMouseDown={handleSvgMouseDown}
-          onWheel={camera.handleWheel}
+          onMouseDown={() => undefined}
+          onWheel={() => undefined}
           getDisplayPosition={drag.getDisplayPosition}
         />
 
@@ -125,7 +111,7 @@ export function RoutePreviewPanel({
         )}
 
         {!hasOverlayData && !imageUrl && (
-          <div className="absolute bottom-3 left-3 px-2 py-1 rounded bg-[var(--md-sys-color-surface)]/85 text-xs text-[var(--md-sys-color-on-surface-variant)]">
+          <div className="absolute bottom-3 left-3 px-2 py-1 rounded bg-(--md-sys-color-surface)/85 text-xs text-(--md-sys-color-on-surface-variant)">
             No route data available.
           </div>
         )}

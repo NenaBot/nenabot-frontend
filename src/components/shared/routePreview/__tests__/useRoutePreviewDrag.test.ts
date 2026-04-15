@@ -108,7 +108,7 @@ describe('useRoutePreviewDrag', () => {
 
     it('should call onDragEnd callback with normalized coordinates when drag completes', () => {
       const onDragEnd = jest.fn();
-      const { result } = renderHook(() => useRoutePreviewDrag(true, onDragEnd));
+      const { result } = renderHook(() => useRoutePreviewDrag(true, undefined, onDragEnd));
 
       // Create a mock SVG element with proper matrix transformation
       const mockSvgElement = {
@@ -181,7 +181,7 @@ describe('useRoutePreviewDrag', () => {
     });
 
     it('should not call onDragEnd if no callback provided', () => {
-      const { result } = renderHook(() => useRoutePreviewDrag(true, undefined));
+      const { result } = renderHook(() => useRoutePreviewDrag(true, undefined, undefined));
 
       act(() => {
         result.current.beginDrag('point-1', createMockMouseEvent());
@@ -193,7 +193,7 @@ describe('useRoutePreviewDrag', () => {
 
     it('should cancel drag without calling onDragEnd', () => {
       const onDragEnd = jest.fn();
-      const { result } = renderHook(() => useRoutePreviewDrag(true, onDragEnd));
+      const { result } = renderHook(() => useRoutePreviewDrag(true, undefined, onDragEnd));
 
       act(() => {
         result.current.beginDrag('point-1', createMockMouseEvent());
@@ -254,6 +254,50 @@ describe('useRoutePreviewDrag', () => {
       const displayPos = result.current.getDisplayPosition(mockPoint);
       expect(displayPos.x).toBe(50);
       expect(displayPos.y).toBe(50);
+    });
+
+    it('should call onDragMove with normalized coordinates during drag', () => {
+      const onDragMove = jest.fn();
+      const { result } = renderHook(() => useRoutePreviewDrag(true, onDragMove));
+
+      const mockSvgElement = {
+        createSVGPoint: jest.fn(() => {
+          return {
+            x: 0,
+            y: 0,
+            matrixTransform: jest.fn(function () {
+              return this;
+            }),
+          };
+        }),
+        getScreenCTM: jest.fn(() => ({
+          a: 1,
+          b: 0,
+          c: 0,
+          d: 1,
+          e: 0,
+          f: 0,
+          inverse: jest.fn(function () {
+            return this;
+          }),
+        })),
+      } as unknown as SVGSVGElement;
+
+      act(() => {
+        result.current.beginDrag('point-1', createMockMouseEvent());
+      });
+
+      const mockSvgEvent = {
+        currentTarget: mockSvgElement,
+        clientX: 30,
+        clientY: 40,
+      } as unknown as React.MouseEvent<SVGSVGElement>;
+
+      act(() => {
+        result.current.updateDrag(mockSvgEvent);
+      });
+
+      expect(onDragMove).toHaveBeenCalledWith('point-1', expect.any(Number), expect.any(Number));
     });
   });
 });

@@ -3,6 +3,12 @@ import { RouteTab } from '../RouteTab';
 import { useRoutePlan } from '../../../hooks/useRoutePlan';
 import { ProfileModel } from '../../../types/profile.types';
 import { MEASUREMENT_DENSITY_MAX } from '../../../types/route.types';
+import { mapPointIdsToRouteIndices } from '../route/routePreviewModel';
+import { RoutePreviewPanel } from '../../shared/RoutePreviewPanel';
+
+jest.mock('../../shared/RoutePreviewPanel', () => ({
+  RoutePreviewPanel: jest.fn(() => <div data-testid="route-preview" />),
+}));
 
 jest.mock('../../../hooks/useRoutePlan', () => ({
   useRoutePlan: jest.fn(),
@@ -22,6 +28,11 @@ describe('RouteTab', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
+
+  const getPreviewProps = () => {
+    const mock = RoutePreviewPanel as jest.Mock;
+    return mock.mock.calls[mock.mock.calls.length - 1]?.[0];
+  };
 
   test('allows starting a corners-only route when measurement density is zero', async () => {
     const createScanJob = jest.fn().mockResolvedValue('job-corners-only');
@@ -205,5 +216,168 @@ describe('RouteTab', () => {
 
     // Verify setMeasurementDensity was NOT called (invalid value rejected)
     expect(setMeasurementDensity).not.toHaveBeenCalled();
+  });
+
+  test('maps point ids to unique route indices when coordinates repeat', () => {
+    const points = [
+      { id: 'battery-0-corner-0', x: 0.5, y: 0.5 },
+      { id: 'battery-0-corner-1', x: 0.5, y: 0.5 },
+      { id: 'measurement-1', x: 0.2, y: 0.2 },
+    ];
+
+    const routePath = [
+      { x: 0.5, y: 0.5 },
+      { x: 0.5, y: 0.5 },
+      { x: 0.2, y: 0.2 },
+    ];
+
+    const mapping = mapPointIdsToRouteIndices(points, routePath);
+
+    expect(mapping.get('battery-0-corner-0')).toBe(0);
+    expect(mapping.get('battery-0-corner-1')).toBe(1);
+    expect(mapping.get('measurement-1')).toBe(2);
+  });
+
+  test('skips point ids that have no route coordinate match', () => {
+    const points = [{ id: 'battery-0-corner-0', x: 0.8, y: 0.8 }];
+    const routePath = [{ x: 0.1, y: 0.1 }];
+
+    const mapping = mapPointIdsToRouteIndices(points, routePath);
+
+    expect(mapping.has('battery-0-corner-0')).toBe(false);
+  });
+
+  test('updates preview route path during drag move', async () => {
+    const moveCornerPoint = jest.fn();
+
+    (useRoutePlan as jest.Mock).mockReturnValue({
+      state: {
+        measurementDensity: 0.5,
+        dryRun: false,
+        isInitializing: false,
+        isPopulating: false,
+        isCreatingJob: false,
+        imageBase64: null,
+        routeError: null,
+        cornerPoints: [
+          { x: 100, y: 50 },
+          { x: 200, y: 150 },
+        ],
+        measurementPoints: [],
+        populatedPath: [
+          { x: 100, y: 50 },
+          { x: 200, y: 150 },
+        ],
+        populatedPathWithMetadata: [],
+        batteries: [
+          {
+            corners: [
+              { x: 100, y: 50 },
+              { x: 200, y: 150 },
+            ],
+          },
+        ],
+      },
+      preview: {
+        routePath: [
+          { x: 0.1, y: 0.2 },
+          { x: 0.4, y: 0.6 },
+        ],
+        points: [
+          { id: 'battery-0-corner-0', x: 0.1, y: 0.2, label: 'B1C1' },
+          { id: 'battery-0-corner-1', x: 0.4, y: 0.6, label: 'B1C2' },
+        ],
+        cornerPointIds: ['battery-0-corner-0', 'battery-0-corner-1'],
+        draggablePointIds: ['battery-0-corner-0', 'battery-0-corner-1'],
+        bounds: {
+          minX: 100,
+          maxX: 200,
+          minY: 50,
+          maxY: 150,
+        },
+      },
+      setDryRun: jest.fn(),
+      setMeasurementDensity: jest.fn(),
+      moveCornerPoint,
+      resetRoutePlan: jest.fn(),
+      createScanJob: jest.fn(),
+    });
+
+    render(<RouteTab selectedProfile={selectedProfile} onJobCreated={jest.fn()} />);
+
+    const previewProps = getPreviewProps();
+    previewProps.onPointDragMove('battery-0-corner-1', 0.9, 0.1);
+
+    await waitFor(() => {
+      const latestProps = getPreviewProps();
+      expect(latestProps.routePath).toEqual([
+        { x: 0.1, y: 0.2 },
+        { x: 0.9, y: 0.1 },
+      ]);
+    });
+  });
+
+  test('commits drag end using pixel bounds', () => {
+    const moveCornerPoint = jest.fn();
+
+    (useRoutePlan as jest.Mock).mockReturnValue({
+      state: {
+        measurementDensity: 0.5,
+        dryRun: false,
+        isInitializing: false,
+        isPopulating: false,
+        isCreatingJob: false,
+        imageBase64: null,
+        routeError: null,
+        cornerPoints: [
+          { x: 100, y: 50 },
+          { x: 200, y: 150 },
+        ],
+        measurementPoints: [],
+        populatedPath: [
+          { x: 100, y: 50 },
+          { x: 200, y: 150 },
+        ],
+        populatedPathWithMetadata: [],
+        batteries: [
+          {
+            corners: [
+              { x: 100, y: 50 },
+              { x: 200, y: 150 },
+            ],
+          },
+        ],
+      },
+      preview: {
+        routePath: [
+          { x: 0.1, y: 0.2 },
+          { x: 0.4, y: 0.6 },
+        ],
+        points: [
+          { id: 'battery-0-corner-0', x: 0.1, y: 0.2, label: 'B1C1' },
+          { id: 'battery-0-corner-1', x: 0.4, y: 0.6, label: 'B1C2' },
+        ],
+        cornerPointIds: ['battery-0-corner-0', 'battery-0-corner-1'],
+        draggablePointIds: ['battery-0-corner-0', 'battery-0-corner-1'],
+        bounds: {
+          minX: 100,
+          maxX: 200,
+          minY: 50,
+          maxY: 150,
+        },
+      },
+      setDryRun: jest.fn(),
+      setMeasurementDensity: jest.fn(),
+      moveCornerPoint,
+      resetRoutePlan: jest.fn(),
+      createScanJob: jest.fn(),
+    });
+
+    render(<RouteTab selectedProfile={selectedProfile} onJobCreated={jest.fn()} />);
+
+    const previewProps = getPreviewProps();
+    previewProps.onPointDragEnd('battery-0-corner-1', 0.25, 0.5);
+
+    expect(moveCornerPoint).toHaveBeenCalledWith('battery-0-corner-1', 125, 100);
   });
 });

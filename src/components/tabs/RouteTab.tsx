@@ -1,9 +1,16 @@
 import { Play, RotateCcw } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { RoutePreviewPanel } from '../shared/RoutePreviewPanel';
 import { useRoutePlan } from '../../hooks/useRoutePlan';
 import { ProfileModel } from '../../types/profile.types';
 import { getMeasurementDensityValidationError } from '../../types/route.types';
+import {
+  applyRouteIndexLabels,
+  createDragPreviewPoint,
+  deriveTransientRoutePath,
+  DragPreviewPoint,
+  normalizedToPixelCoordinate,
+} from './route/routePreviewModel';
 import { RouteSettingsCard } from './route/RouteSettingsCard';
 
 interface RouteTabProps {
@@ -34,6 +41,7 @@ export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: Rou
     state.measurementDensity,
   );
   const [measurementDensityError, setMeasurementDensityError] = useState<string | null>(null);
+  const [dragPreview, setDragPreview] = useState<DragPreviewPoint | null>(null);
   const detectedBatteries = state.batteries.length;
   const checkedWaypoints =
     state.cornerPoints.length > 0
@@ -90,22 +98,31 @@ export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: Rou
   };
 
   const handleCornerPointDragEnd = (pointId: string, normalizedX: number, normalizedY: number) => {
-    const spanX = Math.max(preview.bounds.maxX - preview.bounds.minX, 1);
-    const spanY = Math.max(preview.bounds.maxY - preview.bounds.minY, 1);
+    setDragPreview(null);
 
-    moveCornerPoint(
-      pointId,
-      preview.bounds.minX + normalizedX * spanX,
-      preview.bounds.minY + normalizedY * spanY,
-    );
+    const pixel = normalizedToPixelCoordinate(preview.bounds, normalizedX, normalizedY);
+
+    moveCornerPoint(pointId, pixel.x, pixel.y);
   };
+
+  const handleCornerPointDragMove = (pointId: string, normalizedX: number, normalizedY: number) => {
+    setDragPreview(createDragPreviewPoint(pointId, normalizedX, normalizedY));
+  };
+
+  const displayPoints = useMemo(() => {
+    return applyRouteIndexLabels(preview.points, preview.routePath);
+  }, [preview.points, preview.routePath]);
+
+  const previewRoutePath = useMemo(() => {
+    return deriveTransientRoutePath(preview.routePath, displayPoints, dragPreview);
+  }, [displayPoints, dragPreview, preview.routePath]);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl mb-1">Route Planning</h2>
-          <p className="text-sm text-[var(--md-sys-color-on-surface-variant)]">
+          <p className="text-sm text-(--md-sys-color-on-surface-variant)">
             Adjust detected corner points and measurement density before starting a new scan.
           </p>
         </div>
@@ -115,7 +132,7 @@ export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: Rou
             void resetRoutePlan();
           }}
           disabled={state.isInitializing || state.isPopulating || !selectedProfile}
-          className="px-3 py-2 rounded-lg border border-[var(--md-sys-color-outline)] text-xs text-[var(--md-sys-color-on-surface-variant)] flex items-center gap-2 disabled:opacity-60"
+          className="px-3 py-2 rounded-lg border border-(--md-sys-color-outline) text-xs text-(--md-sys-color-on-surface-variant) flex items-center gap-2 disabled:opacity-60"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           Reset
@@ -123,13 +140,13 @@ export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: Rou
       </div>
 
       {!selectedProfile && (
-        <div className="p-3 border border-[var(--md-sys-color-error)] rounded-lg text-sm text-[var(--md-sys-color-error)]">
+        <div className="p-3 border border-(--md-sys-color-error) rounded-lg text-sm text-(--md-sys-color-error)">
           Select a profile in Setup before creating a route.
         </div>
       )}
 
       {state.routeError && (
-        <div className="p-3 border border-[var(--md-sys-color-error)] rounded-lg text-sm text-[var(--md-sys-color-error)]">
+        <div className="p-3 border border-(--md-sys-color-error) rounded-lg text-sm text-(--md-sys-color-error)">
           {state.routeError}
         </div>
       )}
@@ -145,7 +162,7 @@ export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: Rou
             onMeasurementDensityInputChange={handleMeasurementDensityChange}
           />
 
-          <div className="mt-4 text-xs text-[var(--md-sys-color-on-surface-variant)] space-y-1">
+          <div className="mt-4 text-xs text-(--md-sys-color-on-surface-variant) space-y-1">
             <p>Profile: {selectedProfile?.name ?? '-'}</p>
             <p>Work Z: {selectedProfile?.settings.workZ ?? 0}</p>
             <p>Work R: {selectedProfile?.settings.workR ?? 0}</p>
@@ -165,28 +182,30 @@ export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: Rou
           <RoutePreviewPanel
             title="Detected Route Preview"
             imageUrl={imageUrl}
-            routePath={preview.routePath}
-            measurementPoints={preview.points}
+            routePath={previewRoutePath}
+            measurementPoints={displayPoints}
             cornerPointIds={preview.cornerPointIds}
             draggablePointIds={preview.draggablePointIds}
             disablePointSelection={true}
             enablePointDragging={true}
+            alwaysShowLabels={true}
+            onPointDragMove={handleCornerPointDragMove}
             onPointDragEnd={handleCornerPointDragEnd}
           />
-          <div className="mt-2 text-xs text-[var(--md-sys-color-on-surface-variant)] flex items-center gap-4">
+          <div className="mt-2 text-xs text-(--md-sys-color-on-surface-variant) flex items-center gap-4">
             <span className="inline-flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-[var(--md-sys-color-primary)] inline-block" />
+              <span className="w-2 h-2 rounded-full bg-(--md-sys-color-primary) inline-block" />
               Corner points (draggable)
             </span>
             <span className="inline-flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-[var(--md-sys-color-secondary)] inline-block" />
+              <span className="w-2 h-2 rounded-full bg-(--md-sys-color-secondary) inline-block" />
               Measurement points
             </span>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between text-sm text-[var(--md-sys-color-on-surface-variant)] border border-[var(--md-sys-color-outline-variant)] rounded-lg px-3 py-2">
+      <div className="flex items-center justify-between text-sm text-(--md-sys-color-on-surface-variant) border border-(--md-sys-color-outline-variant) rounded-lg px-3 py-2">
         <span>Detected batteries: {detectedBatteries}</span>
         <span>Checked waypoints: {checkedWaypoints}</span>
       </div>
@@ -201,7 +220,7 @@ export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: Rou
             }
           });
         }}
-        className="w-full px-4 py-3 bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)] rounded-lg text-sm flex items-center justify-center gap-2 disabled:opacity-60"
+        className="w-full px-4 py-3 bg-(--md-sys-color-primary) text-(--md-sys-color-on-primary) rounded-lg text-sm flex items-center justify-center gap-2 disabled:opacity-60"
       >
         <Play className="w-4 h-4 fill-current" />
         {state.isCreatingJob ? 'Creating Job...' : 'Start Scan Job'}

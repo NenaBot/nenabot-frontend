@@ -22,6 +22,7 @@ describe('RoutePreviewSvgLayer', () => {
     draggablePointIds: ['p1'],
     disablePointSelection: false,
     enablePointDragging: false,
+    alwaysShowLabels: false,
     viewBox: '0 0 100 100',
     draggedPointId: null,
     hoveredPointId: null,
@@ -48,11 +49,26 @@ describe('RoutePreviewSvgLayer', () => {
       expect(svg).toHaveAttribute('viewBox', '0 0 100 100');
     });
 
+    it('should preserve aspect ratio for overlay alignment', () => {
+      const { container } = render(<RoutePreviewSvgLayer {...mockProps} />);
+
+      const svg = container.querySelector('svg');
+      expect(svg).toHaveAttribute('preserveAspectRatio', 'xMidYMid meet');
+    });
+
     it('should render polyline when route path provided', () => {
       const { container } = render(<RoutePreviewSvgLayer {...mockProps} />);
 
       const polyline = container.querySelector('polyline');
       expect(polyline).toBeInTheDocument();
+    });
+
+    it('should map normalized route points into SVG coordinates', () => {
+      const { container } = render(<RoutePreviewSvgLayer {...mockProps} />);
+
+      const polylines = container.querySelectorAll('polyline');
+      expect(polylines.length).toBe(2);
+      expect(polylines[0]).toHaveAttribute('points', '20,30 80,70');
     });
 
     it('should not render polyline when no route path and no points', () => {
@@ -73,6 +89,13 @@ describe('RoutePreviewSvgLayer', () => {
   });
 
   describe('point labels', () => {
+    it('should show labels for all points when alwaysShowLabels is true', () => {
+      const { container } = render(<RoutePreviewSvgLayer {...mockProps} alwaysShowLabels={true} />);
+
+      const texts = container.querySelectorAll('text');
+      expect(texts.length).toBe(mockPoints.length);
+    });
+
     it('should show labels for selected points', () => {
       const { container } = render(<RoutePreviewSvgLayer {...mockProps} selectedPointId="p1" />);
 
