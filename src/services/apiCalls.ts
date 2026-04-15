@@ -10,7 +10,7 @@ export interface HealthApiResponse {
   uptimeSeconds?: number;
   robot: ComponentHealthApiResponse;
   camera: ComponentHealthApiResponse;
-  dms: ComponentHealthApiResponse;
+  ionvision: ComponentHealthApiResponse;
 }
 
 export interface ProfileApiResponse {

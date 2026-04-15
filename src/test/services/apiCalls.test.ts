@@ -27,7 +27,7 @@ describe('apiCalls', () => {
     const response = {
       status: 'ok',
       uptimeSeconds: 12,
-      dms: { status: 'ok' },
+      ionvision: { status: 'ok' },
       camera: { status: 'ok' },
       robot: { status: 'ok' },
     };
@@ -46,13 +46,13 @@ describe('apiCalls', () => {
     (apiClient.get as jest.Mock)
       .mockResolvedValueOnce({
         status: 'ok',
-        dms: { status: 'ok' },
+        ionvision: { status: 'ok' },
         camera: { status: 'ok' },
         robot: { status: 'ok' },
       })
       .mockResolvedValueOnce({
         status: 'ok',
-        dms: { status: 'online' },
+        ionvision: { status: 'online' },
         camera: { status: 'online' },
         robot: { status: 'online' },
       });

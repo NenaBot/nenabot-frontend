@@ -45,7 +45,7 @@ function getHardwareIcon(type: HardwareData['type']) {
   const className = 'text-xl text-(--md-sys-color-on-primary-container)';
 
   switch (type) {
-    case 'dms':
+    case 'ionvision':
       return <MaterialSymbol name="database" className={className} />;
     case 'camera':
       return <MaterialSymbol name="photo_camera" className={className} />;
@@ -204,7 +204,7 @@ function StatusCardsError({
 }
 
 export function StatusCards() {
-  const { dms, camera, robot, isLoading, error, refetch } = useHardwareData();
+  const { ionvision, camera, robot, isLoading, error, refetch } = useHardwareData();
 
   if (isLoading) {
     return (
@@ -229,7 +229,7 @@ export function StatusCards() {
   return (
     <div className="mb-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {dms && <StatusCard data={dms} />}
+        {ionvision && <StatusCard data={ionvision} />}
         {camera && <StatusCard data={camera} />}
         {robot && <StatusCard data={robot} />}
       </div>

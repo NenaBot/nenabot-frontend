@@ -14,7 +14,7 @@ test('shows setup error when profile endpoints fail in non-mock mode', async ({ 
         uptimeSeconds: 100,
         robot: { status: 'online', error: null },
         camera: { status: 'online', error: null },
-        dms: { status: 'online', error: null },
+        ionvision: { status: 'online', error: null },
       }),
     });
   });
