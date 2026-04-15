@@ -34,7 +34,10 @@ const { useProgressData } = jest.requireMock('../../hooks/useProgressData') as {
   useProgressData: jest.Mock;
 };
 
-function createState(overrides?: Partial<ProgressTabState['scan']>): ProgressTabState {
+function createState(
+  scanOverrides?: Partial<ProgressTabState['scan']>,
+  lastEventType = 'job:waypoint_started',
+): ProgressTabState {
   return {
     scan: {
       state: 'running',
@@ -42,10 +45,11 @@ function createState(overrides?: Partial<ProgressTabState['scan']>): ProgressTab
       totalPoints: 10,
       elapsedSeconds: 0,
       estimatedRemainingSeconds: 9,
-      ...overrides,
+      ...scanOverrides,
     },
     events: [],
     measurements: [],
+    lastEventType,
   };
 }
 
@@ -69,7 +73,10 @@ describe('ProgressTab', () => {
 
   test('shows manual results CTA when scan is terminal and auto-navigation callback is missing', () => {
     useProgressData.mockReturnValue({
-      progressState: createState({ state: 'completed', completedPoints: 10, totalPoints: 10 }),
+      progressState: createState(
+        { state: 'completed', completedPoints: 10, totalPoints: 10 },
+        'job:completed',
+      ),
       isLoading: false,
       error: null,
     });
@@ -85,7 +92,10 @@ describe('ProgressTab', () => {
   test('allows manual go-to-results action when terminal and onNext exists', () => {
     const onNext = jest.fn();
     useProgressData.mockReturnValue({
-      progressState: createState({ state: 'stopped', completedPoints: 10, totalPoints: 10 }),
+      progressState: createState(
+        { state: 'stopped', completedPoints: 10, totalPoints: 10 },
+        'job:stopped',
+      ),
       isLoading: false,
       error: null,
     });
@@ -99,11 +109,14 @@ describe('ProgressTab', () => {
     expect(onNext).toHaveBeenCalledTimes(1);
   });
 
-  test('auto-advances one second after reaching terminal 100% state', () => {
+  test('auto-advances one second after receiving a live terminal transition event', () => {
     jest.useFakeTimers();
     const onNext = jest.fn();
     useProgressData.mockReturnValue({
-      progressState: createState({ state: 'completed', completedPoints: 10, totalPoints: 10 }),
+      progressState: createState(
+        { state: 'completed', completedPoints: 10, totalPoints: 10 },
+        'job:completed',
+      ),
       isLoading: false,
       error: null,
     });
@@ -113,5 +126,24 @@ describe('ProgressTab', () => {
     expect(onNext).not.toHaveBeenCalled();
     jest.advanceTimersByTime(1000);
     expect(onNext).toHaveBeenCalledTimes(1);
+  });
+
+  test('does not auto-advance for terminal reconnect snapshots', () => {
+    jest.useFakeTimers();
+    const onNext = jest.fn();
+    useProgressData.mockReturnValue({
+      progressState: createState(
+        { state: 'completed', completedPoints: 10, totalPoints: 10 },
+        'job:snapshot',
+      ),
+      isLoading: false,
+      error: null,
+    });
+
+    render(<ProgressTab jobId="job-1" onNext={onNext} />);
+
+    expect(onNext).not.toHaveBeenCalled();
+    jest.advanceTimersByTime(1000);
+    expect(onNext).not.toHaveBeenCalled();
   });
 });

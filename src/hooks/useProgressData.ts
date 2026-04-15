@@ -70,6 +70,7 @@ function mapEventsToProgressState(events: JobEventApiResponse[]): ProgressTabSta
       },
       events: [],
       measurements: [],
+      lastEventType: null,
     };
   }
 
@@ -107,6 +108,7 @@ function mapEventsToProgressState(events: JobEventApiResponse[]): ProgressTabSta
         intensity: toMeasurementIntensity(event),
         status: normalizeEventType(event.type).includes('completed') ? 'complete' : 'processing',
       })),
+    lastEventType: normalizeEventType(lastEvent.type),
   };
 }
 

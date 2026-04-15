@@ -13,6 +13,8 @@ interface ProgressTabProps {
   onNext?: () => void;
 }
 
+const LIVE_TERMINAL_EVENT_TYPES = new Set(['job:completed', 'job:failed', 'job:stopped']);
+
 export function ProgressTab({ jobId, onNext }: ProgressTabProps) {
   const { progressState, isLoading, error } = useProgressData(jobId);
   const [isAborting, setIsAborting] = useState(false);
@@ -55,10 +57,14 @@ export function ProgressTab({ jobId, onNext }: ProgressTabProps) {
       return undefined;
     }
 
-    // Auto-advance to results when scan completes
-    if (isTerminalScanState(progressState.scan.state) && scanProgress === 100 && onNext) {
+    const isLiveTerminalTransition =
+      progressState.lastEventType !== null &&
+      LIVE_TERMINAL_EVENT_TYPES.has(progressState.lastEventType);
+
+    // Auto-advance to results only on live terminal transitions, not reconnect snapshots.
+    if (isTerminalScanState(progressState.scan.state) && isLiveTerminalTransition) {
       console.log(
-        `[ProgressTab] Scan completed (${scanProgress}%), auto-advancing to results in 1s`,
+        `[ProgressTab] Terminal transition (${progressState.lastEventType}, ${scanProgress}%), auto-advancing to results in 1s`,
       );
       const timer = setTimeout(onNext, 1000); // 1s delay for visual feedback
       return () => clearTimeout(timer);
