@@ -15,12 +15,14 @@ export function BreadcrumbNav({ activeTab }: BreadcrumbNavProps) {
   };
 
   return (
-    <nav className="flex items-center gap-2 text-sm mb-4 text-[var(--md-sys-color-on-surface-variant)]">
-      <Home className="w-4 h-4" />
-      <ChevronRight className="w-4 h-4" />
-      <span>NenäBot Control Panel</span>
-      <ChevronRight className="w-4 h-4" />
-      <span className="text-[var(--md-sys-color-primary)]">{tabNames[activeTab] || activeTab}</span>
+    <nav className="flex items-center gap-2 text-sm mb-4 text-[var(--md-sys-color-on-surface-variant)] font-medium">
+      <Home className="w-4 h-4 text-[var(--md-sys-color-primary)]" />
+      <ChevronRight className="w-3 h-3 opacity-50" />
+      <span className="text-[var(--md-sys-color-on-surface)]">NenäBot Control Panel</span>
+      <ChevronRight className="w-3 h-3 opacity-50" />
+      <span className="text-[var(--md-sys-color-primary)] font-bold">
+        {tabNames[activeTab] || activeTab}
+      </span>
     </nav>
   );
 }

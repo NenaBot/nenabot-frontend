@@ -192,10 +192,10 @@ export function MeasurementPointsTable({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-[var(--md-sys-color-surface-container-low)] text-[var(--md-sys-color-on-surface-variant)]">
+        <table className="w-full min-w-[920px] text-sm text-[var(--md-sys-color-on-surface)]">
+          <thead className="bg-[var(--md-sys-color-surface-container-high)] text-[var(--md-sys-color-on-surface)] sticky top-0 z-10">
             <tr>
-              <th className="text-left px-4 py-3 font-medium">
+              <th className="text-left px-4 py-3 font-semibold">
                 <button
                   type="button"
                   onClick={() => handleSortChange('label')}
@@ -205,7 +205,7 @@ export function MeasurementPointsTable({
                   Point{sortIndicator('label')}
                 </button>
               </th>
-              <th className="text-left px-4 py-3 font-medium">
+              <th className="text-left px-4 py-3 font-semibold">
                 <button
                   type="button"
                   onClick={() => handleSortChange('waypointIndex')}
@@ -215,7 +215,7 @@ export function MeasurementPointsTable({
                   Waypoint{sortIndicator('waypointIndex')}
                 </button>
               </th>
-              <th className="text-left px-4 py-3 font-medium">
+              <th className="text-left px-4 py-3 font-semibold">
                 <button
                   type="button"
                   onClick={() => handleSortChange('x')}
@@ -225,7 +225,7 @@ export function MeasurementPointsTable({
                   X{sortIndicator('x')}
                 </button>
               </th>
-              <th className="text-left px-4 py-3 font-medium">
+              <th className="text-left px-4 py-3 font-semibold">
                 <button
                   type="button"
                   onClick={() => handleSortChange('y')}
@@ -235,7 +235,7 @@ export function MeasurementPointsTable({
                   Y{sortIndicator('y')}
                 </button>
               </th>
-              <th className="text-left px-4 py-3 font-medium">
+              <th className="text-left px-4 py-3 font-semibold">
                 <button
                   type="button"
                   onClick={() => handleSortChange('measuredValue')}
@@ -245,9 +245,9 @@ export function MeasurementPointsTable({
                   Measured Value{sortIndicator('measuredValue')}
                 </button>
               </th>
-              <th className="text-left px-4 py-3 font-medium">Comment</th>
-              <th className="text-left px-4 py-3 font-medium">Status</th>
-              <th className="text-left px-4 py-3 font-medium">
+              <th className="text-left px-4 py-3 font-semibold">Comment</th>
+              <th className="text-left px-4 py-3 font-semibold">Status</th>
+              <th className="text-left px-4 py-3 font-semibold">
                 <button
                   type="button"
                   onClick={() => handleSortChange('timestamp')}
@@ -268,34 +268,44 @@ export function MeasurementPointsTable({
                 <tr
                   key={point.id}
                   onClick={() => onSelectPoint(point.id)}
-                  className={`border-t border-[var(--md-sys-color-outline-variant)] cursor-pointer ${
+                  className={`border-t border-[var(--md-sys-color-outline-variant)]/60 cursor-pointer transition-colors ${
                     isSelected
-                      ? 'bg-[var(--md-sys-color-primary-container)]/40'
+                      ? 'bg-[var(--md-sys-color-primary-container)]/60'
                       : isCritical
-                        ? 'bg-red-50 hover:bg-red-100'
-                        : 'hover:bg-[var(--md-sys-color-surface-container-low)]'
+                        ? 'bg-[var(--md-sys-color-error-container)]/35 hover:bg-[var(--md-sys-color-error-container)]/55'
+                        : 'odd:bg-[var(--md-sys-color-surface-container-lowest)] even:bg-[var(--md-sys-color-surface-container-low)]/45 hover:bg-[var(--md-sys-color-surface-container)]'
                   }`}
                 >
-                  <td className="px-4 py-3 font-medium">{point.label}</td>
-                  <td className="px-4 py-3">#{point.waypointIndex}</td>
-                  <td className="px-4 py-3">{point.x.toFixed(3)}</td>
-                  <td className="px-4 py-3">{point.y.toFixed(3)}</td>
-                  <td className={`px-4 py-3 ${isCritical ? 'font-semibold text-red-700' : ''}`}>
+                  <td className="px-4 py-3 font-semibold">{point.label}</td>
+                  <td className="px-4 py-3 text-[var(--md-sys-color-on-surface-variant)]">
+                    #{point.waypointIndex}
+                  </td>
+                  <td className="px-4 py-3 font-medium tabular-nums">{point.x.toFixed(3)}</td>
+                  <td className="px-4 py-3 font-medium tabular-nums">{point.y.toFixed(3)}</td>
+                  <td
+                    className={`px-4 py-3 font-medium ${
+                      isCritical ? 'font-semibold text-[var(--md-sys-color-error)]' : ''
+                    }`}
+                  >
                     {formatMeasuredValue(point.measuredValue)}
                   </td>
-                  <td className="px-4 py-3">{point.comment || '-'}</td>
+                  <td className="px-4 py-3 text-[var(--md-sys-color-on-surface-variant)]">
+                    {point.comment || '-'}
+                  </td>
                   <td className="px-4 py-3">
                     {isCritical ? (
-                      <span className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700 border border-red-200">
+                      <span className="px-2 py-0.5 text-xs rounded-full bg-[var(--md-sys-color-error-container)] text-[var(--md-sys-color-on-error-container)] border border-[var(--md-sys-color-error)]/30">
                         Critical
                       </span>
                     ) : (
-                      <span className="px-2 py-0.5 text-xs rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      <span className="px-2 py-0.5 text-xs rounded-full bg-[var(--status-success-bg)] text-[var(--md-sys-color-success)] border border-[var(--md-sys-color-success)]/30">
                         Normal
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap">{formatDateTime(point.timestamp)}</td>
+                  <td className="px-4 py-3 whitespace-nowrap text-[var(--md-sys-color-on-surface-variant)]">
+                    {formatDateTime(point.timestamp)}
+                  </td>
                 </tr>
               );
             })}
