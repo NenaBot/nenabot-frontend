@@ -43,6 +43,14 @@ export function SetupTab({ selectedProfile, onProfileChange, onNext }: SetupTabP
   const [profiles, setProfiles] = useState<ProfileModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [workText, setWorkText] = useState<{ workZ: string; workR: string }>({
+    workZ: '0',
+    workR: '0',
+  });
+  const [workError, setWorkError] = useState<{ workZ: string | null; workR: string | null }>({
+    workZ: null,
+    workR: null,
+  });
   const [optionsText, setOptionsText] = useState('{}');
   const [optionsError, setOptionsError] = useState<string | null>(null);
 
@@ -84,11 +92,18 @@ export function SetupTab({ selectedProfile, onProfileChange, onNext }: SetupTabP
 
   useEffect(() => {
     if (!selectedProfile) {
+      setWorkText({ workZ: '0', workR: '0' });
+      setWorkError({ workZ: null, workR: null });
       setOptionsText('{}');
       setOptionsError(null);
       return;
     }
 
+    setWorkText({
+      workZ: String(selectedProfile.settings.workZ),
+      workR: String(selectedProfile.settings.workR),
+    });
+    setWorkError({ workZ: null, workR: null });
     setOptionsText(JSON.stringify(selectedProfile.settings.options, null, 2));
     setOptionsError(null);
   }, [selectedProfile]);
@@ -107,14 +122,47 @@ export function SetupTab({ selectedProfile, onProfileChange, onNext }: SetupTabP
   const handleWorkSettingChange = (key: 'workZ' | 'workR', rawValue: string) => {
     if (!selectedProfile) return;
 
+    setWorkText((previous) => ({ ...previous, [key]: rawValue }));
+
+    if (rawValue === '' || rawValue === '-' || rawValue === '.' || rawValue === '-.') {
+      setWorkError((previous) => ({ ...previous, [key]: null }));
+      return;
+    }
+
     const parsed = Number(rawValue);
+    if (!Number.isFinite(parsed)) {
+      setWorkError((previous) => ({ ...previous, [key]: 'Invalid input' }));
+      return;
+    }
+
+    setWorkError((previous) => ({ ...previous, [key]: null }));
+
     onProfileChange({
       ...selectedProfile,
       settings: {
         ...selectedProfile.settings,
-        [key]: Number.isFinite(parsed) ? parsed : 0,
+        [key]: parsed,
       },
     });
+  };
+
+  const handleWorkSettingBlur = (key: 'workZ' | 'workR') => {
+    if (!selectedProfile) return;
+
+    const currentText = workText[key].trim();
+    if (currentText === '' || currentText === '-' || currentText === '.' || currentText === '-.') {
+      setWorkError((previous) => ({ ...previous, [key]: 'Invalid input' }));
+      return;
+    }
+
+    const parsed = Number(currentText);
+    if (!Number.isFinite(parsed)) {
+      setWorkError((previous) => ({ ...previous, [key]: 'Invalid input' }));
+      return;
+    }
+
+    setWorkError((previous) => ({ ...previous, [key]: null }));
+    setWorkText((previous) => ({ ...previous, [key]: String(parsed) }));
   };
 
   const handleOptionsChange = (rawValue: string) => {
@@ -213,25 +261,33 @@ export function SetupTab({ selectedProfile, onProfileChange, onNext }: SetupTabP
           <div className="space-y-2">
             <label className="text-sm text-[var(--md-sys-color-on-surface-variant)]">Work Z</label>
             <input
-              type="number"
-              step="0.01"
-              value={selectedProfile?.settings.workZ ?? 0}
+              type="text"
+              inputMode="decimal"
+              value={workText.workZ}
               onChange={(event) => handleWorkSettingChange('workZ', event.target.value)}
+              onBlur={() => handleWorkSettingBlur('workZ')}
               className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm"
               disabled={!selectedProfile}
             />
+            {workError.workZ && (
+              <p className="text-xs text-[var(--md-sys-color-error)]">Invalid input</p>
+            )}
           </div>
 
           <div className="space-y-2">
             <label className="text-sm text-[var(--md-sys-color-on-surface-variant)]">Work R</label>
             <input
-              type="number"
-              step="0.01"
-              value={selectedProfile?.settings.workR ?? 0}
+              type="text"
+              inputMode="decimal"
+              value={workText.workR}
               onChange={(event) => handleWorkSettingChange('workR', event.target.value)}
+              onBlur={() => handleWorkSettingBlur('workR')}
               className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm"
               disabled={!selectedProfile}
             />
+            {workError.workR && (
+              <p className="text-xs text-[var(--md-sys-color-error)]">Invalid input</p>
+            )}
           </div>
         </div>
 
@@ -254,7 +310,12 @@ export function SetupTab({ selectedProfile, onProfileChange, onNext }: SetupTabP
       <div className="flex items-center justify-end pt-4 border-t border-[var(--md-sys-color-outline-variant)]">
         <button
           onClick={onNext}
-          disabled={!selectedProfile || Boolean(optionsError)}
+          disabled={
+            !selectedProfile ||
+            Boolean(optionsError) ||
+            Boolean(workError.workZ) ||
+            Boolean(workError.workR)
+          }
           className="px-6 py-3 bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)] rounded-full flex items-center gap-2 hover:shadow-lg transition-all text-sm disabled:opacity-60"
         >
           Continue to Camera

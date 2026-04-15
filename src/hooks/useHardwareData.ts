@@ -5,13 +5,13 @@ import { fetchHealthStatus, HealthApiResponse } from '../services/apiCalls';
 import { isMockModeEnabled } from '../state/mockMode';
 
 type HardwareDataMap = {
-  dms: HardwareData | null;
+  ionvision: HardwareData | null;
   camera: HardwareData | null;
   robot: HardwareData | null;
 };
 
 interface UseHardwareDataReturn {
-  dms: HardwareData | null;
+  ionvision: HardwareData | null;
   camera: HardwareData | null;
   robot: HardwareData | null;
   isLoading: boolean;
@@ -50,16 +50,16 @@ function normalizeHardwareData(data: HealthApiResponse): HardwareDataMap {
       : 0;
 
   return {
-    dms: {
-      id: 'dms',
-      type: 'dms',
-      title: 'DMS',
-      status: normalizeHealthStatus(data.dms.status),
+    ionvision: {
+      id: 'ionvision',
+      type: 'ionvision',
+      title: 'IonVision',
+      status: normalizeHealthStatus(data.ionvision.status),
       lastUpdate: now,
       metrics: [
-        { label: 'Service', value: data.dms.status },
+        { label: 'Service', value: data.ionvision.status },
         { label: 'Uptime', value: uptime, unit: 's' },
-        { label: 'Error', value: data.dms.error ? data.dms.error : 'None' },
+        { label: 'Error', value: data.ionvision.error ? data.ionvision.error : 'None' },
       ],
     },
     camera: {
@@ -100,7 +100,7 @@ function normalizeHardwareData(data: HealthApiResponse): HardwareDataMap {
  */
 export function useHardwareData(): UseHardwareDataReturn {
   const [data, setData] = useState<HardwareDataMap>({
-    dms: null,
+    ionvision: null,
     camera: null,
     robot: null,
   });
@@ -185,7 +185,7 @@ export function useHardwareData(): UseHardwareDataReturn {
  */
 export function useHardwareDataPolling(intervalMs: number = 1000): UseHardwareDataReturn {
   const [data, setData] = useState<HardwareDataMap>({
-    dms: null,
+    ionvision: null,
     camera: null,
     robot: null,
   });
@@ -221,7 +221,7 @@ export function useHardwareDataPolling(intervalMs: number = 1000): UseHardwareDa
 
         console.log(`[HardwareDataPolling] Using mock data`);
         setData({
-          dms: { ...mockHardwareData.dms, lastUpdate: new Date() },
+          ionvision: { ...mockHardwareData.ionvision, lastUpdate: new Date() },
           camera: { ...mockHardwareData.camera, lastUpdate: new Date() },
           robot: { ...mockHardwareData.robot, lastUpdate: new Date() },
         });
