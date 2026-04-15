@@ -109,7 +109,7 @@ Common variables:
 
 - `VITE_API_URL` (backend base URL)
 - `VITE_API_TIMEOUT` (request timeout in ms)
-- `VITE_USE_MOCK_DATA` (`true` for local mock mode)
+- `VITE_USE_MOCK_DATA` (`false` by default in development; set `true` to force frontend mock data)
 
 ### 4. Start development server
 

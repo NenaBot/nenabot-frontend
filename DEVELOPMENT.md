@@ -36,7 +36,7 @@ Copy `.env.example` to `.env.development` (already done):
 ```bash
 VITE_API_URL=http://localhost:8000        # Backend API endpoint
 VITE_API_TIMEOUT=30000                    # Request timeout in ms
-VITE_USE_MOCK_DATA=true                   # Use mock data for development
+VITE_USE_MOCK_DATA=false                  # Default to server data; set true to force mock data
 ```
 
 ### 3. Development Server
@@ -183,13 +183,13 @@ export function MyComponent({ title, status, onUpdate }: ComponentProps) {
 - [ ] Monitor bundle size: `npm run build` (check `build/` size)
 - [ ] Update `.env.example` when adding new variables
 - [ ] Document new API endpoints in this file
-- [ ] Remove `VITE_USE_MOCK_DATA=true` before production
+- [ ] Keep `VITE_USE_MOCK_DATA=false` unless you explicitly want frontend mock fixtures
 
 ## Next Steps
 
 1. **Connect to Real Backend**
    - Update `VITE_API_URL` environment variable
-   - Set `VITE_USE_MOCK_DATA=false`
+  - Keep `VITE_USE_MOCK_DATA=false`
    - Test API endpoints in browser DevTools
 
 2. **Improve State Management** (optional)

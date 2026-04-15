@@ -23,6 +23,12 @@ describe('mockMode state module', () => {
     expect(mod.isMockModeEnabled()).toBe(false);
   });
 
+  test('falls back to the env default when localStorage is empty', async () => {
+    const mod = await import('../../state/mockMode');
+
+    expect(mod.isMockModeEnabled()).toBe(false);
+  });
+
   test('setMockModeEnabled persists value and notifies listeners once', async () => {
     const mod = await import('../../state/mockMode');
     const listener = jest.fn();
