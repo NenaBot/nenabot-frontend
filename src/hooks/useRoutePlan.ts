@@ -38,6 +38,7 @@ interface DetectState {
   // Full path with metadata from backend for job creation
   populatedPathWithMetadata: PathPopulatePointApiResponse[];
   batteries: BatteryCornersApiResponse[];
+  previewBounds: PreviewBounds | null;
 }
 
 interface PreviewData {
@@ -72,6 +73,33 @@ function normalizeToUnit(
   return {
     x: Math.max(0, Math.min(1, x)),
     y: Math.max(0, Math.min(1, y)),
+  };
+}
+
+function createPreviewBounds(points: PixelPointApiResponse[]): PreviewBounds {
+  if (points.length === 0) {
+    return {
+      minX: 0,
+      maxX: 1,
+      minY: 0,
+      maxY: 1,
+    };
+  }
+
+  const minX = Math.min(...points.map((point) => point.x));
+  const maxX = Math.max(...points.map((point) => point.x));
+  const minY = Math.min(...points.map((point) => point.y));
+  const maxY = Math.max(...points.map((point) => point.y));
+  const spanX = Math.max(maxX - minX, 1);
+  const spanY = Math.max(maxY - minY, 1);
+  const paddingX = spanX * 0.12;
+  const paddingY = spanY * 0.12;
+
+  return {
+    minX: minX - paddingX,
+    maxX: maxX + paddingX,
+    minY: minY - paddingY,
+    maxY: maxY + paddingY,
   };
 }
 
@@ -294,6 +322,7 @@ export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanO
     populatedPath: [],
     populatedPathWithMetadata: [],
     batteries: [],
+    previewBounds: null,
   });
   const populateRequestCounterRef = useRef(0);
   const batteriesRef = useRef<BatteryCornersApiResponse[]>([]);
@@ -323,6 +352,7 @@ export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanO
           populatedPath: [],
           populatedPathWithMetadata: [],
           batteries: [],
+          previewBounds: null,
         }));
         return;
       }
@@ -423,6 +453,7 @@ export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanO
       isInitializing: true,
       routeError: null,
       measurementDensity: defaultMeasurementDensity,
+      previewBounds: null,
     }));
 
     try {
@@ -452,6 +483,7 @@ export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanO
         populatedPathWithMetadata: [],
         batteries: detectedBatteries,
         imageBase64: detectionResponse.image_base64 ?? null,
+        previewBounds: createPreviewBounds(detectedPoints),
       }));
 
       await runPopulate(detectedBatteries, defaultMeasurementDensity);
@@ -483,6 +515,7 @@ export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanO
         populatedPathWithMetadata: [],
         batteries: [],
         imageBase64: null,
+        previewBounds: null,
       }));
       return;
     }
@@ -660,21 +693,7 @@ export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanO
       };
     }
 
-    const source = boundsSource.length > 0 ? boundsSource : routePoints;
-    const minX = Math.min(...source.map((point) => point.x));
-    const maxX = Math.max(...source.map((point) => point.x));
-    const minY = Math.min(...source.map((point) => point.y));
-    const maxY = Math.max(...source.map((point) => point.y));
-    const spanX = Math.max(maxX - minX, 1);
-    const spanY = Math.max(maxY - minY, 1);
-    const paddingX = spanX * 0.12;
-    const paddingY = spanY * 0.12;
-    const bounds: PreviewBounds = {
-      minX: minX - paddingX,
-      maxX: maxX + paddingX,
-      minY: minY - paddingY,
-      maxY: maxY + paddingY,
-    };
+    const bounds = state.previewBounds ?? createPreviewBounds(boundsSource);
 
     const normalizedRoutePath = routePoints.map((point) => normalizeToUnit(point, bounds));
     const normalizedCorners = state.batteries.flatMap((battery, bIndex) =>
@@ -698,7 +717,13 @@ export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanO
       draggablePointIds: cornerPointIds,
       bounds,
     };
-  }, [state.batteries, state.cornerPoints, state.measurementPoints, state.populatedPath]);
+  }, [
+    state.batteries,
+    state.cornerPoints,
+    state.measurementPoints,
+    state.populatedPath,
+    state.previewBounds,
+  ]);
 
   const resetRoutePlan = useCallback(async () => {
     logRoutePlan('reset:start', {
@@ -716,6 +741,7 @@ export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanO
       populatedPath: [],
       populatedPathWithMetadata: [],
       batteries: [],
+      previewBounds: null,
     }));
     await initializeRoute();
   }, [initializeRoute]);

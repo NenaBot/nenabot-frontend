@@ -144,6 +144,26 @@ describe('useRoutePlan', () => {
     expect(result.current.preview.bounds.maxY).toBeLessThan(100);
   });
 
+  test('keeps preview bounds fixed when corner points move', async () => {
+    const { result } = renderHook(() => useRoutePlan({ selectedProfile }));
+
+    await waitFor(() => {
+      expect(result.current.state.isPopulating).toBe(false);
+    });
+
+    const initialBounds = result.current.preview.bounds;
+
+    await act(async () => {
+      result.current.moveCornerPoint('battery-0-corner-0', 999, 999);
+    });
+
+    await waitFor(() => {
+      expect(populatePath).toHaveBeenCalledTimes(2);
+    });
+
+    expect(result.current.preview.bounds).toEqual(initialBounds);
+  });
+
   test('clamps profile measurement density above max before populating', async () => {
     const highDensityProfile: ProfileModel = {
       ...selectedProfile,
