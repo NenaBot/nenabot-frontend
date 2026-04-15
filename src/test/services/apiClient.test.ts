@@ -106,6 +106,86 @@ describe('apiClient', () => {
     );
   });
 
+  test('uses correct HTTP methods and payload handling for helper methods', async () => {
+    const fetchMock = jest
+      .fn<Promise<Response>, [RequestInfo | URL, RequestInit | undefined]>()
+      .mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ ok: true }),
+      } as unknown as Response);
+
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    await apiClient.post(
+      '/api/test-post',
+      { a: 1 },
+      { headers: { Authorization: 'Bearer token' } },
+    );
+    await apiClient.put('/api/test-put', { b: 2 });
+    await apiClient.patch('/api/test-patch', { c: 3 });
+    await apiClient.delete('/api/test-delete');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'http://localhost:8000/api/test-post',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ a: 1 }),
+        headers: expect.objectContaining({
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer token',
+        }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://localhost:8000/api/test-put',
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({ b: 2 }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'http://localhost:8000/api/test-patch',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({ c: 3 }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'http://localhost:8000/api/test-delete',
+      expect.objectContaining({
+        method: 'DELETE',
+        body: undefined,
+      }),
+    );
+  });
+
+  test('does not retry JSON parsing errors on successful responses', async () => {
+    const jsonError = new TypeError('JSON parse failed');
+    const fetchMock = jest
+      .fn<Promise<Response>, [RequestInfo | URL, RequestInit | undefined]>()
+      .mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => {
+          throw jsonError;
+        },
+      } as unknown as Response);
+
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    await expect(apiClient.get('/api/json-fail', { retries: 3 })).rejects.toBe(jsonError);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  test('returns base API URL from helper', () => {
+    expect(apiClient.getBaseUrl()).toBe('http://localhost:8000');
+  });
+
   test('returns the current camera feed endpoint from deprecated helper', () => {
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 
