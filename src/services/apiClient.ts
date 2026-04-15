@@ -39,6 +39,17 @@ interface RequestConfig {
   retries?: number;
 }
 
+function isCameraEndpoint(endpoint: string): boolean {
+  return endpoint.startsWith('/api/stream/') || endpoint.startsWith('/api/path/detect');
+}
+
+function logCameraRequest(event: string, details: Record<string, unknown>): void {
+  console.info('[CameraAPI]', event, {
+    timestamp: new Date().toISOString(),
+    ...details,
+  });
+}
+
 async function request<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
   const {
     method = 'GET',
@@ -49,10 +60,21 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
   } = config;
 
   const url = `${API_BASE_URL}${endpoint}`;
+  const cameraRequest = isCameraEndpoint(endpoint);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
   console.log(`[API] ${method} ${url}`, { body, headers, timeout, retries });
+  if (cameraRequest) {
+    logCameraRequest('Outgoing camera-related request', {
+      method,
+      endpoint,
+      url,
+      timeout,
+      retries,
+      body,
+    });
+  }
 
   try {
     const response = await fetch(url, {
@@ -70,6 +92,15 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
       console.error(`[API] ${method} ${url} failed:`, response.status, error);
+      if (cameraRequest) {
+        logCameraRequest('Camera-related request failed', {
+          method,
+          endpoint,
+          url,
+          status: response.status,
+          error,
+        });
+      }
       throw new APIError(
         response.status,
         error.code || 'UNKNOWN_ERROR',
@@ -79,6 +110,14 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
 
     const data = (await response.json()) as T;
     console.log(`[API] ${method} ${url} success:`, data);
+    if (cameraRequest) {
+      logCameraRequest('Camera-related request succeeded', {
+        method,
+        endpoint,
+        url,
+        status: response.status,
+      });
+    }
     return data;
   } catch (error) {
     clearTimeout(timeoutId);
@@ -90,11 +129,28 @@ async function request<T>(endpoint: string, config: RequestConfig = {}): Promise
       !(error instanceof TypeError && error.message.includes('JSON'))
     ) {
       console.warn(`[API] ${method} ${url} retrying (${retries} attempts left):`, error);
+      if (cameraRequest) {
+        logCameraRequest('Retrying camera-related request', {
+          method,
+          endpoint,
+          url,
+          retriesLeft: retries,
+          error,
+        });
+      }
       await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
       return request<T>(endpoint, { ...config, retries: retries - 1 });
     }
 
     console.error(`[API] ${method} ${url} failed permanently:`, error);
+    if (cameraRequest) {
+      logCameraRequest('Camera-related request failed permanently', {
+        method,
+        endpoint,
+        url,
+        error,
+      });
+    }
     throw error;
   }
 }
@@ -120,7 +176,15 @@ export const apiClient = {
    * Used for MJPEG multipart streams that need direct src access
    */
   getVideoStreamUrl: (): string => {
-    return `${API_BASE_URL}/api/camera/stream`;
+    const legacyUrl = `${API_BASE_URL}/api/stream/camera/feed`;
+    console.warn(
+      '[CameraAPI] apiClient.getVideoStreamUrl() is deprecated, prefer getStreamUrl(kind)',
+      {
+        timestamp: new Date().toISOString(),
+        url: legacyUrl,
+      },
+    );
+    return legacyUrl;
   },
 
   /**

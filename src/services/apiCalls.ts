@@ -1,5 +1,42 @@
 import { apiClient } from './apiClient';
 
+function logCameraInteraction(event: string, details: Record<string, unknown>): void {
+  console.info('[CameraAPI]', event, {
+    timestamp: new Date().toISOString(),
+    ...details,
+  });
+}
+
+function warnIfLikelyUnreachableFromBrowser(streamUrl: string): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    const parsedUrl = new URL(streamUrl);
+    const host = parsedUrl.hostname;
+    const containerOnlyHosts = new Set(['backend', 'nenabot-backend']);
+    const isContainerOnlyHost = containerOnlyHosts.has(host) || host.endsWith('.internal');
+
+    if (!isContainerOnlyHost) {
+      return;
+    }
+
+    console.warn('[CameraAPI] Stream host may be unreachable from browser context', {
+      timestamp: new Date().toISOString(),
+      streamUrl,
+      browserHost: window.location.hostname,
+      suggestion:
+        'Use a browser-reachable API host (for example localhost or a reverse-proxy URL) for VITE_API_URL.',
+    });
+  } catch (error) {
+    console.warn('[CameraAPI] Failed to parse stream URL for host reachability check', {
+      streamUrl,
+      error,
+    });
+  }
+}
+
 export interface ComponentHealthApiResponse {
   status: string;
   error?: string | null;
@@ -243,7 +280,17 @@ export async function deleteJob(jobId: string): Promise<void> {
 }
 
 export function getStreamUrl(kind: 'camera' | 'detection'): string {
-  return `${apiClient.getBaseUrl()}/api/stream/${kind}/feed`;
+  const baseUrl = apiClient.getBaseUrl();
+  const streamUrl = `${baseUrl}/api/stream/${kind}/feed`;
+
+  logCameraInteraction('Resolved camera stream URL', {
+    kind,
+    baseUrl,
+    streamUrl,
+  });
+  warnIfLikelyUnreachableFromBrowser(streamUrl);
+
+  return streamUrl;
 }
 
 export function getJobEventsUrl(jobId: string): string {

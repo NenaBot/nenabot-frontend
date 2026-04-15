@@ -75,4 +75,20 @@ describe('apiCalls', () => {
     expect(getStreamUrl('camera')).toBe('http://localhost:8000/api/stream/camera/feed');
     expect(getJobEventsUrl('job/1')).toBe('http://localhost:8000/api/job/job%2F1/events');
   });
+
+  test('warns when stream URL uses container-only hostname', () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    (apiClient.getBaseUrl as jest.Mock).mockReturnValue('http://backend:8000');
+
+    const streamUrl = getStreamUrl('detection');
+
+    expect(streamUrl).toBe('http://backend:8000/api/stream/detection/feed');
+    expect(warnSpy).toHaveBeenCalledWith(
+      '[CameraAPI] Stream host may be unreachable from browser context',
+      expect.objectContaining({
+        streamUrl: 'http://backend:8000/api/stream/detection/feed',
+        browserHost: window.location.hostname,
+      }),
+    );
+  });
 });

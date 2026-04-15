@@ -105,4 +105,16 @@ describe('apiClient', () => {
       }),
     );
   });
+
+  test('returns the current camera feed endpoint from deprecated helper', () => {
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    expect(apiClient.getVideoStreamUrl()).toBe('http://localhost:8000/api/stream/camera/feed');
+    expect(warnSpy).toHaveBeenCalledWith(
+      '[CameraAPI] apiClient.getVideoStreamUrl() is deprecated, prefer getStreamUrl(kind)',
+      expect.objectContaining({
+        url: 'http://localhost:8000/api/stream/camera/feed',
+      }),
+    );
+  });
 });

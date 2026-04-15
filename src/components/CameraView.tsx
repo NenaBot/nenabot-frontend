@@ -1,4 +1,5 @@
 import { Camera, AlertCircle } from 'lucide-react';
+import { useEffect } from 'react';
 import { getStreamUrl } from '../services/apiCalls';
 import { useCameraStream } from '../hooks/useCameraStream';
 
@@ -23,6 +24,37 @@ export function CameraView({
     streamUrl,
     retryInterval,
   );
+
+  useEffect(() => {
+    console.info('[CameraView] Rendered camera view', {
+      timestamp: new Date().toISOString(),
+      title,
+      streamKind,
+      streamUrl,
+      streamStatus,
+      streamSrc,
+    });
+  }, [streamKind, streamSrc, streamStatus, streamUrl, title]);
+
+  const onImageLoad = () => {
+    console.info('[CameraView] img onLoad fired', {
+      timestamp: new Date().toISOString(),
+      streamKind,
+      streamSrc,
+      streamStatus,
+    });
+    handleLoad();
+  };
+
+  const onImageError = () => {
+    console.error('[CameraView] img onError fired', {
+      timestamp: new Date().toISOString(),
+      streamKind,
+      streamSrc,
+      streamStatus,
+    });
+    handleError();
+  };
 
   const heightMap = {
     compact: 'aspect-video',
@@ -75,8 +107,8 @@ export function CameraView({
           src={streamSrc}
           alt="Live camera stream"
           className={`w-full h-full object-cover ${showPlaceholder ? 'hidden' : 'block'}`}
-          onLoad={handleLoad}
-          onError={handleError}
+          onLoad={onImageLoad}
+          onError={onImageError}
         />
 
         {/* Placeholder - shown when stream unavailable */}
