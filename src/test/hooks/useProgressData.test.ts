@@ -12,10 +12,19 @@ jest.mock('../../hooks/useMockMode', () => ({
   useMockMode: jest.fn(),
 }));
 
+jest.mock('../../services/apiCalls', () => ({
+  fetchJobs: jest.fn(),
+}));
+
+const { fetchJobs } = jest.requireMock('../../services/apiCalls') as {
+  fetchJobs: jest.Mock;
+};
+
 describe('useProgressData', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (useMockMode as jest.Mock).mockReturnValue([false, jest.fn()]);
+    fetchJobs.mockResolvedValue([]);
     (useJobEvents as jest.Mock).mockReturnValue({
       events: [],
       error: null,
@@ -31,7 +40,74 @@ describe('useProgressData', () => {
 
     expect(result.current.progressState).toBeNull();
     expect(result.current.error).toBe('No active job selected.');
+    expect(result.current.activeJobId).toBeNull();
+    expect(fetchJobs).toHaveBeenCalledTimes(1);
     expect(useJobEvents).toHaveBeenCalledWith(null, true);
+  });
+
+  test('recovers the most recent running job when no job id is provided', async () => {
+    fetchJobs.mockResolvedValue([
+      { id: 'job-old', status: { state: 'running' } },
+      { id: 'job-new', status: { state: 'running' } },
+    ]);
+    const recoveredEventResponse = {
+      events: [
+        {
+          type: 'job:started',
+          state: 'running',
+          totalPoints: 5,
+          lastPointProcessed: 1,
+          timestamp: '2026-03-18T10:00:00.000Z',
+        },
+      ],
+      error: null,
+    };
+    const emptyEventResponse = {
+      events: [],
+      error: null,
+    };
+    (useJobEvents as jest.Mock).mockImplementation((resolvedJobId: string | null) => {
+      if (resolvedJobId === 'job-new') {
+        return recoveredEventResponse;
+      }
+
+      return emptyEventResponse;
+    });
+
+    const { result } = renderHook(() => useProgressData(null));
+
+    await waitFor(() => {
+      expect(result.current.activeJobId).toBe('job-new');
+    });
+
+    expect(fetchJobs).toHaveBeenCalledTimes(1);
+    expect(result.current.error).toBeNull();
+    expect(result.current.progressState?.scan.state).toBe('running');
+  });
+
+  test('prefers explicit job id and does not perform recovery lookup', async () => {
+    (useJobEvents as jest.Mock).mockReturnValue({
+      events: [
+        {
+          type: 'job:started',
+          state: 'running',
+          totalPoints: 4,
+          lastPointProcessed: 0,
+          timestamp: '2026-03-18T10:00:00.000Z',
+        },
+      ],
+      error: null,
+    });
+
+    const { result } = renderHook(() => useProgressData('job-direct'));
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.activeJobId).toBe('job-direct');
+    expect(fetchJobs).not.toHaveBeenCalled();
+    expect(useJobEvents).toHaveBeenCalledWith('job-direct', true);
   });
 
   test('maps SSE events into progress, events, and measurements', async () => {
@@ -166,7 +242,7 @@ describe('useProgressData', () => {
   test('uses mock progress state when mock mode is enabled', async () => {
     (useMockMode as jest.Mock).mockReturnValue([true, jest.fn()]);
 
-    const { result } = renderHook(() => useProgressData('job-3'));
+    const { result } = renderHook(() => useProgressData(null));
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -184,6 +260,8 @@ describe('useProgressData', () => {
       }),
     );
     expect(result.current.error).toBeNull();
+    expect(result.current.activeJobId).toBeNull();
+    expect(fetchJobs).not.toHaveBeenCalled();
     expect(useJobEvents).toHaveBeenCalledWith(null, true);
   });
 });
