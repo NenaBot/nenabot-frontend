@@ -51,6 +51,6 @@ export const mockProgressTabState: ProgressTabState = {
     { id: 2, time: '2:32:18 PM', level: 'success', message: 'job:waypoint_completed' },
     { id: 3, time: '2:32:20 PM', level: 'info', message: 'job:waypoint_started' },
   ],
-  measurements: [{ id: 1, point: 'WP-4', wavelength: '-', intensity: 0.87, status: 'complete' }],
+  measurements: [{ id: 1, point: 'WP-4', time: '2:32:18 PM', intensity: 0.87, status: 'complete' }],
   lastEventType: 'job:waypoint_started',
 };

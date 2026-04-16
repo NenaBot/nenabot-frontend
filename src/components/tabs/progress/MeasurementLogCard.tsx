@@ -1,5 +1,7 @@
 import { CheckCircle } from 'lucide-react';
+import { useTopInsertListAnimation } from '../../../hooks/useTopInsertListAnimation';
 import { ScanMeasurement } from '../../../types/progress.types';
+import { ProgressLogCard } from './ProgressLogCard';
 
 interface MeasurementLogCardProps {
   measurements: ScanMeasurement[];
@@ -9,17 +11,39 @@ interface MeasurementLogCardProps {
  * Shows latest measurements with explicit processing/complete state markers.
  */
 export function MeasurementLogCard({ measurements }: MeasurementLogCardProps) {
+  const { displayItems: displayMeasurements, enteringItemId, isPushingExistingItems } =
+    useTopInsertListAnimation(measurements);
+
+  const formatIntensity = (value: number): string => {
+    if (!Number.isFinite(value)) {
+      return '-';
+    }
+
+    return new Intl.NumberFormat(undefined, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 3,
+    }).format(value);
+  };
+
   return (
-    <section className="border border-[var(--md-sys-color-outline-variant)] rounded-2xl overflow-hidden bg-[var(--md-sys-color-surface-container-lowest)]">
-      <div className="px-5 py-3 border-b border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface)]">
-        <h3 className="text-sm font-medium">Recent Measurements</h3>
-      </div>
-      <div className="p-4 max-h-62.5 overflow-y-auto">
-        <div className="space-y-2">
-          {measurements.map((measurement) => (
+    <ProgressLogCard
+      title="Recent Measurements"
+      isEmpty={displayMeasurements.length === 0}
+      emptyMessage="Waiting for measurements..."
+    >
+      <div className="space-y-2">
+        {displayMeasurements.map((measurement) => {
+          const enterClass = enteringItemId === measurement.id ? 'progress-log-item-enter' : '';
+          const pushClass =
+            isPushingExistingItems && enteringItemId !== measurement.id
+              ? 'progress-log-item-push'
+              : '';
+
+          return (
             <div
               key={measurement.id}
-              className="p-3 border border-[var(--md-sys-color-outline-variant)] rounded-lg hover:bg-[var(--md-sys-color-surface-variant)] transition-colors"
+              data-testid={`measurement-log-row-${measurement.id}`}
+              className={`p-3 border border-(--md-sys-color-outline-variant) rounded-lg hover:bg-(--md-sys-color-surface-variant) transition-colors ${enterClass} ${pushClass}`.trim()}
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium">{measurement.point}</span>
@@ -29,24 +53,22 @@ export function MeasurementLogCard({ measurements }: MeasurementLogCardProps) {
                   <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                 <div>
-                  <span className="text-[var(--md-sys-color-on-surface-variant)]">λ: </span>
-                  <span className="text-[var(--md-sys-color-on-surface)]">
-                    {measurement.wavelength}
+                  <span className="text-(--md-sys-color-on-surface-variant)">Intensity: </span>
+                  <span className="text-(--md-sys-color-on-surface)">
+                    {formatIntensity(measurement.intensity)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[var(--md-sys-color-on-surface-variant)]">I: </span>
-                  <span className="text-[var(--md-sys-color-on-surface)]">
-                    {measurement.intensity}
-                  </span>
+                  <span className="text-(--md-sys-color-on-surface-variant)">Time: </span>
+                  <span className="text-(--md-sys-color-on-surface)">{measurement.time}</span>
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
-    </section>
+    </ProgressLogCard>
   );
 }

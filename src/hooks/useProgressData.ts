@@ -104,7 +104,7 @@ function mapEventsToProgressState(events: JobEventApiResponse[]): ProgressTabSta
       .map((event, index) => ({
         id: index + 1,
         point: `WP-${event.measurement?.waypointIndex ?? index + 1}`,
-        wavelength: '-',
+        time: normalizeEventTime(event.measurement?.timestamp ?? event.timestamp),
         intensity: toMeasurementIntensity(event),
         status: normalizeEventType(event.type).includes('completed') ? 'complete' : 'processing',
       })),

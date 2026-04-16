@@ -28,7 +28,7 @@ export interface ProgressEvent {
 type MeasurementComplete = {
   id: number;
   point: string;
-  wavelength: string;
+  time: string;
   intensity: number;
   status: 'complete';
 };
@@ -36,7 +36,7 @@ type MeasurementComplete = {
 type MeasurementProcessing = {
   id: number;
   point: string;
-  wavelength: string;
+  time: string;
   intensity: number;
   status: 'processing';
 };
