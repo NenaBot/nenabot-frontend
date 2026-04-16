@@ -85,6 +85,85 @@ describe('useProgressData', () => {
     expect(result.current.progressState?.scan.state).toBe('running');
   });
 
+  test('falls back to the most recent completed job when no running job exists', async () => {
+    fetchJobs.mockResolvedValue([
+      { id: 'job-completed-old', status: { state: 'completed' } },
+      { id: 'job-completed-new', status: { state: 'completed' } },
+    ]);
+    const completedEventResponse = {
+      events: [
+        {
+          type: 'job:snapshot',
+          state: 'completed',
+          totalPoints: 6,
+          lastPointProcessed: 6,
+          timestamp: '2026-03-18T10:10:00.000Z',
+        },
+      ],
+      error: null,
+    };
+    const emptyEventResponse = {
+      events: [],
+      error: null,
+    };
+    (useJobEvents as jest.Mock).mockImplementation((resolvedJobId: string | null) => {
+      if (resolvedJobId === 'job-completed-new') {
+        return completedEventResponse;
+      }
+
+      return emptyEventResponse;
+    });
+
+    const { result } = renderHook(() => useProgressData(null));
+
+    await waitFor(() => {
+      expect(result.current.activeJobId).toBe('job-completed-new');
+    });
+
+    expect(fetchJobs).toHaveBeenCalledTimes(1);
+    expect(result.current.error).toBeNull();
+    expect(result.current.progressState?.scan.state).toBe('completed');
+  });
+
+  test('prefers running jobs over completed jobs when both exist', async () => {
+    fetchJobs.mockResolvedValue([
+      { id: 'job-completed-new', status: { state: 'completed' } },
+      { id: 'job-running-old', status: { state: 'running' } },
+      { id: 'job-running-new', status: { state: 'running' } },
+    ]);
+    const runningEventResponse = {
+      events: [
+        {
+          type: 'job:started',
+          state: 'running',
+          totalPoints: 7,
+          lastPointProcessed: 1,
+          timestamp: '2026-03-18T10:20:00.000Z',
+        },
+      ],
+      error: null,
+    };
+    const emptyEventResponse = {
+      events: [],
+      error: null,
+    };
+    (useJobEvents as jest.Mock).mockImplementation((resolvedJobId: string | null) => {
+      if (resolvedJobId === 'job-running-new') {
+        return runningEventResponse;
+      }
+
+      return emptyEventResponse;
+    });
+
+    const { result } = renderHook(() => useProgressData(null));
+
+    await waitFor(() => {
+      expect(result.current.activeJobId).toBe('job-running-new');
+    });
+
+    expect(result.current.progressState?.scan.state).toBe('running');
+  });
+
   test('prefers explicit job id and does not perform recovery lookup', async () => {
     (useJobEvents as jest.Mock).mockReturnValue({
       events: [
