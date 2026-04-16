@@ -19,11 +19,15 @@ export function useCameraStream(streamUrl: string, retryInterval: number, isActi
   useEffect(() => {
     if (!isActive) {
       clearTimeout(retryTimeoutRef.current);
+      logCameraStream('Stream disconnected', {
+        streamUrl,
+        reason: 'inactive',
+      });
       setStreamStatus('disconnected');
       return;
     }
 
-    logCameraStream('Stream URL changed, resetting state', {
+    logCameraStream('Stream created', {
       streamUrl,
       retryInterval,
     });
@@ -32,53 +36,29 @@ export function useCameraStream(streamUrl: string, retryInterval: number, isActi
   }, [isActive, retryInterval, streamUrl]);
 
   useEffect(() => {
-    if (!isActive) {
-      return;
-    }
-
-    logCameraStream('Stream status updated', {
-      streamStatus,
-      streamSrc,
-      streamUrl,
-    });
-  }, [streamSrc, streamStatus, streamUrl]);
-
-  useEffect(() => {
     clearTimeout(retryTimeoutRef.current);
 
     if (!isActive || streamStatus !== 'disconnected' || retryInterval <= 0) {
       return;
     }
 
-    logCameraStream('Scheduling stream reconnect attempt', {
-      streamUrl,
-      retryInterval,
-    });
-
     retryTimeoutRef.current = window.setTimeout(() => {
       try {
         const url = new URL(streamUrl);
         url.searchParams.set('t', Date.now().toString());
         const retryUrl = url.toString();
-        logCameraStream('Applying cache-busted retry URL', {
-          streamUrl,
-          retryUrl,
-        });
         setStreamSrc(retryUrl);
         setStreamStatus('loading');
       } catch (error) {
-        logCameraStream('Skipping reconnect because stream URL is invalid', {
+        logCameraStream('Stream error', {
           streamUrl,
-          error,
+          error: error instanceof Error ? error.message : String(error),
         });
         setStreamStatus('error');
       }
     }, retryInterval);
 
     return () => {
-      logCameraStream('Clearing pending reconnect timer', {
-        streamUrl,
-      });
       clearTimeout(retryTimeoutRef.current);
     };
   }, [isActive, retryInterval, streamStatus, streamUrl]);
@@ -88,7 +68,7 @@ export function useCameraStream(streamUrl: string, retryInterval: number, isActi
       return;
     }
 
-    logCameraStream('Stream image loaded', {
+    logCameraStream('Stream connected', {
       streamSrc,
       streamUrl,
     });
@@ -100,9 +80,10 @@ export function useCameraStream(streamUrl: string, retryInterval: number, isActi
       return;
     }
 
-    logCameraStream('Stream image errored', {
+    logCameraStream('Stream disconnected', {
       streamSrc,
       streamUrl,
+      reason: 'image-error',
     });
     setStreamStatus('disconnected');
   }, [isActive, streamSrc, streamUrl]);

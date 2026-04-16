@@ -80,7 +80,12 @@ describe('ProgressTab', () => {
 
   test('does not crash when transitioning from loading to loaded state', () => {
     useProgressData
-      .mockReturnValueOnce({ activeJobId: 'job-1', progressState: null, isLoading: true, error: null })
+      .mockReturnValueOnce({
+        activeJobId: 'job-1',
+        progressState: null,
+        isLoading: true,
+        error: null,
+      })
       .mockReturnValueOnce({
         activeJobId: 'job-1',
         progressState: createState(),
