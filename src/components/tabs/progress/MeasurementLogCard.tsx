@@ -19,8 +19,11 @@ function formatRawPayload(payload: Record<string, unknown> | null): string {
  * Shows latest measurements with explicit processing/complete state markers.
  */
 export function MeasurementLogCard({ measurements }: MeasurementLogCardProps) {
-  const { displayItems: displayMeasurements, enteringItemId, isPushingExistingItems } =
-    useTopInsertListAnimation(measurements);
+  const {
+    displayItems: displayMeasurements,
+    enteringItemId,
+    isPushingExistingItems,
+  } = useTopInsertListAnimation(measurements);
 
   const formatIntensity = (value: number): string => {
     if (!Number.isFinite(value)) {

@@ -50,10 +50,7 @@ describe('MeasurementLogCard', () => {
   test('animates only newly inserted top measurement', () => {
     const { rerender } = render(
       <MeasurementLogCard
-        measurements={[
-          createMeasurement(1, 'WP-1', 0.45),
-          createMeasurement(2, 'WP-2', 0.78),
-        ]}
+        measurements={[createMeasurement(1, 'WP-1', 0.45), createMeasurement(2, 'WP-2', 0.78)]}
       />,
     );
 

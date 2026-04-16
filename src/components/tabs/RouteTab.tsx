@@ -120,6 +120,11 @@ export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: Rou
       estimatedSeconds: estimateRouteDurationSeconds(estimatedPoints),
     };
   }, [state.cornerPoints.length, state.populatedPath.length]);
+  const routeStatusMessage = state.isInitializing
+    ? 'Detecting initial path...'
+    : state.isPopulating
+      ? 'Updating populated path...'
+      : 'Route preview up to date.';
 
   return (
     <div className="space-y-6">
@@ -167,22 +172,18 @@ export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: Rou
             onMeasurementDensityInputChange={handleMeasurementDensityChange}
             onPopulatePath={handlePopulatePath}
           />
-          <RouteEstimateSummary estimate={routeEstimate} />
-
-          <div className="mt-4 text-xs text-[var(--md-sys-color-on-surface-variant)] space-y-1">
-            <p>Profile: {selectedProfile?.name ?? '-'}</p>
-            <p>Work Z: {selectedProfile?.settings.workZ ?? 0}</p>
-            <p>Work R: {selectedProfile?.settings.workR ?? 0}</p>
-            <p>Corner points: {state.cornerPoints.length}</p>
-            <p>Measurement points: {state.measurementPoints.length}</p>
-            <p>
-              {state.isInitializing
-                ? 'Detecting initial path...'
-                : state.isPopulating
-                  ? 'Updating populated path...'
-                  : 'Route preview up to date.'}
-            </p>
-          </div>
+          <RouteEstimateSummary
+            estimate={routeEstimate}
+            profileName={selectedProfile?.name ?? '-'}
+            workZ={selectedProfile?.settings.workZ ?? 0}
+            workR={selectedProfile?.settings.workR ?? 0}
+            cornerPoints={state.cornerPoints.length}
+            measurementPoints={state.measurementPoints.length}
+            detectedBatteries={detectedBatteries}
+            checkedWaypoints={checkedWaypoints}
+            statusMessage={routeStatusMessage}
+            isBusy={state.isInitializing || state.isPopulating}
+          />
         </div>
 
         <div className="lg:col-span-2">
@@ -209,11 +210,6 @@ export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: Rou
             </span>
           </div>
         </div>
-      </div>
-
-      <div className="flex items-center justify-between text-sm text-[var(--md-sys-color-on-surface-variant)] border border-[var(--md-sys-color-outline-variant)] rounded-lg px-3 py-2">
-        <span>Detected batteries: {detectedBatteries}</span>
-        <span>Checked waypoints: {checkedWaypoints}</span>
       </div>
 
       <button
