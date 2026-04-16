@@ -19,7 +19,7 @@ export function useCameraStream(streamUrl: string, retryInterval: number, isActi
   useEffect(() => {
     if (!isActive) {
       clearTimeout(retryTimeoutRef.current);
-      logCameraStream('Stream disconnected', {
+      logCameraStream('Stream unsubscribed', {
         streamUrl,
         reason: 'inactive',
       });
@@ -27,7 +27,7 @@ export function useCameraStream(streamUrl: string, retryInterval: number, isActi
       return;
     }
 
-    logCameraStream('Stream created', {
+    logCameraStream('Stream subscribed', {
       streamUrl,
       retryInterval,
     });
@@ -68,19 +68,15 @@ export function useCameraStream(streamUrl: string, retryInterval: number, isActi
       return;
     }
 
-    logCameraStream('Stream connected', {
-      streamSrc,
-      streamUrl,
-    });
     setStreamStatus('connected');
-  }, [isActive, streamSrc, streamUrl]);
+  }, [isActive]);
 
   const handleError = useCallback(() => {
     if (!isActive) {
       return;
     }
 
-    logCameraStream('Stream disconnected', {
+    logCameraStream('Stream error', {
       streamSrc,
       streamUrl,
       reason: 'image-error',

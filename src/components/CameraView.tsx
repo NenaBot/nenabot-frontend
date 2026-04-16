@@ -1,5 +1,4 @@
 import { Camera, AlertCircle } from 'lucide-react';
-import { useEffect } from 'react';
 import { getStreamUrl } from '../services/apiCalls';
 import { useCameraStream } from '../hooks/useCameraStream';
 
@@ -28,39 +27,11 @@ export function CameraView({
     isActive,
   );
 
-  useEffect(() => {
-    if (!isActive) {
-      return;
-    }
-
-    console.info('[CameraView] Rendered camera view', {
-      timestamp: new Date().toISOString(),
-      title,
-      streamKind,
-      streamUrl,
-      streamStatus,
-      streamSrc,
-      isActive,
-    });
-  }, [isActive, streamKind, streamSrc, streamStatus, streamUrl, title]);
-
   const onImageLoad = () => {
-    console.info('[CameraView] img onLoad fired', {
-      timestamp: new Date().toISOString(),
-      streamKind,
-      streamSrc,
-      streamStatus,
-    });
     handleLoad();
   };
 
   const onImageError = () => {
-    console.error('[CameraView] img onError fired', {
-      timestamp: new Date().toISOString(),
-      streamKind,
-      streamSrc,
-      streamStatus,
-    });
     handleError();
   };
 
