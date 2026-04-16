@@ -5,6 +5,14 @@ interface MeasurementLogCardProps {
   measurements: ScanMeasurement[];
 }
 
+function formatRawPayload(payload: Record<string, unknown> | null): string {
+  if (!payload) {
+    return '{}';
+  }
+
+  return JSON.stringify(payload, null, 2);
+}
+
 /**
  * Shows latest measurements with explicit processing/complete state markers.
  */
@@ -37,12 +45,25 @@ export function MeasurementLogCard({ measurements }: MeasurementLogCardProps) {
                   </span>
                 </div>
                 <div>
-                  <span className="text-[var(--md-sys-color-on-surface-variant)]">I: </span>
+                  <span className="text-[var(--md-sys-color-on-surface-variant)]">
+                    intensityTopAverage:{' '}
+                  </span>
                   <span className="text-[var(--md-sys-color-on-surface)]">
-                    {measurement.intensity}
+                    {measurement.intensity.toFixed(3)}
                   </span>
                 </div>
               </div>
+              <p className="mt-2 text-xs text-[var(--md-sys-color-on-surface-variant)]">
+                Timestamp: {measurement.timestamp}
+              </p>
+              <details className="mt-2 text-xs">
+                <summary className="cursor-pointer text-[var(--md-sys-color-primary)]">
+                  Full scanResult payload
+                </summary>
+                <pre className="mt-2 max-h-40 overflow-auto rounded bg-[var(--md-sys-color-surface)] p-2 text-[10px] leading-relaxed text-[var(--md-sys-color-on-surface-variant)]">
+                  {formatRawPayload(measurement.rawScanResult)}
+                </pre>
+              </details>
             </div>
           ))}
         </div>

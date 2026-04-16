@@ -21,6 +21,7 @@ const selectedProfile: ProfileModel = {
   settings: {
     workZ: 10,
     workR: 20,
+    threshold: 120,
     options: {
       speed: 'slow',
       measurementDensity: 0.7,
@@ -82,18 +83,18 @@ describe('useRoutePlan', () => {
         batteries: [
           {
             corners: [
-              { x: 5, y: 15 },
-              { x: 15, y: 15 },
-              { x: 15, y: 25 },
-              { x: 5, y: 25 },
+              { pixelX: 5, pixelY: 15 },
+              { pixelX: 15, pixelY: 15 },
+              { pixelX: 15, pixelY: 25 },
+              { pixelX: 5, pixelY: 25 },
             ],
           },
           {
             corners: [
-              { x: 25, y: 35 },
-              { x: 35, y: 35 },
-              { x: 35, y: 45 },
-              { x: 25, y: 45 },
+              { pixelX: 25, pixelY: 35 },
+              { pixelX: 35, pixelY: 35 },
+              { pixelX: 35, pixelY: 45 },
+              { pixelX: 25, pixelY: 45 },
             ],
           },
         ],
@@ -185,18 +186,18 @@ describe('useRoutePlan', () => {
         batteries: [
           {
             corners: [
-              { x: 0, y: 100 },
-              { x: 15, y: 15 },
-              { x: 15, y: 25 },
-              { x: 5, y: 25 },
+              { pixelX: 0, pixelY: 100 },
+              { pixelX: 15, pixelY: 15 },
+              { pixelX: 15, pixelY: 25 },
+              { pixelX: 5, pixelY: 25 },
             ],
           },
           {
             corners: [
-              { x: 25, y: 35 },
-              { x: 35, y: 35 },
-              { x: 35, y: 45 },
-              { x: 25, y: 45 },
+              { pixelX: 25, pixelY: 35 },
+              { pixelX: 35, pixelY: 35 },
+              { pixelX: 35, pixelY: 45 },
+              { pixelX: 25, pixelY: 45 },
             ],
           },
         ],

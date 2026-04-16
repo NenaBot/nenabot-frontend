@@ -16,6 +16,14 @@ interface MeasurementPointsTableProps {
 type SortField = 'label' | 'waypointIndex' | 'timestamp' | 'measuredValue' | 'x' | 'y';
 type SortDirection = 'asc' | 'desc';
 
+function formatPayload(payload: Record<string, unknown> | null | undefined): string {
+  if (!payload) {
+    return '{}';
+  }
+
+  return JSON.stringify(payload, null, 2);
+}
+
 export function MeasurementPointsTable({
   points,
   criticalThreshold,
@@ -192,7 +200,7 @@ export function MeasurementPointsTable({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[920px] text-sm text-[var(--md-sys-color-on-surface)]">
+        <table className="w-full min-w-[1080px] text-sm text-[var(--md-sys-color-on-surface)]">
           <thead className="bg-[var(--md-sys-color-surface-container-high)] text-[var(--md-sys-color-on-surface)] sticky top-0 z-10">
             <tr>
               <th className="text-left px-4 py-3 font-semibold">
@@ -247,6 +255,7 @@ export function MeasurementPointsTable({
               </th>
               <th className="text-left px-4 py-3 font-semibold">Comment</th>
               <th className="text-left px-4 py-3 font-semibold">Status</th>
+              <th className="text-left px-4 py-3 font-semibold">Measurement Data</th>
               <th className="text-left px-4 py-3 font-semibold">
                 <button
                   type="button"
@@ -302,6 +311,16 @@ export function MeasurementPointsTable({
                         Normal
                       </span>
                     )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <details className="text-xs" onClick={(event) => event.stopPropagation()}>
+                      <summary className="cursor-pointer text-[var(--md-sys-color-primary)]">
+                        View payload
+                      </summary>
+                      <pre className="mt-2 max-h-48 overflow-auto rounded bg-[var(--md-sys-color-surface)] p-2 text-[10px] leading-relaxed text-[var(--md-sys-color-on-surface-variant)]">
+                        {formatPayload(point.rawScanResult)}
+                      </pre>
+                    </details>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-[var(--md-sys-color-on-surface-variant)]">
                     {formatDateTime(point.timestamp)}

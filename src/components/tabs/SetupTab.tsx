@@ -12,6 +12,35 @@ interface SetupTabProps {
   onNext?: () => void;
 }
 
+function parseFiniteNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return null;
+}
+
+function resolveProfileThreshold(profile: ProfileApiResponse): number {
+  const fromTopLevel = parseFiniteNumber(profile.threshold);
+  if (fromTopLevel !== null) {
+    return fromTopLevel;
+  }
+
+  const fromOptions = parseFiniteNumber(profile.options?.threshold);
+  if (fromOptions !== null) {
+    return fromOptions;
+  }
+
+  return 120;
+}
+
 function toProfileModel(profile: ProfileApiResponse): ProfileModel {
   return {
     name: profile.name,
@@ -21,6 +50,7 @@ function toProfileModel(profile: ProfileApiResponse): ProfileModel {
         typeof profile.workZ === 'number' && Number.isFinite(profile.workZ) ? profile.workZ : 0,
       workR:
         typeof profile.workR === 'number' && Number.isFinite(profile.workR) ? profile.workR : 0,
+      threshold: resolveProfileThreshold(profile),
       options: profile.options ?? {},
     },
   };
@@ -56,6 +86,23 @@ function getWorkSettingError(rawValue: string): string | null {
   return null;
 }
 
+function getThresholdSettingError(rawValue: string): string | null {
+  if (rawValue.trim().length === 0) {
+    return 'Invalid input';
+  }
+
+  if (rawValue === '-' || rawValue === '.' || rawValue === '-.') {
+    return 'Invalid input';
+  }
+
+  const parsed = Number(rawValue);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return 'Invalid input';
+  }
+
+  return null;
+}
+
 export function SetupTab({ selectedProfile, onProfileChange, onNext }: SetupTabProps) {
   const [profiles, setProfiles] = useState<ProfileModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -68,6 +115,8 @@ export function SetupTab({ selectedProfile, onProfileChange, onNext }: SetupTabP
     workZ: null,
     workR: null,
   });
+  const [thresholdText, setThresholdText] = useState('120');
+  const [thresholdError, setThresholdError] = useState<string | null>(null);
   const [optionsText, setOptionsText] = useState('{}');
   const [optionsError, setOptionsError] = useState<string | null>(null);
 
@@ -111,6 +160,8 @@ export function SetupTab({ selectedProfile, onProfileChange, onNext }: SetupTabP
     if (!selectedProfile) {
       setWorkText({ workZ: '0', workR: '0' });
       setWorkError({ workZ: null, workR: null });
+      setThresholdText('120');
+      setThresholdError(null);
       setOptionsText('{}');
       setOptionsError(null);
       return;
@@ -121,6 +172,8 @@ export function SetupTab({ selectedProfile, onProfileChange, onNext }: SetupTabP
       workR: String(selectedProfile.settings.workR),
     });
     setWorkError({ workZ: null, workR: null });
+    setThresholdText(String(selectedProfile.settings.threshold));
+    setThresholdError(null);
     setOptionsText(JSON.stringify(selectedProfile.settings.options, null, 2));
     setOptionsError(null);
   }, [selectedProfile]);
@@ -173,6 +226,44 @@ export function SetupTab({ selectedProfile, onProfileChange, onNext }: SetupTabP
     setWorkError((previous) => ({ ...previous, [key]: null }));
     const parsed = Number(currentText);
     setWorkText((previous) => ({ ...previous, [key]: String(parsed) }));
+  };
+
+  const handleThresholdChange = (rawValue: string) => {
+    if (!selectedProfile) return;
+
+    setThresholdText(rawValue);
+
+    const error = getThresholdSettingError(rawValue);
+    if (error) {
+      setThresholdError(error);
+      return;
+    }
+
+    setThresholdError(null);
+    const parsed = Number(rawValue);
+
+    onProfileChange({
+      ...selectedProfile,
+      settings: {
+        ...selectedProfile.settings,
+        threshold: parsed,
+      },
+    });
+  };
+
+  const handleThresholdBlur = () => {
+    if (!selectedProfile) return;
+
+    const currentText = thresholdText.trim();
+    const error = getThresholdSettingError(currentText);
+    if (error) {
+      setThresholdError(error);
+      return;
+    }
+
+    const parsed = Number(currentText);
+    setThresholdError(null);
+    setThresholdText(String(parsed));
   };
 
   const handleOptionsChange = (rawValue: string) => {
@@ -267,7 +358,7 @@ export function SetupTab({ selectedProfile, onProfileChange, onNext }: SetupTabP
         title="Profile Settings"
         description="Adjust these values before creating a job."
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div className="space-y-2">
             <label className="text-sm text-[var(--md-sys-color-on-surface-variant)]">Work Z</label>
             <input
@@ -299,6 +390,24 @@ export function SetupTab({ selectedProfile, onProfileChange, onNext }: SetupTabP
               <p className="text-xs text-[var(--md-sys-color-error)]">Invalid input</p>
             )}
           </div>
+
+          <div className="space-y-2">
+            <label className="text-sm text-[var(--md-sys-color-on-surface-variant)]">
+              Threshold
+            </label>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={thresholdText}
+              onChange={(event) => handleThresholdChange(event.target.value)}
+              onBlur={handleThresholdBlur}
+              className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm"
+              disabled={!selectedProfile}
+            />
+            {thresholdError && (
+              <p className="text-xs text-[var(--md-sys-color-error)]">Invalid input</p>
+            )}
+          </div>
         </div>
 
         <div className="space-y-2">
@@ -324,7 +433,8 @@ export function SetupTab({ selectedProfile, onProfileChange, onNext }: SetupTabP
             !selectedProfile ||
             Boolean(optionsError) ||
             Boolean(workError.workZ) ||
-            Boolean(workError.workR)
+            Boolean(workError.workR) ||
+            Boolean(thresholdError)
           }
           className="px-6 py-3 bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)] rounded-full flex items-center gap-2 hover:shadow-lg transition-all text-sm disabled:opacity-60"
         >

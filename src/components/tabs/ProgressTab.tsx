@@ -110,12 +110,14 @@ export function ProgressTab({ jobId, onNext, isActive = true }: ProgressTabProps
 
         {/* Right Panel - Live Camera Feed */}
         <div className="lg:col-span-2">
-          <CameraView
-            title="Live Camera Feed"
-            showStatus={true}
-            height="full"
-            isActive={isActive}
-          />
+          {isActive && (
+            <CameraView
+              title="Live Camera Feed"
+              showStatus={true}
+              height="full"
+              isActive={isActive}
+            />
+          )}
 
           {isTerminal && (
             <div className="mt-4 p-4 border border-[var(--md-sys-color-outline-variant)] rounded-xl bg-[var(--md-sys-color-surface-container-low)]">

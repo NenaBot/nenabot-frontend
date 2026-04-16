@@ -74,12 +74,14 @@ describe('useProgressData', () => {
       expect.objectContaining({
         point: 'WP-4',
         intensity: 0,
+        timestamp: '-',
+        rawScanResult: null,
         status: 'complete',
       }),
     );
   });
 
-  test('extracts measured intensity from measurement scanResult', async () => {
+  test('extracts measured intensity from measurement scanResult.evaluation.intensityTopAverage', async () => {
     (useJobEvents as jest.Mock).mockReturnValue({
       events: [
         {
@@ -91,8 +93,11 @@ describe('useProgressData', () => {
           measurement: {
             waypointIndex: 5,
             scanResult: {
-              measuredValue: 0.63,
+              evaluation: {
+                intensityTopAverage: 0.63,
+              },
             },
+            timestamp: '2026-03-18T10:00:01.000Z',
           },
         },
       ],
@@ -109,6 +114,55 @@ describe('useProgressData', () => {
       expect.objectContaining({
         point: 'WP-5',
         intensity: 0.63,
+        timestamp: expect.any(String),
+        rawScanResult: {
+          evaluation: {
+            intensityTopAverage: 0.63,
+          },
+        },
+        status: 'complete',
+      }),
+    );
+  });
+
+  test('extracts measured intensity from measurement scanResult.evaluation.intensity_average', async () => {
+    (useJobEvents as jest.Mock).mockReturnValue({
+      events: [
+        {
+          type: 'job:waypoint_completed',
+          state: 'running',
+          totalPoints: 12,
+          lastPointProcessed: 6,
+          timestamp: '2026-03-18T10:00:02.000Z',
+          measurement: {
+            waypointIndex: 6,
+            scanResult: {
+              evaluation: {
+                intensity_average: 0.71,
+              },
+            },
+            timestamp: '2026-03-18T10:00:02.000Z',
+          },
+        },
+      ],
+      error: null,
+    });
+
+    const { result } = renderHook(() => useProgressData('job-1'));
+
+    await waitFor(() => {
+      expect(result.current.progressState?.measurements).toHaveLength(1);
+    });
+
+    expect(result.current.progressState?.measurements[0]).toEqual(
+      expect.objectContaining({
+        point: 'WP-6',
+        intensity: 0.71,
+        rawScanResult: {
+          evaluation: {
+            intensity_average: 0.71,
+          },
+        },
         status: 'complete',
       }),
     );
@@ -180,6 +234,7 @@ describe('useProgressData', () => {
       expect.objectContaining({
         point: 'WP-4',
         intensity: 0.87,
+        rawScanResult: { evaluation: { intensityTopAverage: 0.87 } },
         status: 'complete',
       }),
     );

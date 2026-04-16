@@ -30,6 +30,8 @@ type MeasurementComplete = {
   point: string;
   wavelength: string;
   intensity: number;
+  timestamp: string;
+  rawScanResult: Record<string, unknown> | null;
   status: 'complete';
 };
 
@@ -38,6 +40,8 @@ type MeasurementProcessing = {
   point: string;
   wavelength: string;
   intensity: number;
+  timestamp: string;
+  rawScanResult: Record<string, unknown> | null;
   status: 'processing';
 };
 

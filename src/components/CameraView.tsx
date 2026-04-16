@@ -1,5 +1,5 @@
 import { Camera, AlertCircle } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getStreamUrl } from '../services/apiCalls';
 import { useCameraStream } from '../hooks/useCameraStream';
 
@@ -20,16 +20,44 @@ export function CameraView({
   streamKind = 'camera',
   isActive = true,
 }: CameraViewProps) {
+  const [isPageVisible, setIsPageVisible] = useState(
+    typeof document === 'undefined' ? true : document.visibilityState === 'visible',
+  );
+  const imageRef = useRef<HTMLImageElement | null>(null);
+  const shouldStream = isActive && isPageVisible;
   const retryInterval = DEFAULT_RETRY_INTERVAL;
-  const streamUrl = isActive ? getStreamUrl(streamKind) : '';
+  const streamUrl = shouldStream ? getStreamUrl(streamKind) : '';
   const { streamStatus, streamSrc, showPlaceholder, handleLoad, handleError } = useCameraStream(
     streamUrl,
     retryInterval,
-    isActive,
+    shouldStream,
   );
 
   useEffect(() => {
-    if (!isActive) {
+    const handleVisibilityChange = () => {
+      setIsPageVisible(document.visibilityState === 'visible');
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!shouldStream && imageRef.current) {
+      imageRef.current.src = '';
+    }
+
+    return () => {
+      if (imageRef.current) {
+        imageRef.current.src = '';
+      }
+    };
+  }, [shouldStream]);
+
+  useEffect(() => {
+    if (!shouldStream) {
       return;
     }
 
@@ -41,8 +69,19 @@ export function CameraView({
       streamStatus,
       streamSrc,
       isActive,
+      isPageVisible,
+      shouldStream,
     });
-  }, [isActive, streamKind, streamSrc, streamStatus, streamUrl, title]);
+  }, [
+    isActive,
+    isPageVisible,
+    shouldStream,
+    streamKind,
+    streamSrc,
+    streamStatus,
+    streamUrl,
+    title,
+  ]);
 
   const onImageLoad = () => {
     console.info('[CameraView] img onLoad fired', {
@@ -111,8 +150,9 @@ export function CameraView({
       {/* Camera Feed / Placeholder */}
       <div className={`${heightMap[height]} w-full relative overflow-hidden`}>
         {/* MJPEG Stream */}
-        {isActive && (
+        {shouldStream && (
           <img
+            ref={imageRef}
             src={streamSrc}
             alt="Live camera stream"
             className={`w-full h-full object-cover ${showPlaceholder ? 'hidden' : 'block'}`}

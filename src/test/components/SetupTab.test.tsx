@@ -8,6 +8,7 @@ jest.mock('../../services/apiCalls', () => ({
     description: 'Default',
     workZ: 1,
     workR: 2,
+    threshold: 10,
     options: {},
   }),
   fetchProfiles: jest.fn().mockResolvedValue([
@@ -16,6 +17,7 @@ jest.mock('../../services/apiCalls', () => ({
       description: 'Default',
       workZ: 1,
       workR: 2,
+      threshold: 10,
       options: {},
     },
   ]),
@@ -31,6 +33,7 @@ const selectedProfile: ProfileModel = {
   settings: {
     workZ: 1,
     workR: 2,
+    threshold: 10,
     options: {},
   },
 };
@@ -69,6 +72,31 @@ describe('SetupTab', () => {
     expect(onProfileChange).toHaveBeenCalledWith(
       expect.objectContaining({
         settings: expect.objectContaining({ workZ: 3.5 }),
+      }),
+    );
+  });
+
+  test('shows threshold field and propagates threshold edits', async () => {
+    const onProfileChange = jest.fn();
+
+    render(
+      <SetupTab
+        selectedProfile={selectedProfile}
+        onProfileChange={onProfileChange}
+        onNext={jest.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('10')).toBeInTheDocument();
+    });
+
+    const thresholdInput = screen.getByDisplayValue('10');
+    fireEvent.change(thresholdInput, { target: { value: '12.5' } });
+
+    expect(onProfileChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        settings: expect.objectContaining({ threshold: 12.5 }),
       }),
     );
   });

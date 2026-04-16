@@ -42,20 +42,89 @@ function normalizeEventTime(timestamp: unknown): string {
   return parsed.toLocaleTimeString();
 }
 
+function averageTopIntensities(values: unknown): number | null {
+  if (!Array.isArray(values)) {
+    return null;
+  }
+
+  const numericValues = values
+    .filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
+    .sort((a, b) => b - a)
+    .slice(0, 3);
+
+  if (numericValues.length === 0) {
+    return null;
+  }
+
+  return numericValues.reduce((sum, value) => sum + value, 0) / numericValues.length;
+}
+
 function toMeasurementIntensity(event: JobEventApiResponse): number {
   const scanResult = event.measurement?.scanResult;
   if (!scanResult || typeof scanResult !== 'object') {
     return 0;
   }
 
-  const intensityCandidate =
-    (scanResult as { measuredValue?: unknown }).measuredValue ??
-    (scanResult as { value?: unknown }).value ??
-    (scanResult as { intensity?: unknown }).intensity;
+  const evaluation = (scanResult as { evaluation?: unknown }).evaluation;
+  if (evaluation && typeof evaluation === 'object') {
+    const intensityCandidate = (evaluation as { intensityTopAverage?: unknown })
+      .intensityTopAverage;
 
-  return typeof intensityCandidate === 'number' && Number.isFinite(intensityCandidate)
-    ? intensityCandidate
-    : 0;
+    if (typeof intensityCandidate === 'number' && Number.isFinite(intensityCandidate)) {
+      return intensityCandidate;
+    }
+
+    const intensityAverage = (evaluation as { intensity_average?: unknown }).intensity_average;
+    if (typeof intensityAverage === 'number' && Number.isFinite(intensityAverage)) {
+      return intensityAverage;
+    }
+
+    const evaluationTopAverage = averageTopIntensities(
+      (evaluation as { intensityTop?: unknown }).intensityTop,
+    );
+    if (evaluationTopAverage !== null) {
+      return evaluationTopAverage;
+    }
+  }
+
+  const bodyTopAverage = averageTopIntensities(
+    (
+      scanResult as {
+        body?: {
+          measurementData?: {
+            intensityTop?: unknown;
+          };
+        };
+      }
+    ).body?.measurementData?.intensityTop,
+  );
+  if (bodyTopAverage !== null) {
+    return bodyTopAverage;
+  }
+
+  return 0;
+}
+
+function normalizeMeasurementTimestamp(value: unknown): string {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    return '-';
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return '-';
+  }
+
+  return parsed.toLocaleString();
+}
+
+function toScanResultPayload(event: JobEventApiResponse): Record<string, unknown> | null {
+  const scanResult = event.measurement?.scanResult;
+  if (!scanResult || typeof scanResult !== 'object') {
+    return null;
+  }
+
+  return scanResult;
 }
 
 function mapEventsToProgressState(events: JobEventApiResponse[]): ProgressTabState {
@@ -106,6 +175,8 @@ function mapEventsToProgressState(events: JobEventApiResponse[]): ProgressTabSta
         point: `WP-${event.measurement?.waypointIndex ?? index + 1}`,
         wavelength: '-',
         intensity: toMeasurementIntensity(event),
+        timestamp: normalizeMeasurementTimestamp(event.measurement?.timestamp),
+        rawScanResult: toScanResultPayload(event),
         status: normalizeEventType(event.type).includes('completed') ? 'complete' : 'processing',
       })),
     lastEventType: normalizeEventType(lastEvent.type),
