@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { ProgressTab } from '../tabs/ProgressTab';
 import { ProgressTabState } from '../../types/progress.types';
 
@@ -19,7 +19,22 @@ jest.mock('../CameraView', () => ({
 }));
 
 jest.mock('../tabs/progress/CurrentScanStatusCard', () => ({
-  CurrentScanStatusCard: ({ scan }: { scan: { state: string } }) => <div>Scan: {scan.state}</div>,
+  CurrentScanStatusCard: ({
+    scan,
+    onAbort,
+    isAbortDisabled,
+  }: {
+    scan: { state: string };
+    onAbort: () => void;
+    isAbortDisabled: boolean;
+  }) => (
+    <div>
+      <div>Scan: {scan.state}</div>
+      <button type="button" disabled={isAbortDisabled} onClick={onAbort}>
+        Abort Scan
+      </button>
+    </div>
+  ),
 }));
 
 jest.mock('../tabs/progress/EventLogCard', () => ({
@@ -32,6 +47,10 @@ jest.mock('../tabs/progress/MeasurementLogCard', () => ({
 
 const { useProgressData } = jest.requireMock('../../hooks/useProgressData') as {
   useProgressData: jest.Mock;
+};
+
+const { deleteJob } = jest.requireMock('../../services/apiCalls') as {
+  deleteJob: jest.Mock;
 };
 
 function createState(
@@ -61,8 +80,13 @@ describe('ProgressTab', () => {
 
   test('does not crash when transitioning from loading to loaded state', () => {
     useProgressData
-      .mockReturnValueOnce({ progressState: null, isLoading: true, error: null })
-      .mockReturnValueOnce({ progressState: createState(), isLoading: false, error: null });
+      .mockReturnValueOnce({ activeJobId: 'job-1', progressState: null, isLoading: true, error: null })
+      .mockReturnValueOnce({
+        activeJobId: 'job-1',
+        progressState: createState(),
+        isLoading: false,
+        error: null,
+      });
 
     const { rerender } = render(<ProgressTab jobId="job-1" onNext={jest.fn()} />);
     expect(screen.getByText('Loading...')).toBeInTheDocument();
@@ -73,6 +97,7 @@ describe('ProgressTab', () => {
 
   test('shows manual results CTA when scan is terminal and auto-navigation callback is missing', () => {
     useProgressData.mockReturnValue({
+      activeJobId: 'job-1',
       progressState: createState(
         { state: 'completed', completedPoints: 10, totalPoints: 10 },
         'job:completed',
@@ -92,6 +117,7 @@ describe('ProgressTab', () => {
   test('allows manual go-to-results action when terminal and onNext exists', () => {
     const onNext = jest.fn();
     useProgressData.mockReturnValue({
+      activeJobId: 'job-1',
       progressState: createState(
         { state: 'stopped', completedPoints: 10, totalPoints: 10 },
         'job:stopped',
@@ -113,6 +139,7 @@ describe('ProgressTab', () => {
     jest.useFakeTimers();
     const onNext = jest.fn();
     useProgressData.mockReturnValue({
+      activeJobId: 'job-1',
       progressState: createState(
         { state: 'completed', completedPoints: 10, totalPoints: 10 },
         'job:completed',
@@ -132,6 +159,7 @@ describe('ProgressTab', () => {
     jest.useFakeTimers();
     const onNext = jest.fn();
     useProgressData.mockReturnValue({
+      activeJobId: 'job-1',
       progressState: createState(
         { state: 'completed', completedPoints: 10, totalPoints: 10 },
         'job:snapshot',
@@ -145,5 +173,25 @@ describe('ProgressTab', () => {
     expect(onNext).not.toHaveBeenCalled();
     jest.advanceTimersByTime(1000);
     expect(onNext).not.toHaveBeenCalled();
+  });
+
+  test('aborts recovered active job when prop jobId is missing', async () => {
+    useProgressData.mockReturnValue({
+      activeJobId: 'job-recovered',
+      progressState: createState({ state: 'running' }),
+      isLoading: false,
+      error: null,
+    });
+    deleteJob.mockResolvedValue(undefined);
+
+    render(<ProgressTab jobId={null} onNext={jest.fn()} />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Abort Scan' }));
+    });
+
+    await waitFor(() => {
+      expect(deleteJob).toHaveBeenCalledWith('job-recovered');
+    });
   });
 });

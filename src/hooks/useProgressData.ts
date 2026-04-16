@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { mockJobEvents } from '../mocks/progressMocks';
-import { JobEventApiResponse } from '../services/apiCalls';
+import { fetchJobs, JobEventApiResponse } from '../services/apiCalls';
 import { ProgressEvent, ProgressTabState, ScanLifecycleState } from '../types/progress.types';
 import { useJobEvents } from './useJobEvents';
 import { useMockMode } from './useMockMode';
@@ -185,11 +185,58 @@ function mapEventsToProgressState(events: JobEventApiResponse[]): ProgressTabSta
 
 export function useProgressData(jobId: string | null, isActive = true) {
   const [mockMode] = useMockMode();
+  const [recoveredJobId, setRecoveredJobId] = useState<string | null>(null);
+  const [isResolvingJob, setIsResolvingJob] = useState(false);
   const [progressState, setProgressState] = useState<ProgressTabState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { events: jobEvents, error: streamError } = useJobEvents(mockMode ? null : jobId, isActive);
+  const activeJobId = jobId ?? recoveredJobId;
+  const { events: jobEvents, error: streamError } = useJobEvents(
+    mockMode ? null : activeJobId,
+    isActive,
+  );
   const hasEvents = jobEvents.length > 0;
+
+  useEffect(() => {
+    if (mockMode || !isActive) {
+      return;
+    }
+
+    if (jobId && jobId.trim().length > 0) {
+      setRecoveredJobId(null);
+      return;
+    }
+
+    let isCancelled = false;
+
+    const recoverRunningJob = async () => {
+      setIsResolvingJob(true);
+      try {
+        const jobs = await fetchJobs();
+        const runningJobs = jobs.filter((job) => job.status?.state === 'running');
+        const newestRunningJob = runningJobs[runningJobs.length - 1] ?? null;
+
+        if (!isCancelled) {
+          setRecoveredJobId(newestRunningJob?.id ?? null);
+        }
+      } catch (recoveryError) {
+        console.warn('[ProgressData] Failed to recover running job:', recoveryError);
+        if (!isCancelled) {
+          setRecoveredJobId(null);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsResolvingJob(false);
+        }
+      }
+    };
+
+    void recoverRunningJob();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isActive, jobId, mockMode]);
 
   useEffect(() => {
     if (mockMode) {
@@ -201,7 +248,13 @@ export function useProgressData(jobId: string | null, isActive = true) {
 
     setError(null);
 
-    if (!jobId) {
+    if (!activeJobId) {
+      if (isResolvingJob) {
+        setProgressState(null);
+        setIsLoading(true);
+        return;
+      }
+
       setProgressState(null);
       setError('No active job selected.');
       setIsLoading(false);
@@ -215,14 +268,14 @@ export function useProgressData(jobId: string | null, isActive = true) {
     }
 
     setIsLoading(false);
-  }, [hasEvents, jobId, mockMode, streamError]);
+  }, [activeJobId, hasEvents, isResolvingJob, mockMode, streamError]);
 
   const mappedState = useMemo<ProgressTabState | null>(() => {
     if (mockMode) {
       return mapEventsToProgressState(mockJobEvents);
     }
 
-    if (!jobId) {
+    if (!activeJobId) {
       return null;
     }
 
@@ -231,7 +284,7 @@ export function useProgressData(jobId: string | null, isActive = true) {
     }
 
     return mapEventsToProgressState(jobEvents);
-  }, [hasEvents, jobEvents, jobId, mockMode, streamError]);
+  }, [activeJobId, hasEvents, jobEvents, mockMode, streamError]);
 
   useEffect(() => {
     setProgressState(mappedState);
@@ -244,12 +297,13 @@ export function useProgressData(jobId: string | null, isActive = true) {
       return;
     }
 
-    if (jobId) {
+    if (activeJobId) {
       setError(null);
     }
-  }, [jobId, streamError]);
+  }, [activeJobId, streamError]);
 
   return {
+    activeJobId,
     progressState,
     isLoading,
     error,
