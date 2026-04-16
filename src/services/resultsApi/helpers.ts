@@ -6,6 +6,9 @@ import {
   ScanRouteCoordinate,
 } from '../../types/results.types';
 
+const DEFAULT_IMAGE_WIDTH = 1280;
+const DEFAULT_IMAGE_HEIGHT = 720;
+
 function normalizeAxisByBounds(value: number, max: number): number {
   if (!Number.isFinite(value)) {
     return 0;
@@ -18,17 +21,62 @@ function normalizeAxisByBounds(value: number, max: number): number {
   return Math.max(0, Math.min(1, value / max));
 }
 
+function averageTopIntensities(values: unknown): number | null {
+  if (!Array.isArray(values)) {
+    return null;
+  }
+
+  const numericValues = values
+    .filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
+    .sort((a, b) => b - a)
+    .slice(0, 3);
+
+  if (numericValues.length === 0) {
+    return null;
+  }
+
+  return numericValues.reduce((sum, value) => sum + value, 0) / numericValues.length;
+}
+
 function toMeasurementValue(scanResult: Record<string, unknown> | null | undefined): number {
   if (!scanResult || typeof scanResult !== 'object') {
     return 0;
   }
 
-  const numericCandidateKeys = ['measuredValue', 'value', 'intensity', 'signal'];
-  for (const key of numericCandidateKeys) {
-    const value = scanResult[key];
-    if (typeof value === 'number' && Number.isFinite(value)) {
-      return value;
+  const evaluation = scanResult.evaluation;
+  if (evaluation && typeof evaluation === 'object') {
+    const intensityTopAverage = (evaluation as { intensityTopAverage?: unknown })
+      .intensityTopAverage;
+    if (typeof intensityTopAverage === 'number' && Number.isFinite(intensityTopAverage)) {
+      return intensityTopAverage;
     }
+
+    const intensityAverage = (evaluation as { intensity_average?: unknown }).intensity_average;
+    if (typeof intensityAverage === 'number' && Number.isFinite(intensityAverage)) {
+      return intensityAverage;
+    }
+
+    const evaluationTopAverage = averageTopIntensities(
+      (evaluation as { intensityTop?: unknown }).intensityTop,
+    );
+    if (evaluationTopAverage !== null) {
+      return evaluationTopAverage;
+    }
+  }
+
+  const bodyTopAverage = averageTopIntensities(
+    (
+      scanResult as {
+        body?: {
+          measurementData?: {
+            intensityTop?: unknown;
+          };
+        };
+      }
+    ).body?.measurementData?.intensityTop,
+  );
+  if (bodyTopAverage !== null) {
+    return bodyTopAverage;
   }
 
   return 0;
@@ -48,12 +96,81 @@ async function fetchJobImageObjectUrl(jobId: string): Promise<string | null> {
   }
 }
 
+function readDimensionCandidate(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+
+  return null;
+}
+
+function resolveResultImageDimensions(job: JobApiResponse): { width: number; height: number } {
+  const options = job.options ?? {};
+
+  const optionWidthKeys = ['imageWidth', 'frameWidth', 'cameraWidth', 'snapshotWidth', 'width'];
+  const optionHeightKeys = [
+    'imageHeight',
+    'frameHeight',
+    'cameraHeight',
+    'snapshotHeight',
+    'height',
+  ];
+
+  let width: number | null = null;
+  let height: number | null = null;
+
+  for (const key of optionWidthKeys) {
+    if (key in options) {
+      width = readDimensionCandidate(options[key]);
+    }
+    if (width !== null) {
+      break;
+    }
+  }
+
+  for (const key of optionHeightKeys) {
+    if (key in options) {
+      height = readDimensionCandidate(options[key]);
+    }
+    if (height !== null) {
+      break;
+    }
+  }
+
+  const resolutionValue = options.resolution;
+  if (
+    (width === null || height === null) &&
+    Array.isArray(resolutionValue) &&
+    resolutionValue.length >= 2
+  ) {
+    const candidateWidth = readDimensionCandidate(resolutionValue[0]);
+    const candidateHeight = readDimensionCandidate(resolutionValue[1]);
+    if (width === null) {
+      width = candidateWidth;
+    }
+    if (height === null) {
+      height = candidateHeight;
+    }
+  }
+
+  return {
+    width: width ?? DEFAULT_IMAGE_WIDTH,
+    height: height ?? DEFAULT_IMAGE_HEIGHT,
+  };
+}
+
 async function normalizeJobToResult(job: JobApiResponse): Promise<ScanResult> {
   const measurements = Array.isArray(job.measurements) ? job.measurements : [];
-  const xCandidates = measurements.map((item) => item.pixelX ?? 0);
-  const yCandidates = measurements.map((item) => item.pixelY ?? 0);
-  const maxX = Math.max(1, ...xCandidates);
-  const maxY = Math.max(1, ...yCandidates);
+  const { width: imageWidth, height: imageHeight } = resolveResultImageDimensions(job);
+  const maxX = Math.max(1, imageWidth);
+  const maxY = Math.max(1, imageHeight);
 
   const measurementPoints: MeasurementPoint[] = measurements.map((measurement, index) => {
     const rawX = typeof measurement.pixelX === 'number' ? measurement.pixelX : 0;
@@ -69,6 +186,7 @@ async function normalizeJobToResult(job: JobApiResponse): Promise<ScanResult> {
           ? measurement.waypointIndex
           : index + 1,
       measuredValue: toMeasurementValue(measurement.scanResult),
+      rawScanResult: measurement.scanResult ?? null,
       comment: measurement.simulated ? 'Simulated' : '',
       timestamp: measurement.timestamp ?? '',
     };
@@ -84,6 +202,8 @@ async function normalizeJobToResult(job: JobApiResponse): Promise<ScanResult> {
     createdAt: new Date().toISOString(),
     sourceName: job.options?.profile ? String(job.options.profile) : `Job ${job.id}`,
     previewImageUrl: await fetchJobImageObjectUrl(job.id),
+    imageWidth,
+    imageHeight,
     routePath,
     measurementPoints,
   };
@@ -118,5 +238,6 @@ export {
   normalizeAxisByBounds,
   normalizeJobSummary,
   normalizeJobToResult,
+  resolveResultImageDimensions,
   toMeasurementValue,
 };

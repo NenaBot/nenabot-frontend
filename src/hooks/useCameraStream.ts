@@ -19,6 +19,7 @@ export function useCameraStream(streamUrl: string, retryInterval: number, isActi
   useEffect(() => {
     if (!isActive) {
       clearTimeout(retryTimeoutRef.current);
+      setStreamSrc('');
       setStreamStatus('disconnected');
       return;
     }

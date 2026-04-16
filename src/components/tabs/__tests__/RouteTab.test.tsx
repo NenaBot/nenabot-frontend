@@ -14,6 +14,7 @@ const selectedProfile: ProfileModel = {
   settings: {
     workZ: 10,
     workR: 20,
+    threshold: 120,
     options: {},
   },
 };

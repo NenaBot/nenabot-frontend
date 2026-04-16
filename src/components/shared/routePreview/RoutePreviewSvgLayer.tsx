@@ -4,6 +4,7 @@ import { RoutePreviewCoordinate, RoutePreviewPoint } from '../../../types/routeP
 interface RoutePreviewSvgLayerProps {
   routePath: RoutePreviewCoordinate[];
   measurementPoints: RoutePreviewPoint[];
+  viewportAspectRatio: number;
   selectedPointId: string | null;
   criticalPointIds: string[];
   cornerPointIds: string[];
@@ -27,6 +28,7 @@ interface RoutePreviewSvgLayerProps {
 export function RoutePreviewSvgLayer({
   routePath,
   measurementPoints,
+  viewportAspectRatio,
   selectedPointId,
   criticalPointIds,
   cornerPointIds,
@@ -56,7 +58,7 @@ export function RoutePreviewSvgLayer({
   return (
     <svg
       viewBox={viewBox}
-      preserveAspectRatio="xMidYMid meet"
+      preserveAspectRatio="none"
       className="absolute inset-0 w-full h-full"
       role="img"
       aria-label="Route preview"
@@ -98,6 +100,10 @@ export function RoutePreviewSvgLayer({
         const isDraggable = enablePointDragging && draggablePointIds.includes(point.id);
         const isDragging = draggedPointId === point.id;
         const isLabelVisible = isSelected || isDragging || hoveredPointId === point.id;
+        const baseRadius = isCorner ? 1.6 : 0.85;
+        const selectedRadius = isCorner ? 2.0 : 1.15;
+        const ellipseRx = isSelected ? selectedRadius : baseRadius;
+        const ellipseRy = ellipseRx * Math.max(viewportAspectRatio, 0.01);
 
         return (
           <g
@@ -115,10 +121,11 @@ export function RoutePreviewSvgLayer({
             role="button"
             aria-label={`Point ${point.label}`}
           >
-            <circle
+            <ellipse
               cx={displayPos.x}
               cy={displayPos.y}
-              r={isSelected ? 3.4 : 2.8}
+              rx={ellipseRx}
+              ry={ellipseRy}
               fill={
                 isSelected
                   ? 'var(--md-sys-color-tertiary)'
@@ -147,21 +154,24 @@ export function RoutePreviewSvgLayer({
                   repeatCount="indefinite"
                 />
               )}
-            </circle>
+            </ellipse>
             {isLabelVisible && (
-              <text
-                x={displayPos.x}
-                y={displayPos.y}
-                dominantBaseline="middle"
-                textAnchor="middle"
-                fontSize="2.3"
-                fontWeight="600"
-                fill="var(--md-sys-color-on-surface)"
-                pointerEvents="none"
-                vectorEffect="non-scaling-stroke"
-              >
-                {point.label}
-              </text>
+              <g transform={`translate(${displayPos.x} ${displayPos.y})`}>
+                <text
+                  x="0"
+                  y="0"
+                  dominantBaseline="middle"
+                  textAnchor="middle"
+                  fontSize="2.1"
+                  fontWeight="600"
+                  fill="var(--md-sys-color-on-surface)"
+                  pointerEvents="none"
+                  transform={`scale(1 ${Math.max(viewportAspectRatio, 0.01)})`}
+                  vectorEffect="non-scaling-stroke"
+                >
+                  {point.label}
+                </text>
+              </g>
             )}
           </g>
         );

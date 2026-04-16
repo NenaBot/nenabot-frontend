@@ -10,6 +10,7 @@ export interface MeasurementPoint {
   y: number;
   waypointIndex: number;
   measuredValue: number;
+  rawScanResult?: Record<string, unknown> | null;
   comment: string;
   timestamp: string;
 }
@@ -19,6 +20,8 @@ export interface ScanResult {
   createdAt: string;
   sourceName: string;
   previewImageUrl: string | null;
+  imageWidth?: number | null;
+  imageHeight?: number | null;
   routePath: ScanRouteCoordinate[];
   measurementPoints: MeasurementPoint[];
 }

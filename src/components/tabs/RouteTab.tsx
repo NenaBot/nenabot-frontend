@@ -27,6 +27,13 @@ export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: Rou
   });
 
   const imageUrl = state.imageBase64 ? `data:image/jpeg;base64,${state.imageBase64}` : null;
+  const imageAspectRatio =
+    typeof state.imageWidth === 'number' &&
+    typeof state.imageHeight === 'number' &&
+    state.imageWidth > 0 &&
+    state.imageHeight > 0
+      ? state.imageWidth / state.imageHeight
+      : undefined;
   const [measurementDensityInput, setMeasurementDensityInput] = useState(
     state.measurementDensity.toString(),
   );
@@ -165,6 +172,7 @@ export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: Rou
           <RoutePreviewPanel
             title="Detected Route Preview"
             imageUrl={imageUrl}
+            imageAspectRatio={imageAspectRatio}
             routePath={preview.routePath}
             measurementPoints={preview.points}
             cornerPointIds={preview.cornerPointIds}

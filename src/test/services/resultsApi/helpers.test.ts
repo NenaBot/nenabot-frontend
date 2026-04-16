@@ -35,10 +35,22 @@ describe('resultsApiHelpers', () => {
     expect(normalizeAxisByBounds(Number.NaN, 10)).toBe(0);
   });
 
-  test('toMeasurementValue selects first numeric candidate', () => {
-    expect(toMeasurementValue({ measuredValue: 3 })).toBe(3);
-    expect(toMeasurementValue({ measuredValue: 'x', value: 4 })).toBe(4);
-    expect(toMeasurementValue({ intensity: 5 })).toBe(5);
+  test('toMeasurementValue reads evaluation intensity fields and top arrays', () => {
+    expect(toMeasurementValue({ evaluation: { intensityTopAverage: 3 } })).toBe(3);
+    expect(toMeasurementValue({ evaluation: { intensity_average: 4 } })).toBe(4);
+    expect(toMeasurementValue({ evaluation: { intensityTop: [10, 20, 30] } })).toBe(20);
+    expect(
+      toMeasurementValue({
+        body: {
+          measurementData: {
+            intensityTop: [40, 10, 20],
+          },
+        },
+      }),
+    ).toBeCloseTo((40 + 20 + 10) / 3, 6);
+    expect(toMeasurementValue({ measuredValue: 9 })).toBe(0);
+    expect(toMeasurementValue({ value: 4 })).toBe(0);
+    expect(toMeasurementValue({ intensity: 5 })).toBe(0);
     expect(toMeasurementValue({})).toBe(0);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect(toMeasurementValue(null as any)).toBe(0);
@@ -79,7 +91,7 @@ describe('resultsApiHelpers', () => {
           pixelX: 5,
           pixelY: 10,
           waypointIndex: 2,
-          scanResult: { value: 7 },
+          scanResult: { evaluation: { intensity_average: 7 } },
           simulated: true,
           timestamp: 't1',
           waypoint: { x: 1, y: 1 },
@@ -87,7 +99,7 @@ describe('resultsApiHelpers', () => {
         {
           pixelX: 0,
           pixelY: 0,
-          scanResult: { measuredValue: 1 },
+          scanResult: { evaluation: { intensity_average: 1 } },
           waypointIndex: 1,
           timestamp: 't2',
           waypoint: { x: 0, y: 0 },
@@ -106,11 +118,12 @@ describe('resultsApiHelpers', () => {
     expect(result.measurementPoints[0]).toMatchObject({
       waypointIndex: 2,
       measuredValue: 7,
+      rawScanResult: { evaluation: { intensity_average: 7 } },
       comment: 'Simulated',
     });
-    expect(result.routePath).toEqual([
-      { x: 1, y: 1 },
-      { x: 0, y: 0 },
-    ]);
+    expect(result.routePath).toHaveLength(2);
+    expect(result.routePath[0].x).toBeCloseTo(5 / 1280, 6);
+    expect(result.routePath[0].y).toBeCloseTo(10 / 720, 6);
+    expect(result.routePath[1]).toEqual({ x: 0, y: 0 });
   });
 });

@@ -7,6 +7,7 @@ const mockProfiles: ProfileModel[] = [
     settings: {
       workZ: 0,
       workR: 0,
+      threshold: 120,
       options: {
         scanMode: 'standard',
         integrationMs: 100,
@@ -19,6 +20,7 @@ const mockProfiles: ProfileModel[] = [
     settings: {
       workZ: 0,
       workR: 0,
+      threshold: 100,
       options: {
         scanMode: 'precision',
         integrationMs: 150,
