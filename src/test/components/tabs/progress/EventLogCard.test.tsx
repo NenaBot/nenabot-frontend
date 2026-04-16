@@ -35,6 +35,12 @@ describe('EventLogCard', () => {
     expect(messages).toEqual(['job:waypoint_completed', 'job:waypoint_started', 'job:started']);
   });
 
+  test('renders waiting empty-state notice when there are no events', () => {
+    render(<EventLogCard events={[]} />);
+
+    expect(screen.getByText('Waiting for scan events...')).toBeInTheDocument();
+  });
+
   test('animates only newly inserted top event', () => {
     const { rerender } = render(
       <EventLogCard
@@ -42,7 +48,8 @@ describe('EventLogCard', () => {
       />,
     );
 
-    expect(screen.getByTestId('event-log-row-2')).not.toHaveClass('event-log-item-enter');
+    expect(screen.getByTestId('event-log-row-2')).not.toHaveClass('progress-log-item-enter');
+    expect(screen.getByTestId('event-log-row-2')).not.toHaveClass('progress-log-item-push');
 
     rerender(
       <EventLogCard
@@ -55,12 +62,15 @@ describe('EventLogCard', () => {
     );
 
     const newestRow = screen.getByTestId('event-log-row-3');
-    expect(newestRow).toHaveClass('event-log-item-enter');
+    const shiftedRow = screen.getByTestId('event-log-row-2');
+    expect(newestRow).toHaveClass('progress-log-item-enter');
+    expect(shiftedRow).toHaveClass('progress-log-item-push');
 
     act(() => {
       jest.advanceTimersByTime(220);
     });
 
-    expect(newestRow).not.toHaveClass('event-log-item-enter');
+    expect(newestRow).not.toHaveClass('progress-log-item-enter');
+    expect(shiftedRow).not.toHaveClass('progress-log-item-push');
   });
 });
