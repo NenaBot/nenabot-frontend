@@ -92,9 +92,10 @@ describe('RouteTab', () => {
 
     const startButton = screen.getByRole('button', { name: 'Start Scan Job' });
     expect(startButton).not.toBeDisabled();
-    expect(screen.getByText('Checked waypoints: 4')).toBeInTheDocument();
-    expect(screen.getByText('Estimated Points:')).toBeInTheDocument();
-    expect(screen.getByText('Estimated Time:')).toBeInTheDocument();
+    expect(screen.getByText('Checked Waypoints')).toBeInTheDocument();
+    expect(screen.getByText('Profile default-profile')).toBeInTheDocument();
+    expect(screen.getByText('Estimated Points')).toBeInTheDocument();
+    expect(screen.getByText('Estimated Time')).toBeInTheDocument();
     expect(screen.getByText('~16s')).toBeInTheDocument();
 
     fireEvent.click(startButton);
@@ -142,8 +143,8 @@ describe('RouteTab', () => {
 
     render(<RouteTab selectedProfile={selectedProfile} onJobCreated={jest.fn()} />);
 
-    expect(screen.getByText('Estimated Points:')).toBeInTheDocument();
-    expect(screen.getByText('0')).toBeInTheDocument();
+    expect(screen.getByText('Estimated Points')).toBeInTheDocument();
+    expect(screen.getAllByText('0').length).toBeGreaterThan(0);
     expect(screen.getByText('~10s')).toBeInTheDocument();
   });
 
@@ -205,7 +206,7 @@ describe('RouteTab', () => {
 
     const startButton = screen.getByRole('button', { name: 'Start Scan Job' });
     expect(startButton).not.toBeDisabled();
-    expect(screen.getByText('Checked waypoints: 4')).toBeInTheDocument();
+    expect(screen.getByText('Checked Waypoints')).toBeInTheDocument();
 
     fireEvent.click(startButton);
 

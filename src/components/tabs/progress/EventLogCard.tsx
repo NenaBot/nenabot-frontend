@@ -11,8 +11,11 @@ interface EventLogCardProps {
  * Displays chronological scan events. Event type drives visual indicator.
  */
 export function EventLogCard({ events }: EventLogCardProps) {
-  const { displayItems: displayEvents, enteringItemId, isPushingExistingItems } =
-    useTopInsertListAnimation(events);
+  const {
+    displayItems: displayEvents,
+    enteringItemId,
+    isPushingExistingItems,
+  } = useTopInsertListAnimation(events);
 
   return (
     <ProgressLogCard
