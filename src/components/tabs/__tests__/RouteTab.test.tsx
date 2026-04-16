@@ -93,6 +93,9 @@ describe('RouteTab', () => {
     const startButton = screen.getByRole('button', { name: 'Start Scan Job' });
     expect(startButton).not.toBeDisabled();
     expect(screen.getByText('Checked waypoints: 4')).toBeInTheDocument();
+    expect(screen.getByText('Estimated Points:')).toBeInTheDocument();
+    expect(screen.getByText('Estimated Time:')).toBeInTheDocument();
+    expect(screen.getByText('~16s')).toBeInTheDocument();
 
     fireEvent.click(startButton);
 
@@ -100,6 +103,48 @@ describe('RouteTab', () => {
       expect(createScanJob).toHaveBeenCalledTimes(1);
       expect(onJobCreated).toHaveBeenCalledWith('job-corners-only');
     });
+  });
+
+  test('shows startup-only estimate when no route points are available', () => {
+    (useRoutePlan as jest.Mock).mockReturnValue({
+      state: {
+        measurementDensity: 0.5,
+        dryRun: false,
+        isInitializing: false,
+        isPopulating: false,
+        isCreatingJob: false,
+        imageBase64: null,
+        routeError: null,
+        cornerPoints: [],
+        measurementPoints: [],
+        populatedPath: [],
+        populatedPathWithMetadata: [],
+        batteries: [],
+      },
+      preview: {
+        routePath: [],
+        points: [],
+        cornerPointIds: [],
+        draggablePointIds: [],
+        bounds: {
+          minX: 0,
+          maxX: 1,
+          minY: 0,
+          maxY: 1,
+        },
+      },
+      setDryRun: jest.fn(),
+      setMeasurementDensity: jest.fn(),
+      moveCornerPoint: jest.fn(),
+      resetRoutePlan: jest.fn(),
+      createScanJob: jest.fn(),
+    });
+
+    render(<RouteTab selectedProfile={selectedProfile} onJobCreated={jest.fn()} />);
+
+    expect(screen.getByText('Estimated Points:')).toBeInTheDocument();
+    expect(screen.getByText('0')).toBeInTheDocument();
+    expect(screen.getByText('~10s')).toBeInTheDocument();
   });
 
   test('allows starting when route path exists with low non-zero density and zero measurements', async () => {
