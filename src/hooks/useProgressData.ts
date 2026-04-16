@@ -209,18 +209,21 @@ export function useProgressData(jobId: string | null, isActive = true) {
 
     let isCancelled = false;
 
-    const recoverRunningJob = async () => {
+    const recoverPreferredJob = async () => {
       setIsResolvingJob(true);
       try {
         const jobs = await fetchJobs();
         const runningJobs = jobs.filter((job) => job.status?.state === 'running');
+        const completedJobs = jobs.filter((job) => job.status?.state === 'completed');
         const newestRunningJob = runningJobs[runningJobs.length - 1] ?? null;
+        const newestCompletedJob = completedJobs[completedJobs.length - 1] ?? null;
+        const preferredJob = newestRunningJob ?? newestCompletedJob;
 
         if (!isCancelled) {
-          setRecoveredJobId(newestRunningJob?.id ?? null);
+          setRecoveredJobId(preferredJob?.id ?? null);
         }
       } catch (recoveryError) {
-        console.warn('[ProgressData] Failed to recover running job:', recoveryError);
+        console.warn('[ProgressData] Failed to recover job:', recoveryError);
         if (!isCancelled) {
           setRecoveredJobId(null);
         }
@@ -231,7 +234,7 @@ export function useProgressData(jobId: string | null, isActive = true) {
       }
     };
 
-    void recoverRunningJob();
+    void recoverPreferredJob();
 
     return () => {
       isCancelled = true;
