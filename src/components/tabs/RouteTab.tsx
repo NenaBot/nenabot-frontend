@@ -1,9 +1,20 @@
 import { Play, RotateCcw } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { RoutePreviewPanel } from '../shared/RoutePreviewPanel';
 import { useRoutePlan } from '../../hooks/useRoutePlan';
 import { ProfileModel } from '../../types/profile.types';
-import { getMeasurementDensityValidationError } from '../../types/route.types';
+import {
+  estimateRouteDurationSeconds,
+  getMeasurementDensityValidationError,
+} from '../../types/route.types';
+import {
+  applyRouteIndexLabels,
+  createDragPreviewPoint,
+  deriveTransientRoutePath,
+  DragPreviewPoint,
+  normalizedToPixelCoordinate,
+} from './route/routePreviewModel';
+import { RouteEstimateSummary } from './route/RouteEstimateSummary';
 import { RouteSettingsCard } from './route/RouteSettingsCard';
 
 interface RouteTabProps {
@@ -96,6 +107,19 @@ export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: Rou
       preview.bounds.minY + normalizedY * spanY,
     );
   };
+  const routeEstimate = useMemo(() => {
+    const estimatedPoints =
+      state.populatedPath.length > 0
+        ? state.populatedPath.length
+        : state.cornerPoints.length > 0
+          ? state.cornerPoints.length
+          : 0;
+
+    return {
+      measurementPoints: estimatedPoints,
+      estimatedSeconds: estimateRouteDurationSeconds(estimatedPoints),
+    };
+  }, [state.cornerPoints.length, state.populatedPath.length]);
 
   return (
     <div className="space-y-6">
@@ -143,6 +167,7 @@ export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: Rou
             onMeasurementDensityInputChange={handleMeasurementDensityChange}
             onPopulatePath={handlePopulatePath}
           />
+          <RouteEstimateSummary estimate={routeEstimate} />
 
           <div className="mt-4 text-xs text-[var(--md-sys-color-on-surface-variant)] space-y-1">
             <p>Profile: {selectedProfile?.name ?? '-'}</p>

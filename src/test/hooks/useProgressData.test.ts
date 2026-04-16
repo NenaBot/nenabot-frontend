@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { useProgressData } from '../../hooks/useProgressData';
 import { useJobEvents } from '../../hooks/useJobEvents';
 import { useMockMode } from '../../hooks/useMockMode';
@@ -23,6 +23,7 @@ const { fetchJobs } = jest.requireMock('../../services/apiCalls') as {
 describe('useProgressData', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.useRealTimers();
     (useMockMode as jest.Mock).mockReturnValue([false, jest.fn()]);
     fetchJobs.mockResolvedValue([]);
     (useJobEvents as jest.Mock).mockReturnValue({
@@ -222,6 +223,8 @@ describe('useProgressData', () => {
     expect(result.current.progressState?.scan.state).toBe('running');
     expect(result.current.progressState?.scan.totalPoints).toBe(10);
     expect(result.current.progressState?.scan.completedPoints).toBe(4);
+    expect(result.current.progressState?.scan.elapsedSeconds).toBe(1);
+    expect(result.current.progressState?.scan.estimatedRemainingSeconds).toBe(14);
     expect(result.current.progressState?.events[0].level).toBe('success');
     expect(result.current.progressState?.events[1].level).toBe('success');
     expect(result.current.progressState?.measurements).toHaveLength(1);
@@ -370,6 +373,95 @@ describe('useProgressData', () => {
 
     expect(result.current.progressState?.scan.state).toBe('running');
     expect(result.current.progressState?.scan.totalPoints).toBe(8);
+  });
+
+  test('ticks elapsed time while scan remains running between SSE events', async () => {
+    jest.useFakeTimers();
+    (useJobEvents as jest.Mock).mockReturnValue({
+      events: [
+        {
+          type: 'job:started',
+          state: 'running',
+          totalPoints: 10,
+          lastPointProcessed: 2,
+          timestamp: '2026-03-18T10:00:00.000Z',
+        },
+      ],
+      error: null,
+    });
+
+    const { result } = renderHook(() => useProgressData('job-live'));
+
+    await waitFor(() => {
+      expect(result.current.progressState).not.toBeNull();
+    });
+
+    const initialElapsed = result.current.progressState?.scan.elapsedSeconds ?? 0;
+    const initialRemaining = result.current.progressState?.scan.estimatedRemainingSeconds ?? 0;
+
+    act(() => {
+      jest.advanceTimersByTime(3000);
+    });
+
+    expect(result.current.progressState?.scan.elapsedSeconds).toBe(initialElapsed + 3);
+    expect(result.current.progressState?.scan.estimatedRemainingSeconds).toBeLessThan(
+      initialRemaining,
+    );
+  });
+
+  test('falls back to progress-based elapsed estimation for snapshot-only running reconnects', async () => {
+    (useJobEvents as jest.Mock).mockReturnValue({
+      events: [
+        {
+          type: 'job:snapshot',
+          state: 'running',
+          totalPoints: 10,
+          lastPointProcessed: 4,
+          timestamp: '2026-03-18T10:00:00.000Z',
+        },
+      ],
+      error: null,
+    });
+
+    const { result } = renderHook(() => useProgressData('job-reconnect'));
+
+    await waitFor(() => {
+      expect(result.current.progressState).not.toBeNull();
+    });
+
+    expect(result.current.progressState?.scan.elapsedSeconds).toBe(16);
+    expect(result.current.progressState?.scan.estimatedRemainingSeconds).toBe(9);
+  });
+
+  test('sets remaining estimate to zero in terminal states', async () => {
+    (useJobEvents as jest.Mock).mockReturnValue({
+      events: [
+        {
+          type: 'job:started',
+          state: 'running',
+          totalPoints: 5,
+          lastPointProcessed: 0,
+          timestamp: '2026-03-18T10:00:00.000Z',
+        },
+        {
+          type: 'job:completed',
+          state: 'completed',
+          totalPoints: 5,
+          lastPointProcessed: 5,
+          timestamp: '2026-03-18T10:00:18.000Z',
+        },
+      ],
+      error: null,
+    });
+
+    const { result } = renderHook(() => useProgressData('job-done'));
+
+    await waitFor(() => {
+      expect(result.current.progressState?.scan.state).toBe('completed');
+    });
+
+    expect(result.current.progressState?.scan.elapsedSeconds).toBe(18);
+    expect(result.current.progressState?.scan.estimatedRemainingSeconds).toBe(0);
   });
 
   test('uses mock progress state when mock mode is enabled', async () => {

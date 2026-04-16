@@ -36,9 +36,22 @@ export const POINTS_PER_CM_INPUT_MAX = POINTS_PER_CM_MAX_EXCLUSIVE;
 export const MEASUREMENT_DENSITY_MIN = 0;
 export const MEASUREMENT_DENSITY_MAX = 10;
 
+export const ROUTE_ESTIMATE_STARTUP_SECONDS = 10;
+export const ROUTE_ESTIMATE_SECONDS_PER_POINT = 1.5;
+
 const DEFAULT_POINTS_PER_CM = 25;
-const DEFAULT_ESTIMATE_SECONDS = 12 * 60;
 const DEFAULT_ESTIMATE_POINTS = 2500;
+const DEFAULT_ESTIMATE_SECONDS = estimateRouteDurationSeconds(DEFAULT_ESTIMATE_POINTS);
+
+export function estimateRouteDurationSeconds(points: number): number {
+  const normalizedPoints = Math.max(0, points);
+  return Math.max(
+    0,
+    Math.round(
+      ROUTE_ESTIMATE_STARTUP_SECONDS + normalizedPoints * ROUTE_ESTIMATE_SECONDS_PER_POINT,
+    ),
+  );
+}
 
 export function createDefaultRoutePlan(): RoutePlan {
   return {
