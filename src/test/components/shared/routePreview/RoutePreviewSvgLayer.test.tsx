@@ -44,8 +44,8 @@ describe('RoutePreviewSvgLayer', () => {
 
     const point = screen.getByLabelText('Point B1C1');
     expect(point).toBeInTheDocument();
-    expect(container.querySelector('circle')).toHaveAttribute('cx', '0');
-    expect(container.querySelector('circle')).toHaveAttribute('cy', '0');
+    expect(container.querySelector('ellipse')).toHaveAttribute('cx', '0');
+    expect(container.querySelector('ellipse')).toHaveAttribute('cy', '0');
 
     const polyline = container.querySelector('polyline[stroke="var(--md-sys-color-primary)"]');
     expect(polyline).not.toBeNull();

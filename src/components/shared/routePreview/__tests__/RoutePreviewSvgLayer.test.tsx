@@ -67,8 +67,8 @@ describe('RoutePreviewSvgLayer', () => {
     it('should render measurement points', () => {
       const { container } = render(<RoutePreviewSvgLayer {...mockProps} />);
 
-      const circles = container.querySelectorAll('circle');
-      expect(circles.length).toBe(mockPoints.length);
+      const ellipses = container.querySelectorAll('ellipse');
+      expect(ellipses.length).toBe(mockPoints.length);
     });
   });
 
@@ -106,8 +106,10 @@ describe('RoutePreviewSvgLayer', () => {
     it('should apply tertiary color to selected points', () => {
       const { container } = render(<RoutePreviewSvgLayer {...mockProps} selectedPointId="p1" />);
 
-      const selectedCircle = container.querySelector('circle[fill="var(--md-sys-color-tertiary)"]');
-      expect(selectedCircle).toBeInTheDocument();
+      const selectedEllipse = container.querySelector(
+        'ellipse[fill="var(--md-sys-color-tertiary)"]',
+      );
+      expect(selectedEllipse).toBeInTheDocument();
     });
 
     it('should apply error color to critical points', () => {
@@ -115,24 +117,24 @@ describe('RoutePreviewSvgLayer', () => {
         <RoutePreviewSvgLayer {...mockProps} criticalPointIds={['p1']} />,
       );
 
-      const criticalCircle = container.querySelector('circle[fill="var(--md-sys-color-error)"]');
-      expect(criticalCircle).toBeInTheDocument();
+      const criticalEllipse = container.querySelector('ellipse[fill="var(--md-sys-color-error)"]');
+      expect(criticalEllipse).toBeInTheDocument();
     });
 
     it('should apply secondary color to normal points', () => {
       const { container } = render(<RoutePreviewSvgLayer {...mockProps} />);
 
-      const normalCircles = container.querySelectorAll(
-        'circle[fill="var(--md-sys-color-secondary)"]',
+      const normalEllipses = container.querySelectorAll(
+        'ellipse[fill="var(--md-sys-color-secondary)"]',
       );
-      expect(normalCircles.length).toBeGreaterThan(0);
+      expect(normalEllipses.length).toBeGreaterThan(0);
     });
 
     it('should increase stroke width for dragged points', () => {
       const { container } = render(<RoutePreviewSvgLayer {...mockProps} draggedPointId="p1" />);
 
-      const draggedCircle = container.querySelector('circle[stroke-width="0.8"]');
-      expect(draggedCircle).toBeInTheDocument();
+      const draggedEllipse = container.querySelector('ellipse[stroke-width="0.8"]');
+      expect(draggedEllipse).toBeInTheDocument();
     });
   });
 
@@ -188,9 +190,9 @@ describe('RoutePreviewSvgLayer', () => {
     it('should call onSelectPoint when point is clicked', () => {
       const { container } = render(<RoutePreviewSvgLayer {...mockProps} />);
 
-      const circles = container.querySelectorAll('circle');
-      if (circles.length > 0) {
-        fireEvent.click(circles[0]);
+      const ellipses = container.querySelectorAll('ellipse');
+      if (ellipses.length > 0) {
+        fireEvent.click(ellipses[0]);
 
         expect(mockProps.onSelectPoint).toHaveBeenCalledWith('p1');
       }
@@ -201,9 +203,9 @@ describe('RoutePreviewSvgLayer', () => {
         <RoutePreviewSvgLayer {...mockProps} disablePointSelection={true} />,
       );
 
-      const circles = container.querySelectorAll('circle');
-      if (circles.length > 0) {
-        fireEvent.click(circles[0]);
+      const ellipses = container.querySelectorAll('ellipse');
+      if (ellipses.length > 0) {
+        fireEvent.click(ellipses[0]);
 
         expect(mockProps.onSelectPoint).not.toHaveBeenCalled();
       }
