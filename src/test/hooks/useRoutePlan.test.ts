@@ -376,7 +376,11 @@ describe('useRoutePlan', () => {
     const { result } = renderHook(() => useRoutePlan({ selectedProfile }));
 
     await waitFor(() => {
-      expect(result.current.state.isPopulating).toBe(false);
+      expect(populatePath).toHaveBeenCalled();
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.populatedPathWithMetadata).toHaveLength(2);
     });
 
     expect(result.current.state.populatedPathWithMetadata).toHaveLength(2);
@@ -401,7 +405,13 @@ describe('useRoutePlan', () => {
     const { result } = renderHook(() => useRoutePlan({ selectedProfile }));
 
     await waitFor(() => {
-      expect(result.current.state.isPopulating).toBe(false);
+      expect(populatePath).toHaveBeenCalled();
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.routeError).toBe(
+        'Received invalid route metadata from backend. Please retry.',
+      );
     });
 
     expect(result.current.state.populatedPathWithMetadata).toEqual([]);
@@ -452,10 +462,10 @@ describe('useRoutePlan', () => {
           batteries: [
             {
               corners: [
-                { x: 101, y: 201 },
-                { x: 111, y: 201 },
-                { x: 111, y: 211 },
-                { x: 101, y: 211 },
+                { pixelX: 101, pixelY: 201 },
+                { pixelX: 111, pixelY: 201 },
+                { pixelX: 111, pixelY: 211 },
+                { pixelX: 101, pixelY: 211 },
               ],
             },
           ],
