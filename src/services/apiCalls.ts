@@ -1,5 +1,57 @@
 import { apiClient } from './apiClient';
 
+function logApiCall(event: string, details: Record<string, unknown>): void {
+  console.info('[RouteAPI]', event, {
+    timestamp: new Date().toISOString(),
+    ...details,
+  });
+}
+
+function logApiCallError(event: string, error: unknown, details: Record<string, unknown>): void {
+  console.error('[RouteAPI]', event, {
+    timestamp: new Date().toISOString(),
+    error,
+    ...details,
+  });
+}
+
+function logCameraInteraction(event: string, details: Record<string, unknown>): void {
+  console.info('[CameraAPI]', event, {
+    timestamp: new Date().toISOString(),
+    ...details,
+  });
+}
+
+function warnIfLikelyUnreachableFromBrowser(streamUrl: string): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    const parsedUrl = new URL(streamUrl);
+    const host = parsedUrl.hostname;
+    const containerOnlyHosts = new Set(['backend', 'nenabot-backend']);
+    const isContainerOnlyHost = containerOnlyHosts.has(host) || host.endsWith('.internal');
+
+    if (!isContainerOnlyHost) {
+      return;
+    }
+
+    console.warn('[CameraAPI] Stream host may be unreachable from browser context', {
+      timestamp: new Date().toISOString(),
+      streamUrl,
+      browserHost: window.location.hostname,
+      suggestion:
+        'Use a browser-reachable API host (for example localhost or a reverse-proxy URL) for VITE_API_URL.',
+    });
+  } catch (error) {
+    console.warn('[CameraAPI] Failed to parse stream URL for host reachability check', {
+      streamUrl,
+      error,
+    });
+  }
+}
+
 export interface ComponentHealthApiResponse {
   status: string;
   error?: string | null;
@@ -10,7 +62,7 @@ export interface HealthApiResponse {
   uptimeSeconds?: number;
   robot: ComponentHealthApiResponse;
   camera: ComponentHealthApiResponse;
-  dms: ComponentHealthApiResponse;
+  ionvision: ComponentHealthApiResponse;
 }
 
 export interface ProfileApiResponse {
@@ -160,9 +212,15 @@ const jobByIdInFlight = new Map<string, Promise<JobApiResponse>>();
 
 export async function fetchHealthStatus(): Promise<HealthApiResponse> {
   if (healthInFlight) return healthInFlight;
+  logApiCall('fetchHealthStatus:request', {});
   healthInFlight = apiClient.get<HealthApiResponse>('/api/health');
   try {
-    return await healthInFlight;
+    const response = await healthInFlight;
+    logApiCall('fetchHealthStatus:response', { status: response.status });
+    return response;
+  } catch (error) {
+    logApiCallError('fetchHealthStatus:error', error, {});
+    throw error;
   } finally {
     healthInFlight = null;
   }
@@ -170,9 +228,15 @@ export async function fetchHealthStatus(): Promise<HealthApiResponse> {
 
 export async function fetchProfiles(): Promise<ProfileApiResponse[]> {
   if (profileListInFlight) return profileListInFlight;
+  logApiCall('fetchProfiles:request', {});
   profileListInFlight = apiClient.get<ProfileApiResponse[]>('/api/profile');
   try {
-    return await profileListInFlight;
+    const response = await profileListInFlight;
+    logApiCall('fetchProfiles:response', { profileCount: response.length });
+    return response;
+  } catch (error) {
+    logApiCallError('fetchProfiles:error', error, {});
+    throw error;
   } finally {
     profileListInFlight = null;
   }
@@ -180,9 +244,15 @@ export async function fetchProfiles(): Promise<ProfileApiResponse[]> {
 
 export async function fetchDefaultProfile(): Promise<ProfileApiResponse> {
   if (defaultProfileInFlight) return defaultProfileInFlight;
+  logApiCall('fetchDefaultProfile:request', {});
   defaultProfileInFlight = apiClient.get<ProfileApiResponse>('/api/profile/default');
   try {
-    return await defaultProfileInFlight;
+    const response = await defaultProfileInFlight;
+    logApiCall('fetchDefaultProfile:response', { profile: response.name });
+    return response;
+  } catch (error) {
+    logApiCallError('fetchDefaultProfile:error', error, {});
+    throw error;
   } finally {
     defaultProfileInFlight = null;
   }
@@ -191,25 +261,84 @@ export async function fetchDefaultProfile(): Promise<ProfileApiResponse> {
 export async function detectPath(
   payload: PathDetectRequestApi = {},
 ): Promise<PathDetectResponseApi> {
-  return apiClient.post<PathDetectResponseApi>('/api/path/detect', payload);
+  logApiCall('detectPath:request', {
+    optionKeys: Object.keys(payload.options ?? {}),
+  });
+
+  try {
+    const response = await apiClient.post<PathDetectResponseApi>('/api/path/detect', payload);
+    logApiCall('detectPath:response', {
+      ok: response.ok,
+      detectionCount: response.detections?.length ?? 0,
+      hasImage: Boolean(response.image_base64),
+    });
+    return response;
+  } catch (error) {
+    logApiCallError('detectPath:error', error, {
+      optionKeys: Object.keys(payload.options ?? {}),
+    });
+    throw error;
+  }
 }
 
 export async function populatePath(
   payload: PathPopulateRequestApi,
 ): Promise<PathPopulateResponseApi> {
-  return apiClient.post<PathPopulateResponseApi>('/api/path/populate', payload);
+  logApiCall('populatePath:request', {
+    batteryCount: payload.batteries.length,
+    measuringPointsPerCm: payload.measuringPointsPerCm,
+  });
+
+  try {
+    const response = await apiClient.post<PathPopulateResponseApi>('/api/path/populate', payload);
+    logApiCall('populatePath:response', {
+      pointCount: response.path.length,
+    });
+    return response;
+  } catch (error) {
+    logApiCallError('populatePath:error', error, {
+      batteryCount: payload.batteries.length,
+      measuringPointsPerCm: payload.measuringPointsPerCm,
+    });
+    throw error;
+  }
 }
 
 export async function createJob(payload: CreateJobRequestApi): Promise<JobApiResponse> {
   // POST /api/job creates a new job and starts it
-  return apiClient.post<JobApiResponse>('/api/job', payload);
+  logApiCall('createJob:request', {
+    pathLength: payload.path.length,
+    dryRun: payload.dryRun,
+    workZ: payload.workZ,
+    workR: payload.workR,
+  });
+
+  try {
+    const response = await apiClient.post<JobApiResponse>('/api/job', payload);
+    logApiCall('createJob:response', { jobId: response.id });
+    return response;
+  } catch (error) {
+    logApiCallError('createJob:error', error, {
+      pathLength: payload.path.length,
+      dryRun: payload.dryRun,
+      workZ: payload.workZ,
+      workR: payload.workR,
+    });
+    throw error;
+  }
 }
 
 export async function fetchJobs(): Promise<JobApiResponse[]> {
   if (jobsInFlight) return jobsInFlight;
+  logApiCall('fetchJobs:request', {});
   jobsInFlight = apiClient.get<JobApiResponse[]>('/api/job');
   try {
-    return await jobsInFlight;
+    const response = await jobsInFlight;
+    logApiCall('fetchJobs:response', { jobCount: response.length });
+    return response;
+  } catch (error) {
+    logApiCallError('fetchJobs:error', error, {});
+    throw error;
   } finally {
     jobsInFlight = null;
   }
@@ -217,9 +346,15 @@ export async function fetchJobs(): Promise<JobApiResponse[]> {
 
 export async function fetchLatestJob(): Promise<JobApiResponse> {
   if (latestJobInFlight) return latestJobInFlight;
+  logApiCall('fetchLatestJob:request', {});
   latestJobInFlight = apiClient.get<JobApiResponse>('/api/job/latest');
   try {
-    return await latestJobInFlight;
+    const response = await latestJobInFlight;
+    logApiCall('fetchLatestJob:response', { jobId: response.id });
+    return response;
+  } catch (error) {
+    logApiCallError('fetchLatestJob:error', error, {});
+    throw error;
   } finally {
     latestJobInFlight = null;
   }
@@ -229,10 +364,16 @@ export async function fetchJobById(jobId: string): Promise<JobApiResponse> {
   const normalizedId = jobId.trim();
   if (jobByIdInFlight.has(normalizedId)) return jobByIdInFlight.get(normalizedId)!;
 
+  logApiCall('fetchJobById:request', { jobId: normalizedId });
   const request = apiClient.get<JobApiResponse>(`/api/job/${encodeURIComponent(normalizedId)}`);
   jobByIdInFlight.set(normalizedId, request);
   try {
-    return await request;
+    const response = await request;
+    logApiCall('fetchJobById:response', { jobId: response.id });
+    return response;
+  } catch (error) {
+    logApiCallError('fetchJobById:error', error, { jobId: normalizedId });
+    throw error;
   } finally {
     jobByIdInFlight.delete(normalizedId);
   }
@@ -243,7 +384,17 @@ export async function deleteJob(jobId: string): Promise<void> {
 }
 
 export function getStreamUrl(kind: 'camera' | 'detection'): string {
-  return `${apiClient.getBaseUrl()}/api/stream/${kind}/feed`;
+  const baseUrl = apiClient.getBaseUrl();
+  const streamUrl = `${baseUrl}/api/stream/${kind}/feed`;
+
+  logCameraInteraction('Resolved camera stream URL', {
+    kind,
+    baseUrl,
+    streamUrl,
+  });
+  warnIfLikelyUnreachableFromBrowser(streamUrl);
+
+  return streamUrl;
 }
 
 export function getJobEventsUrl(jobId: string): string {

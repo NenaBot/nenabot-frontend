@@ -1,9 +1,9 @@
 import { HardwareData } from '../types/hardware.types';
 
-export const mockDmsData: HardwareData = {
-  id: 'dms-1',
-  type: 'dms',
-  title: 'DMS',
+export const mockIonvisionData: HardwareData = {
+  id: 'ionvision-mock',
+  type: 'ionvision',
+  title: 'IonVision Mock',
   status: 'online',
   lastUpdate: new Date(Date.now() - 900),
   metrics: [
@@ -43,7 +43,7 @@ export const mockRobotData: HardwareData = {
 };
 
 export const mockHardwareData = {
-  dms: mockDmsData,
+  ionvision: mockIonvisionData,
   camera: mockCameraData,
   robot: mockRobotData,
 };

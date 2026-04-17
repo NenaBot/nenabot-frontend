@@ -21,6 +21,7 @@ import { RoutePreviewCoordinate, RoutePreviewPoint } from '../types/routePreview
 
 interface UseRoutePlanOptions {
   selectedProfile: ProfileModel | null;
+  isActive?: boolean;
 }
 
 interface DetectState {
@@ -262,7 +263,22 @@ function populatedPathToJobPath(points: PathPopulatePointApiResponse[]): JobPath
   }));
 }
 
-export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
+function logRoutePlan(event: string, details: Record<string, unknown>): void {
+  console.info('[RoutePlan]', event, {
+    timestamp: new Date().toISOString(),
+    ...details,
+  });
+}
+
+function logRoutePlanError(event: string, error: unknown, details: Record<string, unknown>): void {
+  console.error('[RoutePlan]', event, {
+    timestamp: new Date().toISOString(),
+    error,
+    ...details,
+  });
+}
+
+export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanOptions) {
   const [state, setState] = useState<DetectState>({
     isInitializing: false,
     isPopulating: false,
@@ -284,6 +300,9 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
   const runPopulate = useCallback(
     async (batteries: BatteryCornersApiResponse[], measurementDensity: number) => {
       if (batteries.length === 0) {
+        logRoutePlan('populate:skipped-empty', {
+          measurementDensity,
+        });
         setState((prev) => ({
           ...prev,
           isPopulating: false,
@@ -298,6 +317,12 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
 
       const requestId = populateRequestCounterRef.current + 1;
       populateRequestCounterRef.current = requestId;
+      logRoutePlan('populate:start', {
+        requestId,
+        batteryCount: batteries.length,
+        measurementDensity,
+        mockMode: isMockModeEnabled(),
+      });
       setState((prev) => ({ ...prev, isPopulating: true, routeError: null }));
 
       try {
@@ -312,6 +337,9 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
             });
 
         if (populateRequestCounterRef.current !== requestId) {
+          logRoutePlan('populate:stale-response', {
+            requestId,
+          });
           return;
         }
 
@@ -337,8 +365,19 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
           populatedPathWithMetadata: populatedWithMetadata,
           batteries,
         }));
+        logRoutePlan('populate:success', {
+          requestId,
+          batteryCount: batteries.length,
+          cornerCount: currentCornerPoints.length,
+          populatedPointCount: populatedPixels.length,
+          measurementPointCount: separatedMeasurements.length,
+        });
       } catch (error) {
-        console.error('Path populate failed:', error);
+        logRoutePlanError('populate:error', error, {
+          requestId,
+          batteryCount: batteries.length,
+          measurementDensity,
+        });
         if (populateRequestCounterRef.current === requestId) {
           const routeError =
             error instanceof Error && error.message === 'INVALID_PATH_METADATA'
@@ -361,6 +400,12 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
       ? 0.5
       : getMeasurementDensityFromProfile(selectedProfile);
 
+    logRoutePlan('initialize:start', {
+      mockMode: isMockModeEnabled(),
+      profile: selectedProfile?.name ?? null,
+      measurementDensity: defaultMeasurementDensity,
+    });
+
     setState((prev) => ({
       ...prev,
       isInitializing: true,
@@ -379,6 +424,11 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
         throw new Error('No path points were detected.');
       }
 
+      logRoutePlan('initialize:detected', {
+        batteryCount: detectedBatteries.length,
+        imageLoaded: Boolean(detectionResponse.image_base64),
+      });
+
       const detectedPoints = flattenBatteryCorners(detectedBatteries);
 
       setState((prev) => ({
@@ -394,7 +444,9 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
 
       await runPopulate(detectedBatteries, defaultMeasurementDensity);
     } catch (error) {
-      console.error('Path detection failed:', error);
+      logRoutePlanError('initialize:error', error, {
+        profile: selectedProfile?.name ?? null,
+      });
       setState((prev) => ({
         ...prev,
         isInitializing: false,
@@ -405,6 +457,10 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
   }, [runPopulate, selectedProfile]);
 
   useEffect(() => {
+    if (!isActive) {
+      return;
+    }
+
     if (!selectedProfile) {
       setState((prev) => ({
         ...prev,
@@ -420,13 +476,18 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
     }
 
     void initializeRoute();
-  }, [initializeRoute, selectedProfile]);
+  }, [initializeRoute, isActive, selectedProfile]);
 
   const setMeasurementDensity = (value: number) => {
     if (!isMeasurementDensityInRange(value)) {
       return;
     }
 
+    logRoutePlan('density:update', {
+      value,
+      batteryCount: state.batteries.length,
+      mockMode: isMockModeEnabled(),
+    });
     setState((prev) => ({ ...prev, measurementDensity: value }));
     void runPopulate(state.batteries, value);
   };
@@ -449,6 +510,15 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
     ) {
       return;
     }
+
+    logRoutePlan('corner:move', {
+      pointId,
+      batteryIndex,
+      cornerIndex,
+      x,
+      y,
+      measurementDensity: state.measurementDensity,
+    });
 
     const updatedBatteries = state.batteries.map((battery, bIndex) => {
       if (bIndex !== batteryIndex) {
@@ -502,11 +572,26 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
       return null;
     }
 
+    logRoutePlan('job:create:start', {
+      mockMode: isMockModeEnabled(),
+      dryRun: state.dryRun,
+      pathSource:
+        state.populatedPathWithMetadata.length > 0
+          ? 'metadata'
+          : state.populatedPath.length > 0
+            ? 'pixels'
+            : 'corners',
+      pathLength: jobPath.length,
+    });
+
     setState((prev) => ({ ...prev, isCreatingJob: true, routeError: null }));
 
     try {
       if (isMockModeEnabled()) {
         const mockJobId = `mock-job-${Date.now()}`;
+        logRoutePlan('job:create:mock-success', {
+          jobId: mockJobId,
+        });
         setState((prev) => ({ ...prev, isCreatingJob: false }));
         return mockJobId;
       }
@@ -524,9 +609,15 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
       });
 
       setState((prev) => ({ ...prev, isCreatingJob: false }));
+      logRoutePlan('job:create:success', {
+        jobId: response.id,
+      });
       return response.id;
     } catch (error) {
-      console.error('Job creation failed:', error);
+      logRoutePlanError('job:create:error', error, {
+        pathLength: jobPath.length,
+        dryRun: state.dryRun,
+      });
       setState((prev) => ({
         ...prev,
         isCreatingJob: false,
@@ -588,6 +679,10 @@ export function useRoutePlan({ selectedProfile }: UseRoutePlanOptions) {
   }, [state.batteries, state.cornerPoints, state.measurementPoints, state.populatedPath]);
 
   const resetRoutePlan = useCallback(async () => {
+    logRoutePlan('reset:start', {
+      mockMode: isMockModeEnabled(),
+      profile: selectedProfile?.name ?? null,
+    });
     setState((prev) => ({
       ...prev,
       isInitializing: true,

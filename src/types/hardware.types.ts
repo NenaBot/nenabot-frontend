@@ -1,6 +1,6 @@
 export type HardwareStatus = 'online' | 'offline' | 'error' | 'warning' | 'idle';
 
-export type HardwareDeviceType = 'dms' | 'camera' | 'robot';
+export type HardwareDeviceType = 'ionvision' | 'camera' | 'robot';
 
 export interface HardwareMetric {
   label: string;

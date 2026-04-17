@@ -61,6 +61,7 @@ export interface ProgressTabState {
   scan: ScanStatusModel;
   events: ProgressEvent[];
   measurements: ScanMeasurement[];
+  lastEventType: string | null;
 }
 
 /**

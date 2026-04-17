@@ -62,6 +62,37 @@ describe('useCameraStream', () => {
     expect(result.current.streamSrc).toBe('http://localhost:8000/stream');
   });
 
+  test('skips reconnect work when inactive', () => {
+    const { result } = renderHook(() =>
+      useCameraStream('http://localhost:8000/stream', 500, false),
+    );
+
+    expect(result.current.streamStatus).toBe('disconnected');
+
+    act(() => {
+      result.current.handleError();
+      result.current.handleLoad();
+      jest.advanceTimersByTime(1000);
+    });
+
+    expect(result.current.streamStatus).toBe('disconnected');
+    expect(result.current.streamSrc).toBe('http://localhost:8000/stream');
+  });
+
+  test('marks invalid reconnect URLs as error instead of throwing', () => {
+    const { result } = renderHook(() => useCameraStream('not-a-url', 500));
+
+    act(() => {
+      result.current.handleError();
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(500);
+    });
+
+    expect(result.current.streamStatus).toBe('error');
+  });
+
   test('resets status and src when stream URL changes', () => {
     const { result, rerender } = renderHook(
       ({ url }: { url: string }) => useCameraStream(url, 500),

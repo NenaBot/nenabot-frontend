@@ -164,7 +164,7 @@ describe('useRoutePlan', () => {
     });
   });
 
-  test('re-populates when a corner point is moved', async () => {
+  test('re-populates when a corner point is moved to edge values', async () => {
     const { result } = renderHook(() => useRoutePlan({ selectedProfile }));
 
     await waitFor(() => {
@@ -172,7 +172,7 @@ describe('useRoutePlan', () => {
     });
 
     await act(async () => {
-      result.current.moveCornerPoint('battery-0-corner-0', 0.5, 0.5);
+      result.current.moveCornerPoint('battery-0-corner-0', 0, 100);
     });
 
     await waitFor(() => {
@@ -185,7 +185,7 @@ describe('useRoutePlan', () => {
         batteries: [
           {
             corners: [
-              { x: 0.5, y: 0.5 },
+              { x: 0, y: 100 },
               { x: 15, y: 15 },
               { x: 15, y: 25 },
               { x: 5, y: 25 },

@@ -70,6 +70,7 @@ function mapEventsToProgressState(events: JobEventApiResponse[]): ProgressTabSta
       },
       events: [],
       measurements: [],
+      lastEventType: null,
     };
   }
 
@@ -107,15 +108,16 @@ function mapEventsToProgressState(events: JobEventApiResponse[]): ProgressTabSta
         intensity: toMeasurementIntensity(event),
         status: normalizeEventType(event.type).includes('completed') ? 'complete' : 'processing',
       })),
+    lastEventType: normalizeEventType(lastEvent.type),
   };
 }
 
-export function useProgressData(jobId: string | null) {
+export function useProgressData(jobId: string | null, isActive = true) {
   const [mockMode] = useMockMode();
   const [progressState, setProgressState] = useState<ProgressTabState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { events: jobEvents, error: streamError } = useJobEvents(mockMode ? null : jobId);
+  const { events: jobEvents, error: streamError } = useJobEvents(mockMode ? null : jobId, isActive);
   const hasEvents = jobEvents.length > 0;
 
   useEffect(() => {

@@ -1,6 +1,6 @@
-import { expect, test } from '@playwright/test';
+import { expect, Page, test } from '@playwright/test';
 
-async function enableMockMode(page) {
+async function enableMockMode(page: Page) {
   await page.addInitScript(() => {
     window.localStorage.setItem('nenabot-use-mock-data', 'true');
   });
@@ -11,20 +11,28 @@ test('loads a previous mock scan and exports csv', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Results', exact: true }).click();
 
-  await expect(page.getByRole('heading', { name: 'Scan Results' })).toBeVisible();
+  const resultsPanel = page.getByRole('tabpanel').filter({
+    has: page.getByRole('heading', { name: 'Scan Results' }),
+  });
 
-  const scanSelector = page.locator('select').first();
+  await expect(resultsPanel.getByRole('heading', { name: 'Scan Results' })).toBeVisible();
+
+  const scanSelector = resultsPanel.getByRole('combobox', {
+    name: 'View uploaded data from a previous scan',
+  });
   await scanSelector.selectOption('mock-scan-02');
   await expect(scanSelector).toHaveValue('mock-scan-02');
 
-  await page.getByRole('button', { name: 'Load Scan' }).click();
-  await expect(page.getByRole('heading', { name: 'Scan Results' })).toBeVisible();
+  await resultsPanel.getByRole('button', { name: 'Load Scan' }).click();
+  await expect(resultsPanel.getByRole('heading', { name: 'Scan Results' })).toBeVisible();
 
-  const exportFormatSelector = page.locator('select').nth(1);
+  const exportFormatSelector = resultsPanel.getByRole('combobox', {
+    name: 'Select export format',
+  });
   await exportFormatSelector.selectOption('csv');
 
   const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export Data' }).click();
+  await resultsPanel.getByRole('button', { name: 'Export Data' }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toContain('.csv');
   expect(download.suggestedFilename()).toContain('mock-scan-02');

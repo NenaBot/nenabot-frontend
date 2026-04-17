@@ -1,8 +1,5 @@
-import { clamp, polylineFromPoints } from './geometry';
+import { polylineFromPoints } from './geometry';
 import { RoutePreviewCoordinate, RoutePreviewPoint } from '../../../types/routePreview.types';
-
-const EDGE_PADDING_SVG = 3.4;
-const EDGE_PADDING_NORMALIZED = EDGE_PADDING_SVG / 100;
 
 interface RoutePreviewSvgLayerProps {
   routePath: RoutePreviewCoordinate[];
@@ -49,26 +46,12 @@ export function RoutePreviewSvgLayer({
   onWheel,
   getDisplayPosition,
 }: RoutePreviewSvgLayerProps) {
-  const clampToVisibleSvg = (value: number) =>
-    clamp(value, EDGE_PADDING_SVG, 100 - EDGE_PADDING_SVG);
-
   const renderedPoints = measurementPoints.map((point) => ({
     point,
-    displayPos: (() => {
-      const pos = getDisplayPosition(point);
-      return {
-        x: clampToVisibleSvg(pos.x),
-        y: clampToVisibleSvg(pos.y),
-      };
-    })(),
+    displayPos: getDisplayPosition(point),
   }));
   // Draw the route only from backend-populated ordered path data.
-  const polyline = polylineFromPoints(
-    routePath.map((point) => ({
-      x: clamp(point.x, EDGE_PADDING_NORMALIZED, 1 - EDGE_PADDING_NORMALIZED),
-      y: clamp(point.y, EDGE_PADDING_NORMALIZED, 1 - EDGE_PADDING_NORMALIZED),
-    })),
-  );
+  const polyline = polylineFromPoints(routePath);
 
   return (
     <svg

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { JobEventApiResponse, getJobEventsUrl } from '../services/apiCalls';
 
 interface UseJobEventsResult {
@@ -6,16 +6,20 @@ interface UseJobEventsResult {
   error: string | null;
 }
 
-export function useJobEvents(jobId: string | null): UseJobEventsResult {
+export function useJobEvents(jobId: string | null, isActive = true): UseJobEventsResult {
   const [events, setEvents] = useState<JobEventApiResponse[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const previousJobIdRef = useRef<string | null>(jobId);
 
   useEffect(() => {
-    // Reset stream state whenever the job changes to avoid mixing histories.
-    setEvents([]);
-    setError(null);
+    if (previousJobIdRef.current !== jobId) {
+      // Reset stream state whenever the job changes to avoid mixing histories.
+      setEvents([]);
+      setError(null);
+      previousJobIdRef.current = jobId;
+    }
 
-    if (!jobId) {
+    if (!jobId || !isActive) {
       return;
     }
 
@@ -49,7 +53,7 @@ export function useJobEvents(jobId: string | null): UseJobEventsResult {
       console.log(`[JobEvents] Cleaning up SSE connection for job ${jobId}`);
       source.close();
     };
-  }, [jobId]);
+  }, [isActive, jobId]);
 
   return {
     events,

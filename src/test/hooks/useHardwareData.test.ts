@@ -14,7 +14,7 @@ jest.mock('../../state/mockMode', () => ({
 const livePayload = {
   status: 'ok',
   uptimeSeconds: 120,
-  dms: { status: 'ok', error: null },
+  ionvision: { status: 'ok', error: null },
   camera: { status: 'degraded', error: null },
   robot: { status: 'failed', error: 'joint issue' },
 };
@@ -47,7 +47,7 @@ describe('useHardwareData', () => {
     });
 
     expect(fetchHealthStatus).toHaveBeenCalledTimes(1);
-    expect(result.current.dms?.status).toBe('online');
+    expect(result.current.ionvision?.status).toBe('online');
     expect(result.current.camera?.status).toBe('warning');
     expect(result.current.robot?.status).toBe('error');
     expect(result.current.lastUpdated).toBeInstanceOf(Date);
@@ -63,7 +63,7 @@ describe('useHardwareData', () => {
     });
 
     expect(fetchHealthStatus).not.toHaveBeenCalled();
-    expect(result.current.dms).not.toBeNull();
+    expect(result.current.ionvision).not.toBeNull();
     expect(result.current.camera).not.toBeNull();
     expect(result.current.robot).not.toBeNull();
   });

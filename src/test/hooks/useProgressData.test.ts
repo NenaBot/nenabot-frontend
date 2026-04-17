@@ -31,7 +31,7 @@ describe('useProgressData', () => {
 
     expect(result.current.progressState).toBeNull();
     expect(result.current.error).toBe('No active job selected.');
-    expect(useJobEvents).toHaveBeenCalledWith(null);
+    expect(useJobEvents).toHaveBeenCalledWith(null, true);
   });
 
   test('maps SSE events into progress, events, and measurements', async () => {
@@ -184,6 +184,6 @@ describe('useProgressData', () => {
       }),
     );
     expect(result.current.error).toBeNull();
-    expect(useJobEvents).toHaveBeenCalledWith(null);
+    expect(useJobEvents).toHaveBeenCalledWith(null, true);
   });
 });

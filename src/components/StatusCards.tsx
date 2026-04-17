@@ -42,10 +42,10 @@ function getStatusText(status: HardwareStatus) {
 }
 
 function getHardwareIcon(type: HardwareData['type']) {
-  const className = 'text-xl text-(--md-sys-color-on-primary-container)';
+  const className = 'text-xl text-[var(--md-sys-color-on-primary-container)]';
 
   switch (type) {
-    case 'dms':
+    case 'ionvision':
       return <MaterialSymbol name="database" className={className} />;
     case 'camera':
       return <MaterialSymbol name="photo_camera" className={className} />;
@@ -180,21 +180,21 @@ function StatusCardsError({
   onRetry: () => void | Promise<void>;
 }) {
   return (
-    <div className="border border-(--md-sys-color-error) rounded-2xl p-5 bg-(--md-sys-color-error-container)">
+    <div className="border border-[var(--md-sys-color-error)] rounded-2xl p-5 bg-[var(--md-sys-color-error-container)]">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-2">
-          <AlertCircle className="w-5 h-5 text-(--md-sys-color-on-error-container) mt-0.5" />
+          <AlertCircle className="w-5 h-5 text-[var(--md-sys-color-on-error-container)] mt-0.5" />
           <div>
-            <h3 className="text-sm font-semibold text-(--md-sys-color-on-error-container)">
+            <h3 className="text-sm font-semibold text-[var(--md-sys-color-on-error-container)]">
               Hardware status unavailable
             </h3>
-            <p className="text-xs text-(--md-sys-color-on-error-container) mt-1">{message}</p>
+            <p className="text-xs text-[var(--md-sys-color-on-error-container)] mt-1">{message}</p>
           </div>
         </div>
         <button
           type="button"
           onClick={onRetry}
-          className="px-3 py-1.5 rounded-full text-xs font-medium bg-(--md-sys-color-primary) text-(--md-sys-color-on-primary)"
+          className="px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)]"
         >
           Retry
         </button>
@@ -204,7 +204,7 @@ function StatusCardsError({
 }
 
 export function StatusCards() {
-  const { dms, camera, robot, isLoading, error, refetch } = useHardwareData();
+  const { ionvision, camera, robot, isLoading, error, refetch } = useHardwareData();
 
   if (isLoading) {
     return (
@@ -229,7 +229,7 @@ export function StatusCards() {
   return (
     <div className="mb-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {dms && <StatusCard data={dms} />}
+        {ionvision && <StatusCard data={ionvision} />}
         {camera && <StatusCard data={camera} />}
         {robot && <StatusCard data={robot} />}
       </div>
