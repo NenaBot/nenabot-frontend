@@ -1,6 +1,6 @@
-import { expect, test } from '@playwright/test';
+import { expect, Page, test } from '@playwright/test';
 
-async function enableMockMode(page) {
+async function enableMockMode(page: Page) {
   await page.addInitScript(() => {
     window.localStorage.setItem('nenabot-use-mock-data', 'true');
   });
@@ -26,7 +26,9 @@ test('loads a previous mock scan and exports csv', async ({ page }) => {
   await resultsPanel.getByRole('button', { name: 'Load Scan' }).click();
   await expect(resultsPanel.getByRole('heading', { name: 'Scan Results' })).toBeVisible();
 
-  const exportFormatSelector = resultsPanel.getByRole('combobox').nth(1);
+  const exportFormatSelector = resultsPanel.getByRole('combobox', {
+    name: 'Select export format',
+  });
   await exportFormatSelector.selectOption('csv');
 
   const downloadPromise = page.waitForEvent('download');

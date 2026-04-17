@@ -1,8 +1,9 @@
 import { Settings, MapPin, Activity, BarChart3, Camera } from 'lucide-react';
+import { TabId } from '../types/tab.types';
 
 interface TabNavigationProps {
-  activeTab: string;
-  onTabChange: (tab: string) => void;
+  activeTab: TabId;
+  onTabChange: (tab: TabId) => void;
 }
 
 export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {

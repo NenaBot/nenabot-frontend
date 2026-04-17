@@ -42,7 +42,7 @@ function getStatusText(status: HardwareStatus) {
 }
 
 function getHardwareIcon(type: HardwareData['type']) {
-  const className = 'text-xl text-(--md-sys-color-on-primary-container)';
+  const className = 'text-xl text-[var(--md-sys-color-on-primary-container)]';
 
   switch (type) {
     case 'ionvision':
@@ -180,21 +180,21 @@ function StatusCardsError({
   onRetry: () => void | Promise<void>;
 }) {
   return (
-    <div className="border border-(--md-sys-color-error) rounded-2xl p-5 bg-(--md-sys-color-error-container)">
+    <div className="border border-[var(--md-sys-color-error)] rounded-2xl p-5 bg-[var(--md-sys-color-error-container)]">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-2">
-          <AlertCircle className="w-5 h-5 text-(--md-sys-color-on-error-container) mt-0.5" />
+          <AlertCircle className="w-5 h-5 text-[var(--md-sys-color-on-error-container)] mt-0.5" />
           <div>
-            <h3 className="text-sm font-semibold text-(--md-sys-color-on-error-container)">
+            <h3 className="text-sm font-semibold text-[var(--md-sys-color-on-error-container)]">
               Hardware status unavailable
             </h3>
-            <p className="text-xs text-(--md-sys-color-on-error-container) mt-1">{message}</p>
+            <p className="text-xs text-[var(--md-sys-color-on-error-container)] mt-1">{message}</p>
           </div>
         </div>
         <button
           type="button"
           onClick={onRetry}
-          className="px-3 py-1.5 rounded-full text-xs font-medium bg-(--md-sys-color-primary) text-(--md-sys-color-on-primary)"
+          className="px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)]"
         >
           Retry
         </button>

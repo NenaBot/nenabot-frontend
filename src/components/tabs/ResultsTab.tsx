@@ -149,6 +149,8 @@ export function ResultsTab({ initialJobId, isActive = true }: ResultsTabProps) {
             value={exportFormat}
             onChange={(event) => setExportFormat(event.target.value as ExportFormat)}
             className="px-3 py-2 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm"
+            aria-label="Select export format"
+            title="Select export format"
           >
             <option value="json">JSON</option>
             <option value="csv">CSV</option>
