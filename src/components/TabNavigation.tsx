@@ -6,15 +6,20 @@ interface TabNavigationProps {
   onTabChange: (tab: TabId) => void;
 }
 
-export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
-  const tabs = [
-    { id: 'setup', label: 'Setup', icon: Settings, description: 'Configure scan parameters' },
-    { id: 'camera', label: 'Camera', icon: Camera, description: 'Verify camera and detection' },
-    { id: 'route', label: 'Route', icon: MapPin, description: 'Plan scan route' },
-    { id: 'progress', label: 'Progress', icon: Activity, description: 'Monitor live scanning' },
-    { id: 'results', label: 'Results', icon: BarChart3, description: 'View analysis' },
-  ];
+const tabs: Array<{
+  id: TabId;
+  label: string;
+  icon: typeof Settings;
+  description: string;
+}> = [
+  { id: 'setup', label: 'Setup', icon: Settings, description: 'Configure scan parameters' },
+  { id: 'camera', label: 'Camera', icon: Camera, description: 'Verify camera and detection' },
+  { id: 'route', label: 'Route', icon: MapPin, description: 'Plan scan route' },
+  { id: 'progress', label: 'Progress', icon: Activity, description: 'Monitor live scanning' },
+  { id: 'results', label: 'Results', icon: BarChart3, description: 'View analysis' },
+];
 
+export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
   return (
     <div className="sticky top-16 z-40 border-b border-[var(--md-sys-color-outline-variant)]/50 bg-[var(--md-sys-color-surface)] backdrop-blur-sm shadow-sm">
       <div className="max-w-7xl mx-auto px-6">
