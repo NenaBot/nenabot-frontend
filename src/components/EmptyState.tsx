@@ -1,4 +1,5 @@
 import React from 'react';
+import { useDarkMode } from '../hooks/useDarkMode';
 
 interface EmptyStateProps {
   icon: React.ReactNode;
@@ -21,11 +22,13 @@ export function EmptyState({
   primaryAction,
   secondaryAction,
 }: EmptyStateProps) {
+  const [dark] = useDarkMode();
+
   return (
     <div className="border border-[var(--md-sys-color-outline-variant)]/50 rounded-2xl p-12 bg-[var(--md-sys-color-surface-container-lowest)] shadow-lg">
       <div className="max-w-md mx-auto text-center">
         <div className="w-20 h-20 bg-gradient-to-br from-[var(--md-sys-color-primary)] to-[var(--md-sys-color-tertiary)] rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg hover:shadow-xl transition-shadow">
-          <div className="text-white text-2xl">{icon}</div>
+          <div style={{ color: dark ? 'black' : 'white' }} className="text-2xl font-semibold">{icon}</div>
         </div>
         <h3 className="text-xl font-bold mb-2 text-[var(--md-sys-color-on-surface)]">{title}</h3>
         <p className="text-sm text-[var(--md-sys-color-on-surface-variant)] mb-6">{description}</p>

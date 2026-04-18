@@ -32,7 +32,7 @@ export const MaterialSymbol = React.forwardRef<HTMLSpanElement, MaterialSymbolPr
     return (
       <span
         ref={ref}
-        className={`material-symbols-outlined leading-none inline-flex ${sizeClass} ${className}`}
+        className={`material-symbols-outlined leading-none inline-flex text-current ${sizeClass} ${className}`}
         style={symbolStyle}
         {...props}
       >

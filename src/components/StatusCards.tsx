@@ -1,7 +1,8 @@
-import { CheckCircle2, AlertCircle, Activity, XCircle, Clock, WifiOff } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Activity, XCircle, Clock, WifiOff, Database, Camera, Settings } from 'lucide-react';
 import { MaterialSymbol } from './MaterialSymbol';
 import { HardwareData, HardwareStatus } from '../types/hardware.types';
 import { useHardwareData } from '../hooks/useHardwareData';
+import { useDarkMode } from '../hooks/useDarkMode';
 
 interface StatusCardProps {
   data: HardwareData;
@@ -41,22 +42,24 @@ function getStatusText(status: HardwareStatus) {
   }
 }
 
-function getHardwareIcon(type: HardwareData['type']) {
-  const className = 'text-xl text-[var(--md-sys-color-on-primary-container)]';
-
-  switch (type) {
-    case 'ionvision':
-      return <MaterialSymbol name="database" className={className} />;
-    case 'camera':
-      return <MaterialSymbol name="photo_camera" className={className} />;
-    case 'robot':
-      return <MaterialSymbol name="precision_manufacturing" className={className} />;
-    default:
-      return <MaterialSymbol name="settings" className={className} />;
-  }
-}
-
 function StatusCard({ data }: StatusCardProps) {
+  const [dark] = useDarkMode();
+
+  const getHardwareIcon = (type: HardwareData['type']) => {
+    const iconProps = { className: 'w-6 h-6 font-semibold', style: { color: dark ? 'black' : 'white' } };
+
+    switch (type) {
+      case 'ionvision':
+        return <Database {...iconProps} />;
+      case 'camera':
+        return <Camera {...iconProps} />;
+      case 'robot':
+        return <MaterialSymbol name="precision_manufacturing" className="text-2xl font-semibold" style={{ color: dark ? 'black' : 'white' }} />;
+      default:
+        return <Settings {...iconProps} />;
+    }
+  };
+
   return (
     <div className="group relative rounded-2xl p-5 overflow-hidden transition-all duration-300 hover:scale-105 hover:-translate-y-1 border border-[var(--md-sys-color-outline-variant)]/50 bg-[var(--md-sys-color-surface-container-low)] hover:shadow-xl">
       {/* Gradient background overlay */}
