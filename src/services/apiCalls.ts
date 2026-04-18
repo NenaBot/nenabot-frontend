@@ -203,6 +203,27 @@ export interface JobEventApiResponse {
   timestamp?: string | null;
 }
 
+export interface CalibrationPointApiResponse {
+  pixelX: number;
+  pixelY: number;
+  gridRow?: number | null;
+  gridCol?: number | null;
+  label?: string | null;
+}
+
+export interface CalibrationFlowResponseApi {
+  ok: boolean;
+  message: string;
+  currentStep: number;
+  totalSteps: number;
+  checkerboardVisible: boolean;
+  calibrated: boolean;
+  lastCalibratedAt?: string | null;
+  referenceImageBase64?: string | null;
+  targetPoint?: CalibrationPointApiResponse | null;
+  capturedPoints?: CalibrationPointApiResponse[];
+}
+
 let healthInFlight: Promise<HealthApiResponse> | null = null;
 let profileListInFlight: Promise<ProfileApiResponse[]> | null = null;
 let defaultProfileInFlight: Promise<ProfileApiResponse> | null = null;
@@ -381,6 +402,32 @@ export async function fetchJobById(jobId: string): Promise<JobApiResponse> {
 
 export async function deleteJob(jobId: string): Promise<void> {
   await apiClient.delete<void>(`/api/job/${encodeURIComponent(jobId.trim())}`);
+}
+
+export async function calibrationStart(): Promise<CalibrationFlowResponseApi> {
+  logApiCall('calibration start', {});
+  const response = await apiClient.post<CalibrationFlowResponseApi>('/api/calibration', {
+    action: 'start',
+  });
+  logApiCall('calibration start success', {
+    ok: response.ok,
+    currentStep: response.currentStep,
+    checkerboardVisible: response.checkerboardVisible,
+  });
+  return response;
+}
+
+export async function calibrationCapture(): Promise<CalibrationFlowResponseApi> {
+  logApiCall('calibration capture', {});
+  const response = await apiClient.post<CalibrationFlowResponseApi>('/api/calibration', {
+    action: 'capture',
+  });
+  logApiCall('calibration capture success', {
+    ok: response.ok,
+    currentStep: response.currentStep,
+    calibrated: response.calibrated,
+  });
+  return response;
 }
 
 export function getStreamUrl(kind: 'camera' | 'detection'): string {
