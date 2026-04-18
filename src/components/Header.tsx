@@ -45,7 +45,10 @@ export function Header() {
         <div className="flex items-center gap-4">
           {/* Logo with glow effect */}
           <div className="p-2.5 bg-gradient-to-br from-[var(--md-sys-color-primary)] to-[var(--md-sys-color-secondary)] rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
-            <Microscope className="w-6 h-6 font-semibold" style={{ color: dark ? 'black' : 'white' }} />
+            <Microscope
+              className="w-6 h-6 font-semibold"
+              style={{ color: dark ? 'black' : 'white' }}
+            />
           </div>
           <div>
             <h1 className="text-3xl font-bold text-[var(--md-sys-color-on-surface)]">
