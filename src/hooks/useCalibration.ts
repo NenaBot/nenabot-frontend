@@ -76,7 +76,8 @@ export function useCalibration() {
         calibrated: false,
       }));
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Unknown error during calibration start';
+      const errorMsg =
+        err instanceof Error ? err.message : 'Unknown error during calibration start';
       setState((prev) => ({
         ...prev,
         isLoading: false,

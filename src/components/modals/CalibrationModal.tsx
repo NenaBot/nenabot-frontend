@@ -40,7 +40,9 @@ export function CalibrationModal({ isOpen, onClose }: CalibrationModalProps) {
         {/* Header */}
         <div className="sticky top-0 bg-[var(--md-sys-color-surface)] border-b border-[var(--md-sys-color-outline-variant)] p-6 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-[var(--md-sys-color-on-surface)]">Camera & Robot Calibration</h2>
+            <h2 className="text-2xl font-bold text-[var(--md-sys-color-on-surface)]">
+              Camera & Robot Calibration
+            </h2>
             <p className="text-sm text-[var(--md-sys-color-on-surface-variant)] mt-1">
               Guide the robot arm to 4 calibration points
             </p>
@@ -112,7 +114,11 @@ export function CalibrationModal({ isOpen, onClose }: CalibrationModalProps) {
                       }`}
                     >
                       <div className="flex items-center justify-center gap-1">
-                        {isCaptured ? <CheckCircle className="w-5 h-5 text-[var(--md-sys-color-tertiary)] font-semibold flex-shrink-0" /> : <div className="w-5 h-5" />}
+                        {isCaptured ? (
+                          <CheckCircle className="w-5 h-5 text-[var(--md-sys-color-tertiary)] font-semibold flex-shrink-0" />
+                        ) : (
+                          <div className="w-5 h-5" />
+                        )}
                         <span>P{pointNumber}</span>
                       </div>
                     </div>
@@ -146,7 +152,9 @@ export function CalibrationModal({ isOpen, onClose }: CalibrationModalProps) {
                   disabled={calibration.isLoading}
                   className="px-6 py-2 text-sm font-medium text-[var(--md-sys-color-on-primary)] bg-[var(--md-sys-color-primary)] rounded-lg hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
                 >
-                  {calibration.isLoading && <Loader className="w-5 h-5 animate-spin font-semibold" />}
+                  {calibration.isLoading && (
+                    <Loader className="w-5 h-5 animate-spin font-semibold" />
+                  )}
                   Capture Current Point
                 </button>
               </div>
@@ -158,9 +166,14 @@ export function CalibrationModal({ isOpen, onClose }: CalibrationModalProps) {
                 <div className="border border-[var(--md-sys-color-outline-variant)] rounded-lg p-4 bg-[var(--md-sys-color-primary-container)]">
                   <div className="flex items-start gap-3 mb-3">
                     <div className="p-2.5 bg-[var(--md-sys-color-primary)] rounded-lg shadow-sm flex-shrink-0">
-                      <CheckCircle className="w-6 h-6 font-semibold" style={{ color: dark ? 'black' : 'white' }} />
+                      <CheckCircle
+                        className="w-6 h-6 font-semibold"
+                        style={{ color: dark ? 'black' : 'white' }}
+                      />
                     </div>
-                    <h3 className="font-semibold text-sm text-[var(--md-sys-color-on-primary-container)]">You'll Need</h3>
+                    <h3 className="font-semibold text-sm text-[var(--md-sys-color-on-primary-container)]">
+                      You&apos;ll Need
+                    </h3>
                   </div>
                   <ul className="text-xs text-[var(--md-sys-color-on-primary-container)] space-y-1">
                     <li>✓ A3 calibration checkerboard</li>
@@ -173,14 +186,19 @@ export function CalibrationModal({ isOpen, onClose }: CalibrationModalProps) {
                 <div className="border border-[var(--md-sys-color-outline-variant)] rounded-lg p-4 bg-[var(--md-sys-color-secondary-container)]">
                   <div className="flex items-start gap-3 mb-3">
                     <div className="p-2.5 bg-[var(--md-sys-color-secondary)] rounded-lg shadow-sm flex-shrink-0">
-                      <CheckCircle className="w-6 h-6 font-semibold" style={{ color: dark ? 'black' : 'white' }} />
+                      <CheckCircle
+                        className="w-6 h-6 font-semibold"
+                        style={{ color: dark ? 'black' : 'white' }}
+                      />
                     </div>
-                    <h3 className="font-semibold text-sm text-[var(--md-sys-color-on-secondary-container)]">Steps</h3>
+                    <h3 className="font-semibold text-sm text-[var(--md-sys-color-on-secondary-container)]">
+                      Steps
+                    </h3>
                   </div>
                   <ol className="text-xs text-[var(--md-sys-color-on-secondary-container)] space-y-1">
-                    <li>1. Click "Start"</li>
+                    <li>1. Click &quot;Start&quot;</li>
                     <li>2. Move robot to red point</li>
-                    <li>3. Click "Capture"</li>
+                    <li>3. Click &quot;Capture&quot;</li>
                     <li>4. Repeat 4 times</li>
                   </ol>
                 </div>
@@ -192,7 +210,9 @@ export function CalibrationModal({ isOpen, onClose }: CalibrationModalProps) {
                   <div className="flex gap-3">
                     <CheckCircle className="w-6 h-6 text-[var(--md-sys-color-tertiary)] flex-shrink-0 mt-0 font-semibold" />
                     <div>
-                      <p className="text-sm font-semibold text-[var(--md-sys-color-on-tertiary-container)]">Already Calibrated</p>
+                      <p className="text-sm font-semibold text-[var(--md-sys-color-on-tertiary-container)]">
+                        Already Calibrated
+                      </p>
                       <p className="text-xs text-[var(--md-sys-color-on-tertiary-container)] mt-1">
                         Last calibrated: {calibration.lastCalibratedAt}
                       </p>
@@ -207,8 +227,12 @@ export function CalibrationModal({ isOpen, onClose }: CalibrationModalProps) {
                   <div className="flex gap-3">
                     <AlertTriangle className="w-6 h-6 text-[var(--md-sys-color-error)] flex-shrink-0 mt-0 font-semibold" />
                     <div>
-                      <p className="text-sm font-semibold text-[var(--md-sys-color-on-error-container)]">Error</p>
-                      <p className="text-sm text-[var(--md-sys-color-on-error-container)] mt-1">{calibration.error}</p>
+                      <p className="text-sm font-semibold text-[var(--md-sys-color-on-error-container)]">
+                        Error
+                      </p>
+                      <p className="text-sm text-[var(--md-sys-color-on-error-container)] mt-1">
+                        {calibration.error}
+                      </p>
                     </div>
                   </div>
                 </div>

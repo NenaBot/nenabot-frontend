@@ -42,7 +42,7 @@ export function CalibrationTab({ onNext, isActive = true }: CalibrationTabProps)
 
   // Update can start condition
   useEffect(() => {
-    const intrinsicsOk = isMockModeEnabled() ? true : systemStatus?.intrinsicsLoaded ?? false;
+    const intrinsicsOk = isMockModeEnabled() ? true : (systemStatus?.intrinsicsLoaded ?? false);
     setCanStart(intrinsicsOk && !calibration.isInProgress);
   }, [systemStatus, calibration.isInProgress]);
 
@@ -137,7 +137,9 @@ export function CalibrationTab({ onNext, isActive = true }: CalibrationTabProps)
         </div>
 
         {/* Status Message */}
-        <div className={`p-4 rounded-lg border ${getStatusColor().includes('red') ? 'bg-red-50 border-red-300' : getStatusColor().includes('green') ? 'bg-green-50 border-green-300' : 'bg-blue-50 border-blue-300'}`}>
+        <div
+          className={`p-4 rounded-lg border ${getStatusColor().includes('red') ? 'bg-red-50 border-red-300' : getStatusColor().includes('green') ? 'bg-green-50 border-green-300' : 'bg-blue-50 border-blue-300'}`}
+        >
           <p className={`text-sm font-medium ${getStatusColor()}`}>{calibration.message}</p>
         </div>
 
@@ -208,7 +210,7 @@ export function CalibrationTab({ onNext, isActive = true }: CalibrationTabProps)
             <div className="p-2 bg-[var(--md-sys-color-primary-container)] rounded-lg">
               <CheckCircle className="w-5 h-5 text-[var(--md-sys-color-on-primary-container)]" />
             </div>
-            <h3 className="font-medium">What You'll Need</h3>
+            <h3 className="font-medium">What You&apos;ll Need</h3>
           </div>
           <ul className="text-sm text-[var(--md-sys-color-on-surface-variant)] space-y-2">
             <li>✓ Printed A3 calibration checkerboard (9×7 squares)</li>
@@ -226,16 +228,18 @@ export function CalibrationTab({ onNext, isActive = true }: CalibrationTabProps)
             <h3 className="font-medium">Calibration Steps</h3>
           </div>
           <ol className="text-sm text-[var(--md-sys-color-on-surface-variant)] space-y-2">
-            <li>1. Click "Start Calibration"</li>
+            <li>1. Click &quot;Start Calibration&quot;</li>
             <li>2. Move robot tip to red target point</li>
-            <li>3. Click "Capture Current Point"</li>
+            <li>3. Click &quot;Capture Current Point&quot;</li>
             <li>4. Repeat for all 4 points</li>
           </ol>
         </div>
       </div>
 
       {/* Main Content */}
-      {calibration.isInProgress ? renderPointCapture() : canStart ? (
+      {calibration.isInProgress ? (
+        renderPointCapture()
+      ) : canStart ? (
         <div className="space-y-4">
           {calibration.calibrated && (
             <div className="p-4 rounded-lg bg-green-50 border border-green-300">

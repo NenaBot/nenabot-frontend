@@ -1,4 +1,14 @@
-import { CheckCircle2, AlertCircle, Activity, XCircle, Clock, WifiOff, Database, Camera, Settings } from 'lucide-react';
+import {
+  CheckCircle2,
+  AlertCircle,
+  Activity,
+  XCircle,
+  Clock,
+  WifiOff,
+  Database,
+  Camera,
+  Settings,
+} from 'lucide-react';
 import { MaterialSymbol } from './MaterialSymbol';
 import { HardwareData, HardwareStatus } from '../types/hardware.types';
 import { useHardwareData } from '../hooks/useHardwareData';
@@ -46,7 +56,10 @@ function StatusCard({ data }: StatusCardProps) {
   const [dark] = useDarkMode();
 
   const getHardwareIcon = (type: HardwareData['type']) => {
-    const iconProps = { className: 'w-6 h-6 font-semibold', style: { color: dark ? 'black' : 'white' } };
+    const iconProps = {
+      className: 'w-6 h-6 font-semibold',
+      style: { color: dark ? 'black' : 'white' },
+    };
 
     switch (type) {
       case 'ionvision':
@@ -54,7 +67,13 @@ function StatusCard({ data }: StatusCardProps) {
       case 'camera':
         return <Camera {...iconProps} />;
       case 'robot':
-        return <MaterialSymbol name="precision_manufacturing" className="text-2xl font-semibold" style={{ color: dark ? 'black' : 'white' }} />;
+        return (
+          <MaterialSymbol
+            name="precision_manufacturing"
+            className="text-2xl font-semibold"
+            style={{ color: dark ? 'black' : 'white' }}
+          />
+        );
       default:
         return <Settings {...iconProps} />;
     }
