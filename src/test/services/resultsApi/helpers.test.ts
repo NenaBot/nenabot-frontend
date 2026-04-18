@@ -113,4 +113,76 @@ describe('resultsApiHelpers', () => {
       { x: 0, y: 0 },
     ]);
   });
+
+  test('normalizeJobToResult uses image dimensions when available for normalization', async () => {
+    getJobImageUrlMocked.mockReturnValue('http://example/job/image-dimensions');
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      blob: jest.fn().mockResolvedValue(new Blob(['data'])),
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (global as any).createImageBitmap = jest.fn().mockResolvedValue({
+      width: 1000,
+      height: 1000,
+      close: jest.fn(),
+    });
+
+    const job: JobApiResponse = {
+      id: 'job-dimensions',
+      measurements: [
+        {
+          pixelX: 100,
+          pixelY: 100,
+          waypoint: { x: 0, y: 0 },
+        },
+        {
+          pixelX: 200,
+          pixelY: 200,
+          waypoint: { x: 0, y: 0 },
+        },
+      ],
+    };
+
+    const result = await normalizeJobToResult(job);
+
+    expect(result.measurementPoints[0].x).toBeCloseTo(100 / 999, 4);
+    expect(result.measurementPoints[0].y).toBeCloseTo(100 / 999, 4);
+    expect(result.measurementPoints[1].x).toBeCloseTo(200 / 999, 4);
+    expect(result.measurementPoints[1].y).toBeCloseTo(200 / 999, 4);
+  });
+
+  test('normalizeJobToResult falls back to min-max normalization when image dimensions are unavailable', async () => {
+    getJobImageUrlMocked.mockReturnValue('http://example/job/image-fallback');
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      blob: jest.fn().mockResolvedValue(new Blob(['data'])),
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (global as any).createImageBitmap = undefined;
+
+    const job: JobApiResponse = {
+      id: 'job-fallback',
+      measurements: [
+        {
+          pixelX: 100,
+          pixelY: 100,
+          waypoint: { x: 0, y: 0 },
+        },
+        {
+          pixelX: 200,
+          pixelY: 200,
+          waypoint: { x: 0, y: 0 },
+        },
+      ],
+    };
+
+    const result = await normalizeJobToResult(job);
+
+    expect(result.measurementPoints[0].x).toBeCloseTo(0, 4);
+    expect(result.measurementPoints[0].y).toBeCloseTo(0, 4);
+    expect(result.measurementPoints[1].x).toBeCloseTo(1, 4);
+    expect(result.measurementPoints[1].y).toBeCloseTo(1, 4);
+  });
 });
