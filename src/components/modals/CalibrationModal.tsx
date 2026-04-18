@@ -34,13 +34,6 @@ export function CalibrationModal({ isOpen, onClose }: CalibrationModalProps) {
     onClose();
   };
 
-  const getStatusColor = (): string => {
-    if (calibration.error) return 'text-red-600';
-    if (calibration.calibrated) return 'text-green-600';
-    if (calibration.isInProgress) return 'text-blue-600';
-    return 'text-gray-600';
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="bg-[var(--md-sys-color-surface)] rounded-2xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-[var(--md-sys-color-outline-variant)]">

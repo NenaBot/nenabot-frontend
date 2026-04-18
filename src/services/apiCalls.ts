@@ -65,6 +65,18 @@ export interface HealthApiResponse {
   ionvision: ComponentHealthApiResponse;
 }
 
+export interface CalibrationStatusApiResponse {
+  intrinsicsLoaded?: boolean;
+  checkerboardVisible?: boolean;
+  calibrated?: boolean;
+  lastCalibratedAt?: string | null;
+}
+
+export interface StatusApiResponse {
+  status: string;
+  calibration?: CalibrationStatusApiResponse | null;
+}
+
 export interface ProfileApiResponse {
   name: string;
   description?: string | null;
@@ -276,6 +288,21 @@ export async function fetchDefaultProfile(): Promise<ProfileApiResponse> {
     throw error;
   } finally {
     defaultProfileInFlight = null;
+  }
+}
+
+export async function fetchStatusRoute(): Promise<StatusApiResponse> {
+  logApiCall('fetchStatusRoute:request', {});
+  try {
+    const response = await apiClient.get<StatusApiResponse>('/api/status');
+    logApiCall('fetchStatusRoute:response', {
+      status: response.status,
+      hasCalibration: Boolean(response.calibration),
+    });
+    return response;
+  } catch (error) {
+    logApiCallError('fetchStatusRoute:error', error, {});
+    throw error;
   }
 }
 

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { calibrationStart, calibrationCapture, CalibrationFlowResponseApi } from '../services/apiCalls';
+import { calibrationStart, calibrationCapture } from '../services/apiCalls';
 
 export interface CalibrationState {
   isLoading: boolean;
