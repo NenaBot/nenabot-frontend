@@ -132,16 +132,39 @@ export function CalibrationTab({ isActive = true }: CalibrationTabProps) {
 
   const updateFlow = (data: Partial<CalibrationState>) => {
     setCalibrationState((prev) => ({ ...prev, ...data }));
-    if (data.referenceImageBase64) {
-      if (referenceImageRef.current) {
-        referenceImageRef.current.src = `data:image/jpeg;base64,${data.referenceImageBase64}`;
-        referenceImageRef.current.onload = drawOverlay;
-      }
-    } else {
-      drawOverlay();
+    if (data.referenceImageBase64 && referenceImageRef.current) {
+      referenceImageRef.current.src = `data:image/jpeg;base64,${data.referenceImageBase64}`;
     }
   };
 
+  useEffect(() => {
+    const img = referenceImageRef.current;
+
+    if (!img || !calibrationState.referenceImageBase64) {
+      return;
+    }
+
+    if (img.complete && img.naturalWidth && img.naturalHeight) {
+      drawOverlay();
+      return;
+    }
+
+    const handleLoad = () => {
+      drawOverlay();
+    };
+
+    img.onload = handleLoad;
+
+    return () => {
+      if (img.onload === handleLoad) {
+        img.onload = null;
+      }
+    };
+  }, [
+    calibrationState.capturedPoints,
+    calibrationState.targetPoint,
+    calibrationState.referenceImageBase64,
+  ]);
   const runCalibration = async (action: 'start' | 'capture') => {
     try {
       const data = await apiClient.post<CalibrationFlowResponse>('/api/calibration', {
