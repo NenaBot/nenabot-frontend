@@ -1,1 +1,1 @@
-export type TabId = 'setup' | 'camera' | 'route' | 'progress' | 'results';
+export type TabId = 'setup' | 'camera' | 'calibration' | 'route' | 'progress' | 'results';

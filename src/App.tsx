@@ -4,6 +4,7 @@ import { StatusCards } from './components/StatusCards';
 import { TabNavigation } from './components/TabNavigation';
 import { SetupTab } from './components/tabs/SetupTab';
 import { CameraTab } from './components/tabs/CameraTab';
+import { CalibrationTab } from './components/tabs/CalibrationTab';
 import { RouteTab } from './components/tabs/RouteTab';
 import { ProgressTab } from './components/tabs/ProgressTab';
 import { ResultsTab } from './components/tabs/ResultsTab';
@@ -65,6 +66,10 @@ export default function App() {
           {renderPanel(
             'camera',
             <CameraTab onNext={goToRoute} isActive={activeTab === 'camera'} />,
+          )}
+          {renderPanel(
+            'calibration',
+            <CalibrationTab isActive={activeTab === 'calibration'} />,
           )}
           {renderPanel(
             'route',

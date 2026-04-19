@@ -1,4 +1,4 @@
-import { Settings, MapPin, Activity, BarChart3, Camera } from 'lucide-react';
+import { Settings, MapPin, Activity, BarChart3, Camera, Crosshair } from 'lucide-react';
 import { TabId } from '../types/tab.types';
 
 interface TabNavigationProps {
@@ -14,6 +14,7 @@ const tabs: Array<{
 }> = [
   { id: 'setup', label: 'Setup', icon: Settings, description: 'Configure scan parameters' },
   { id: 'camera', label: 'Camera', icon: Camera, description: 'Verify camera and detection' },
+  { id: 'calibration', label: 'Calibration', icon: Crosshair, description: 'Robot 4-point calibration' },
   { id: 'route', label: 'Route', icon: MapPin, description: 'Plan scan route' },
   { id: 'progress', label: 'Progress', icon: Activity, description: 'Monitor live scanning' },
   { id: 'results', label: 'Results', icon: BarChart3, description: 'View analysis' },

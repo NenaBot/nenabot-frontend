@@ -16,6 +16,9 @@ test('can navigate through all primary tabs on desktop', async ({ page }) => {
   await page.getByRole('button', { name: 'Camera', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Camera Preview & Verification' })).toBeVisible();
 
+  await page.getByRole('button', { name: 'Calibration', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Robot 4-Point Calibration' })).toBeVisible();
+
   await page.getByRole('button', { name: 'Route', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Route Planning' })).toBeVisible();
 
