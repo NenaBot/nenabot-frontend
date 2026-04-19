@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { apiClient } from '../../services/apiClient';
+import { CameraView } from '../CameraView';
 
 interface CalibrationState {
   intrinsicsLoaded: boolean;
@@ -255,22 +256,13 @@ export function CalibrationTab({ isActive = true }: CalibrationTabProps) {
 
       {/* Video Feeds */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="border border-[var(--md-sys-color-outline-variant)] rounded-2xl p-4 bg-[var(--md-sys-color-surface-container-lowest)]">
-          <label className="block text-sm font-medium mb-3">Raw Stream</label>
-          <img
-            id="rawFeed"
-            alt="raw stream"
-            className="w-full rounded-lg bg-black aspect-video object-cover"
-          />
-        </div>
-        <div className="border border-[var(--md-sys-color-outline-variant)] rounded-2xl p-4 bg-[var(--md-sys-color-surface-container-lowest)]">
-          <label className="block text-sm font-medium mb-3">Detection Stream</label>
-          <img
-            id="detectionFeed"
-            alt="detection stream"
-            className="w-full rounded-lg bg-black aspect-video object-cover"
-          />
-        </div>
+        <CameraView title="Raw Stream" showStatus={true} streamKind="camera" isActive={isActive} />
+        <CameraView
+          title="Detection Stream"
+          showStatus={true}
+          streamKind="detection"
+          isActive={isActive}
+        />
       </div>
 
       {/* Progress and Actions */}

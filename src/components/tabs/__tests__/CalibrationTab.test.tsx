@@ -6,6 +6,7 @@ jest.mock('../../../services/apiClient', () => ({
   apiClient: {
     get: jest.fn(),
     post: jest.fn(),
+    getBaseUrl: jest.fn(() => 'http://localhost:8000'),
   },
 }));
 
