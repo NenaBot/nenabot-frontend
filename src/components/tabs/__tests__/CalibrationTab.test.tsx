@@ -1,36 +1,34 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { CalibrationTab } from '../CalibrationTab';
+import { apiClient } from '../../../services/apiClient';
 
-const mockFetch = jest.fn();
-global.fetch = mockFetch as any;
+jest.mock('../../../services/apiClient', () => ({
+  apiClient: {
+    get: jest.fn(),
+    post: jest.fn(),
+  },
+}));
+
+const mockApiClient = apiClient as jest.Mocked<typeof apiClient>;
 
 describe('CalibrationTab', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockFetch.mockClear();
-    mockFetch.mockResolvedValue({
-      json: async () => ({
-        calibration: {
-          intrinsicsLoaded: false,
-          checkerboardVisible: false,
-          calibrated: false,
-          lastCalibratedAt: 'Never',
-          currentStep: 0,
-          totalSteps: 4,
-        },
-      }),
+    mockApiClient.get.mockResolvedValue({
+      calibration: {
+        intrinsicsLoaded: false,
+        checkerboardVisible: false,
+        calibrated: false,
+        lastCalibratedAt: 'Never',
+        currentStep: 0,
+        totalSteps: 4,
+      },
     });
   });
 
   test('renders calibration tab with header', () => {
     render(<CalibrationTab />);
     expect(screen.getByText('Robot 4-Point Calibration')).toBeInTheDocument();
-  });
-
-  test('displays API URL input field with default value', () => {
-    render(<CalibrationTab />);
-    const input = screen.getByDisplayValue('http://localhost:8000');
-    expect(input).toBeInTheDocument();
   });
 
   test('displays status labels', () => {
@@ -82,20 +80,17 @@ describe('CalibrationTab', () => {
     expect(screen.getByText('Reference Frame')).toBeInTheDocument();
   });
 
-  test('allows updating API URL', () => {
+  test('allows clicking Refresh Status button', () => {
     render(<CalibrationTab />);
-    const input = screen.getByDisplayValue('http://localhost:8000') as HTMLInputElement;
-    fireEvent.change(input, { target: { value: 'http://192.168.1.100:8000' } });
-    expect(input.value).toBe('http://192.168.1.100:8000');
+    const refreshBtn = screen.getByRole('button', { name: /refresh status/i });
+    fireEvent.click(refreshBtn);
+    expect(refreshBtn).toBeInTheDocument();
   });
 
-  test('renders with isActive prop', () => {
-    render(<CalibrationTab isActive={true} />);
-    expect(screen.getByText('Robot 4-Point Calibration')).toBeInTheDocument();
-  });
-
-  test('renders controls section', () => {
+  test('allows clicking Start Calibration button', () => {
     render(<CalibrationTab />);
-    expect(screen.getByText('API URL')).toBeInTheDocument();
+    const startBtn = screen.getByRole('button', { name: /start calibration/i });
+    fireEvent.click(startBtn);
+    expect(startBtn).toBeInTheDocument();
   });
 });

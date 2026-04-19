@@ -55,15 +55,6 @@ test('calibration tab displays video feeds', async ({ page }) => {
   await expect(page.getByText('Reference Frame')).toBeVisible();
 });
 
-test('can update API URL in calibration tab', async ({ page }) => {
-  await enableMockMode(page);
-  await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto('/');
-
-  await page.getByRole('button', { name: 'Calibration', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Robot 4-Point Calibration' })).toBeVisible();
-});
-
 test('calibration tab remains accessible on mobile', async ({ page }) => {
   await enableMockMode(page);
   await page.setViewportSize({ width: 390, height: 844 });

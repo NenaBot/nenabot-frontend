@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { apiClient } from '../../services/apiClient';
 
 interface CalibrationState {
   intrinsicsLoaded: boolean;
@@ -19,7 +20,6 @@ interface CalibrationTabProps {
 }
 
 export function CalibrationTab({ isActive = true }: CalibrationTabProps) {
-  const [apiUrl, setApiUrl] = useState('http://localhost:8000');
   const [calibrationState, setCalibrationState] = useState<CalibrationState>({
     intrinsicsLoaded: false,
     checkerboardVisible: false,
@@ -34,8 +34,6 @@ export function CalibrationTab({ isActive = true }: CalibrationTabProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const referenceImageRef = useRef<HTMLImageElement>(null);
 
-  const api = () => apiUrl.replace(/\/+$/, '') + '/api';
-
   const setPill = (ok: boolean) => ({
     className: `inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
       ok
@@ -48,8 +46,7 @@ export function CalibrationTab({ isActive = true }: CalibrationTabProps) {
 
   const refreshStatus = async () => {
     try {
-      const res = await fetch(`${api()}/status`);
-      const data = await res.json();
+      const data = await apiClient.get<any>('/api/status');
       const cal = data.calibration;
       setCalibrationState((prev) => ({
         ...prev,
@@ -120,12 +117,7 @@ export function CalibrationTab({ isActive = true }: CalibrationTabProps) {
 
   const runCalibration = async (action: 'start' | 'capture') => {
     try {
-      const res = await fetch(`${api()}/calibration`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
-      });
-      const data = await res.json();
+      const data = await apiClient.post<any>('/api/calibration', { action });
       updateFlow(data);
       await refreshStatus();
     } catch (error) {
@@ -154,32 +146,21 @@ export function CalibrationTab({ isActive = true }: CalibrationTabProps) {
         </p>
       </div>
 
-      {/* API Configuration */}
+      {/* Controls */}
       <div className="border border-[var(--md-sys-color-outline-variant)] rounded-2xl p-6 bg-[var(--md-sys-color-surface-container-lowest)]">
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <label className="block text-sm font-medium mb-2">API URL</label>
-            <input
-              type="text"
-              value={apiUrl}
-              onChange={(e) => setApiUrl(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface)] text-[var(--md-sys-color-on-surface)]"
-            />
-          </div>
-          <div className="flex gap-2 items-end">
-            <button
-              onClick={refreshStatus}
-              className="px-4 py-2 rounded-lg border border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface)] text-[var(--md-sys-color-on-surface)] hover:bg-[var(--md-sys-color-surface-container)] transition-colors"
-            >
-              Refresh Status
-            </button>
-            <button
-              onClick={() => runCalibration('start')}
-              className="px-4 py-2 rounded-lg bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)] font-medium hover:bg-[var(--md-sys-color-primary)]/90 transition-colors"
-            >
-              Start Calibration
-            </button>
-          </div>
+        <div className="flex gap-2">
+          <button
+            onClick={refreshStatus}
+            className="px-4 py-2 rounded-lg border border-[var(--md-sys-color-outline-variant)] bg-[var(--md-sys-color-surface)] text-[var(--md-sys-color-on-surface)] hover:bg-[var(--md-sys-color-surface-container)] transition-colors"
+          >
+            Refresh Status
+          </button>
+          <button
+            onClick={() => runCalibration('start')}
+            className="px-4 py-2 rounded-lg bg-[var(--md-sys-color-primary)] text-[var(--md-sys-color-on-primary)] font-medium hover:bg-[var(--md-sys-color-primary)]/90 transition-colors"
+          >
+            Start Calibration
+          </button>
         </div>
       </div>
 
