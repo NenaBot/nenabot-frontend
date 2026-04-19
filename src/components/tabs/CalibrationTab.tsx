@@ -29,7 +29,8 @@ export function CalibrationTab({ isActive = true }: CalibrationTabProps) {
     totalSteps: 4,
     targetPoint: null,
     capturedPoints: [],
-    message: 'Press Start Calibration once the checkerboard is visible and the robot is at the desired start pose.',
+    message:
+      'Press Start Calibration once the checkerboard is visible and the robot is at the desired start pose.',
   });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const referenceImageRef = useRef<HTMLImageElement>(null);
@@ -92,7 +93,13 @@ export function CalibrationTab({ isActive = true }: CalibrationTabProps) {
     if (calibrationState.targetPoint) {
       ctx.strokeStyle = '#f59e0b';
       ctx.beginPath();
-      ctx.arc(calibrationState.targetPoint.pixelX, calibrationState.targetPoint.pixelY, 14, 0, Math.PI * 2);
+      ctx.arc(
+        calibrationState.targetPoint.pixelX,
+        calibrationState.targetPoint.pixelY,
+        14,
+        0,
+        Math.PI * 2,
+      );
       ctx.stroke();
       ctx.fillStyle = '#f59e0b';
       ctx.fillText(
@@ -141,8 +148,8 @@ export function CalibrationTab({ isActive = true }: CalibrationTabProps) {
       <div>
         <h2 className="text-2xl font-semibold mb-1">Robot 4-Point Calibration</h2>
         <p className="text-sm text-[var(--md-sys-color-on-surface-variant)]">
-          Intrinsics are loaded from the configured camera JSON. This page runs the runtime 4-point robot calibration
-          and shows when robot_mapping.json was last written.
+          Intrinsics are loaded from the configured camera JSON. This page runs the runtime 4-point
+          robot calibration and shows when robot_mapping.json was last written.
         </p>
       </div>
 
@@ -183,7 +190,9 @@ export function CalibrationTab({ isActive = true }: CalibrationTabProps) {
         </div>
 
         <div className="border border-[var(--md-sys-color-outline-variant)] rounded-2xl p-4 bg-[var(--md-sys-color-surface-container-lowest)]">
-          <p className="text-sm text-[var(--md-sys-color-on-surface-variant)] mb-2">Runtime Calibration</p>
+          <p className="text-sm text-[var(--md-sys-color-on-surface-variant)] mb-2">
+            Runtime Calibration
+          </p>
           <div className={calibratedPill.className}>
             {calibratedPill.icon}
             {calibrationState.calibrated ? 'Ready' : 'Not Ready'}
@@ -224,8 +233,11 @@ export function CalibrationTab({ isActive = true }: CalibrationTabProps) {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <p className="text-sm font-medium">
-              Step <span className="text-[var(--md-sys-color-primary)]">{calibrationState.currentStep}</span> /{' '}
-              {calibrationState.totalSteps}
+              Step{' '}
+              <span className="text-[var(--md-sys-color-primary)]">
+                {calibrationState.currentStep}
+              </span>{' '}
+              / {calibrationState.totalSteps}
             </p>
             <button
               onClick={() => runCalibration('capture')}

@@ -67,10 +67,7 @@ export default function App() {
             'camera',
             <CameraTab onNext={goToRoute} isActive={activeTab === 'camera'} />,
           )}
-          {renderPanel(
-            'calibration',
-            <CalibrationTab isActive={activeTab === 'calibration'} />,
-          )}
+          {renderPanel('calibration', <CalibrationTab isActive={activeTab === 'calibration'} />)}
           {renderPanel(
             'route',
             <RouteTab
