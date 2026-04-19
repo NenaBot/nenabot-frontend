@@ -15,6 +15,26 @@ interface CalibrationState {
   referenceImageBase64?: string;
 }
 
+interface CalibrationStatusResponse {
+  calibration: {
+    intrinsicsLoaded: boolean;
+    checkerboardVisible: boolean;
+    calibrated: boolean;
+    lastCalibratedAt: string;
+    currentStep: number;
+    totalSteps: number;
+  };
+}
+
+interface CalibrationFlowResponse {
+  currentStep: number;
+  totalSteps: number;
+  message: string;
+  targetPoint?: { pixelX: number; pixelY: number; label?: string } | null;
+  capturedPoints?: Array<{ pixelX: number; pixelY: number; label?: string }>;
+  referenceImageBase64?: string;
+}
+
 interface CalibrationTabProps {
   isActive?: boolean;
 }
@@ -47,7 +67,7 @@ export function CalibrationTab({ isActive = true }: CalibrationTabProps) {
 
   const refreshStatus = async () => {
     try {
-      const data = await apiClient.get<any>('/api/status');
+      const data = await apiClient.get<CalibrationStatusResponse>('/api/status');
       const cal = data.calibration;
       setCalibrationState((prev) => ({
         ...prev,
@@ -124,7 +144,9 @@ export function CalibrationTab({ isActive = true }: CalibrationTabProps) {
 
   const runCalibration = async (action: 'start' | 'capture') => {
     try {
-      const data = await apiClient.post<any>('/api/calibration', { action });
+      const data = await apiClient.post<CalibrationFlowResponse>('/api/calibration', {
+        action,
+      });
       updateFlow(data);
       await refreshStatus();
     } catch (error) {
