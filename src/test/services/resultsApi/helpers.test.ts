@@ -2,6 +2,7 @@ import {
   normalizeAxisByBounds,
   normalizeJobSummary,
   normalizeJobToResult,
+  readImageDimensionsFromBlob,
   toMeasurementValue,
 } from '../../../services/resultsApi/helpers';
 import { getJobImageUrl, type MeasurementApiResponse } from '../../../services/apiCalls';
@@ -9,6 +10,34 @@ import { JobApiResponse } from '../../../services/apiCalls';
 
 jest.mock('../../../services/apiCalls');
 const getJobImageUrlMocked = getJobImageUrl as jest.MockedFunction<typeof getJobImageUrl>;
+
+function makeJpegBytes(width: number, height: number): Uint8Array {
+  return new Uint8Array([
+    0xff,
+    0xd8,
+    0xff,
+    0xc0,
+    0x00,
+    0x11,
+    0x08,
+    (height >> 8) & 0xff,
+    height & 0xff,
+    (width >> 8) & 0xff,
+    width & 0xff,
+    0x03,
+    0x01,
+    0x11,
+    0x00,
+    0x02,
+    0x11,
+    0x00,
+    0x03,
+    0x11,
+    0x00,
+    0xff,
+    0xd9,
+  ]);
+}
 
 describe('resultsApiHelpers', () => {
   beforeEach(() => {
@@ -125,5 +154,39 @@ describe('resultsApiHelpers', () => {
     expect(result.routePath[0].x).toBeCloseTo(5 / 1280, 6);
     expect(result.routePath[0].y).toBeCloseTo(10 / 720, 6);
     expect(result.routePath[1]).toEqual({ x: 0, y: 0 });
+  });
+
+  test('normalizeJobToResult uses stored image dimensions for pixel normalization', async () => {
+    getJobImageUrlMocked.mockReturnValue('http://example/job/image');
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      blob: jest.fn().mockResolvedValue(new Blob([makeJpegBytes(1920, 1080)])),
+    });
+
+    const result = await normalizeJobToResult({
+      id: 'job-hires',
+      measurements: [
+        {
+          pixelX: 960,
+          pixelY: 540,
+          waypointIndex: 0,
+          waypoint: { x: 0, y: 0 },
+        },
+      ],
+    } as JobApiResponse);
+
+    expect(result.imageWidth).toBe(1920);
+    expect(result.imageHeight).toBe(1080);
+    expect(result.measurementPoints[0].x).toBeCloseTo(0.5, 6);
+    expect(result.measurementPoints[0].y).toBeCloseTo(0.5, 6);
+  });
+
+  test('readImageDimensionsFromBlob parses JPEG dimensions', async () => {
+    await expect(
+      readImageDimensionsFromBlob(new Blob([makeJpegBytes(1600, 1200)])),
+    ).resolves.toEqual({
+      width: 1600,
+      height: 1200,
+    });
   });
 });
