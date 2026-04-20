@@ -8,8 +8,7 @@ import { RouteTab } from './components/tabs/RouteTab';
 import { ProgressTab } from './components/tabs/ProgressTab';
 import { ResultsTab } from './components/tabs/ResultsTab';
 import { ProfileModel } from './types/profile.types';
-
-type TabId = 'setup' | 'camera' | 'route' | 'progress' | 'results';
+import { TabId } from './types/tab.types';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabId>('setup');
@@ -53,7 +52,7 @@ export default function App() {
       <Header />
       <main className="max-w-7xl mx-auto px-6 py-6">
         <StatusCards />
-        <TabNavigation activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab as TabId)} />
+        <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
         <div className="mt-6">
           {renderPanel(
             'setup',

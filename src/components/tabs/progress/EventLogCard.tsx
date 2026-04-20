@@ -7,7 +7,7 @@ interface EventLogCardProps {
 }
 
 /**
- * Displays chronological scan events. Event type drives visual indicator.
+ * Displays scan events in reverse chronological order (newest first). Event type drives visual indicator.
  */
 export function EventLogCard({ events }: EventLogCardProps) {
   const displayEvents = useMemo(() => [...events].reverse(), [events]);
