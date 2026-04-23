@@ -23,7 +23,12 @@ interface UseHardwareDataReturn {
 function normalizeHealthStatus(status: string): HardwareData['status'] {
   const normalized = status.trim().toLowerCase();
 
-  if (normalized === 'ok' || normalized === 'online' || normalized === 'healthy') {
+  if (
+    normalized === 'ok' ||
+    normalized === 'online' ||
+    normalized === 'healthy' ||
+    normalized === 'connected'
+  ) {
     return 'online';
   }
 
