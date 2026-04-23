@@ -7,13 +7,6 @@ import {
   estimateRouteDurationSeconds,
   getMeasurementDensityValidationError,
 } from '../../types/route.types';
-import {
-  applyRouteIndexLabels,
-  createDragPreviewPoint,
-  deriveTransientRoutePath,
-  DragPreviewPoint,
-  normalizedToPixelCoordinate,
-} from './route/routePreviewModel';
 import { RouteEstimateSummary } from './route/RouteEstimateSummary';
 import { RouteSettingsCard } from './route/RouteSettingsCard';
 
