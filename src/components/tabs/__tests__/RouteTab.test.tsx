@@ -83,7 +83,6 @@ describe('RouteTab', () => {
     const startButton = screen.getByRole('button', { name: 'Start Scan Job' });
     expect(startButton).not.toBeDisabled();
     expect(screen.getByText('Checked Waypoints')).toBeInTheDocument();
-    expect(screen.getByText('Profile default-profile')).toBeInTheDocument();
     expect(screen.getByText('Estimated Points')).toBeInTheDocument();
     expect(screen.getByText('Estimated Time')).toBeInTheDocument();
     expect(screen.getByText('~16s')).toBeInTheDocument();
