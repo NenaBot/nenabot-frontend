@@ -13,8 +13,9 @@ export function useCameraStream(streamUrl: string, retryInterval: number, isActi
   const [streamStatus, setStreamStatus] = useState<StreamStatus>(
     isActive ? 'loading' : 'disconnected',
   );
-  const [streamSrc, setStreamSrc] = useState(streamUrl);
+  const [streamSrc, setStreamSrc] = useState(isActive ? streamUrl : '');
   const retryTimeoutRef = useRef<number | undefined>(undefined);
+  const previousStatusRef = useRef<StreamStatus>('disconnected');
 
   useEffect(() => {
     if (!isActive) {
@@ -23,7 +24,9 @@ export function useCameraStream(streamUrl: string, retryInterval: number, isActi
         streamUrl,
         reason: 'inactive',
       });
+      previousStatusRef.current = 'disconnected';
       setStreamStatus('disconnected');
+      setStreamSrc('');
       return;
     }
 
@@ -31,6 +34,7 @@ export function useCameraStream(streamUrl: string, retryInterval: number, isActi
       streamUrl,
       retryInterval,
     });
+    previousStatusRef.current = 'loading';
     setStreamSrc(streamUrl);
     setStreamStatus('loading');
   }, [isActive, retryInterval, streamUrl]);
@@ -48,12 +52,14 @@ export function useCameraStream(streamUrl: string, retryInterval: number, isActi
         url.searchParams.set('t', Date.now().toString());
         const retryUrl = url.toString();
         setStreamSrc(retryUrl);
+        previousStatusRef.current = 'loading';
         setStreamStatus('loading');
       } catch (error) {
         logCameraStream('Stream error', {
           streamUrl,
           error: error instanceof Error ? error.message : String(error),
         });
+        previousStatusRef.current = 'error';
         setStreamStatus('error');
       }
     }, retryInterval);
@@ -68,10 +74,14 @@ export function useCameraStream(streamUrl: string, retryInterval: number, isActi
       return;
     }
 
-    logCameraStream('Stream connected', {
-      streamSrc,
-      streamUrl,
-    });
+    // Only log when transitioning to 'connected' from a different state
+    if (previousStatusRef.current !== 'connected') {
+      logCameraStream('Stream connected', {
+        streamSrc,
+        streamUrl,
+      });
+    }
+    previousStatusRef.current = 'connected';
     setStreamStatus('connected');
   }, [isActive, streamSrc, streamUrl]);
 
@@ -80,11 +90,15 @@ export function useCameraStream(streamUrl: string, retryInterval: number, isActi
       return;
     }
 
-    logCameraStream('Stream disconnected', {
-      streamSrc,
-      streamUrl,
-      reason: 'image-error',
-    });
+    // Only log when transitioning to 'disconnected' from a different state
+    if (previousStatusRef.current !== 'disconnected') {
+      logCameraStream('Stream disconnected', {
+        streamSrc,
+        streamUrl,
+        reason: 'image-error',
+      });
+    }
+    previousStatusRef.current = 'disconnected';
     setStreamStatus('disconnected');
   }, [isActive, streamSrc, streamUrl]);
 

@@ -84,12 +84,6 @@ export function CameraView({
   ]);
 
   const onImageLoad = () => {
-    console.info('[CameraView] img onLoad fired', {
-      timestamp: new Date().toISOString(),
-      streamKind,
-      streamSrc,
-      streamStatus,
-    });
     handleLoad();
   };
 
