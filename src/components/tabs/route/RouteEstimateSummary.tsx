@@ -79,16 +79,16 @@ export function RouteEstimateSummary({
       <div className="flex flex-wrap gap-2 text-xs">
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--md-sys-color-surface-container-high)] text-[var(--md-sys-color-on-surface)]">
           <MapPinned className="w-3 h-3" />
-          Profile {profileName}
+          Profile: {profileName}
         </span>
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--md-sys-color-surface-container-high)] text-[var(--md-sys-color-on-surface)]">
-          Work Z {workZ}
+          Z: {workZ}
         </span>
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--md-sys-color-surface-container-high)] text-[var(--md-sys-color-on-surface)]">
-          Work R {workR}
+          R: {workR}
         </span>
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--md-sys-color-surface-container-high)] text-[var(--md-sys-color-on-surface)]">
-          Threshold {threshold}
+          Threshold: {threshold}
         </span>
       </div>
 
