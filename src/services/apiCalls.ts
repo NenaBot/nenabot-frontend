@@ -148,16 +148,18 @@ export interface BatteryCornersApiResponse {
   corners: PixelPointApiResponse[];
 }
 
-export interface BatteryCornersPopulateRequestApi {
-  corners: {
-    pixelX: number;
-    pixelY: number;
-  }[];
+export interface PopulateCornerApiRequest {
+  pixelX: number;
+  pixelY: number;
+}
+
+export interface PopulateBatteryApiRequest {
+  corners: PopulateCornerApiRequest[];
 }
 
 export interface PathPopulateRequestApi {
   // List of battery detections, each containing corner points
-  batteries: BatteryCornersPopulateRequestApi[];
+  batteries: PopulateBatteryApiRequest[];
   // Measurement density: number of interpolated points per cm between corners [0, 10]
   measuringPointsPerCm: number;
   options?: Record<string, unknown> | null;

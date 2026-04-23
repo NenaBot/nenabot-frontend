@@ -8,8 +8,10 @@ interface RouteSettingsCardProps {
   measurementDensityError: string | null;
   dryRun: boolean;
   isLoading: boolean;
+  isPopulateDisabled: boolean;
   onDryRunChange: (value: boolean) => void;
   onMeasurementDensityInputChange: (value: string) => void;
+  onPopulatePath: () => void;
 }
 
 export function RouteSettingsCard({
@@ -17,13 +19,15 @@ export function RouteSettingsCard({
   measurementDensityError,
   dryRun,
   isLoading,
+  isPopulateDisabled,
   onDryRunChange,
   onMeasurementDensityInputChange,
+  onPopulatePath,
 }: RouteSettingsCardProps) {
   return (
     <CardSection
       title="Route Settings"
-      headerContent={<MapPin className="w-5 h-5 text-[var(--md-sys-color-primary)]" />}
+      headerContent={<MapPin className="w-5 h-5 text-(--md-sys-color-primary)" />}
     >
       <FormField
         label="Measurement Density"
@@ -34,7 +38,7 @@ export function RouteSettingsCard({
           aria-label="Measurement Density"
           value={measurementDensityInput}
           onChange={(event) => onMeasurementDensityInputChange(event.target.value)}
-          className="w-full px-3 py-2.5 border border-[var(--md-sys-color-outline)] rounded-lg bg-[var(--md-sys-color-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--md-sys-color-primary)]"
+          className="w-full px-3 py-2.5 border border-(--md-sys-color-outline) rounded-lg bg-(--md-sys-color-surface) text-sm focus:outline-none focus:ring-2 focus:ring-(--md-sys-color-primary)"
           min={MEASUREMENT_DENSITY_MIN}
           max={MEASUREMENT_DENSITY_MAX}
           step="0.1"
@@ -44,7 +48,7 @@ export function RouteSettingsCard({
       </FormField>
 
       {measurementDensityError && (
-        <p className="text-xs mt-2 text-[var(--md-sys-color-error)]">{measurementDensityError}</p>
+        <p className="text-xs mt-2 text-(--md-sys-color-error)">{measurementDensityError}</p>
       )}
 
       <label className="mt-5 flex items-center gap-3 text-sm">
@@ -52,11 +56,20 @@ export function RouteSettingsCard({
           type="checkbox"
           checked={dryRun}
           onChange={(event) => onDryRunChange(event.target.checked)}
-          className="w-4 h-4 accent-[var(--md-sys-color-primary)]"
+          className="w-4 h-4 accent-(--md-sys-color-primary)"
           disabled={isLoading}
         />
         Dry Run
       </label>
+
+      <button
+        type="button"
+        onClick={onPopulatePath}
+        disabled={isPopulateDisabled}
+        className="mt-5 w-full px-3 py-2.5 rounded-lg bg-(--md-sys-color-primary) text-(--md-sys-color-on-primary) text-sm font-medium disabled:opacity-60"
+      >
+        Populate Path
+      </button>
     </CardSection>
   );
 }

@@ -54,34 +54,16 @@ export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: Rou
     !state.isInitializing &&
     !state.isPopulating;
   const isStartDisabled = !isRouteReady || state.isCreatingJob || !selectedProfile;
+  const isPopulateDisabled =
+    !selectedProfile ||
+    state.isInitializing ||
+    state.isPopulating ||
+    Boolean(measurementDensityError);
 
   useEffect(() => {
     setMeasurementDensityInput(state.measurementDensity.toString());
     setPendingMeasurementDensity(state.measurementDensity);
   }, [state.measurementDensity]);
-
-  useEffect(() => {
-    if (measurementDensityError) {
-      return;
-    }
-
-    if (pendingMeasurementDensity === state.measurementDensity) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      setMeasurementDensity(pendingMeasurementDensity);
-    }, 300);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [
-    measurementDensityError,
-    pendingMeasurementDensity,
-    setMeasurementDensity,
-    state.measurementDensity,
-  ]);
 
   const handleMeasurementDensityChange = (nextValue: string) => {
     setMeasurementDensityInput(nextValue);
@@ -94,6 +76,14 @@ export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: Rou
 
     setMeasurementDensityError(null);
     setPendingMeasurementDensity(Number(nextValue));
+  };
+
+  const handlePopulatePath = () => {
+    if (measurementDensityError) {
+      return;
+    }
+
+    setMeasurementDensity(pendingMeasurementDensity);
   };
 
   const handleCornerPointDragEnd = (pointId: string, normalizedX: number, normalizedY: number) => {
@@ -148,8 +138,10 @@ export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: Rou
             measurementDensityError={measurementDensityError}
             dryRun={state.dryRun}
             isLoading={state.isInitializing || state.isPopulating}
+            isPopulateDisabled={isPopulateDisabled}
             onDryRunChange={setDryRun}
             onMeasurementDensityInputChange={handleMeasurementDensityChange}
+            onPopulatePath={handlePopulatePath}
           />
 
           <div className="mt-4 text-xs text-[var(--md-sys-color-on-surface-variant)] space-y-1">

@@ -4,8 +4,8 @@ import {
   detectPath,
   PathDetectResponseApi,
   PathItemApiResponse,
-  BatteryCornersPopulateRequestApi,
   PathPopulatePointApiResponse,
+  PathPopulateRequestApi,
   populatePath,
   PixelPointApiResponse,
   BatteryCornersApiResponse,
@@ -232,17 +232,6 @@ function getPreviewBounds(state: DetectState): PreviewBounds {
   };
 }
 
-function batteriesToPopulateRequest(
-  batteries: BatteryCornersApiResponse[],
-): BatteryCornersPopulateRequestApi[] {
-  return batteries.map((battery) => ({
-    corners: battery.corners.map((corner) => ({
-      pixelX: corner.x,
-      pixelY: corner.y,
-    })),
-  }));
-}
-
 function createMockPopulatedPath(
   batteries: BatteryCornersApiResponse[],
   measuringPointsPerCm: number,
@@ -397,24 +386,46 @@ export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanO
 
       const requestId = populateRequestCounterRef.current + 1;
       populateRequestCounterRef.current = requestId;
+      const cornerCount = batteries.reduce((count, battery) => count + battery.corners.length, 0);
       logRoutePlan('populate:start', {
         requestId,
         batteryCount: batteries.length,
+        cornerCount,
         measurementDensity,
         mockMode: isMockModeEnabled(),
       });
       setState((prev) => ({ ...prev, isPopulating: true, routeError: null }));
 
       try {
+        const populateRequestBatteries: PathPopulateRequestApi['batteries'] = batteries.map(
+          (battery) => ({
+            corners: battery.corners.map((corner) => ({
+              pixelX: corner.x,
+              pixelY: corner.y,
+            })),
+          }),
+        );
+
+        const populateRequestPayload = {
+          batteries: populateRequestBatteries,
+          measuringPointsPerCm: measurementDensity,
+          options: selectedProfile?.settings.options ?? {},
+        };
+
+        logRoutePlan('populate:request', {
+          requestId,
+          batteryCount: batteries.length,
+          cornerCount,
+          measuringPointsPerCm: measurementDensity,
+          optionKeys: Object.keys(populateRequestPayload.options ?? {}),
+          mockMode: isMockModeEnabled(),
+        });
+
         const populateResponse = isMockModeEnabled()
           ? {
               path: createMockPopulatedPath(batteries, measurementDensity),
             }
-          : await populatePath({
-              batteries: batteriesToPopulateRequest(batteries),
-              measuringPointsPerCm: measurementDensity,
-              options: selectedProfile?.settings.options ?? {},
-            });
+          : await populatePath(populateRequestPayload);
 
         if (populateRequestCounterRef.current !== requestId) {
           logRoutePlan('populate:stale-response', {
