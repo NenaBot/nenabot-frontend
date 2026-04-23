@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 
+const THEME_EVENT = 'nenabot-theme-change';
+
 export function useDarkMode() {
   const [dark, setDark] = useState(() => {
     if (typeof window === 'undefined') {
@@ -22,6 +24,11 @@ export function useDarkMode() {
     const root = document.documentElement;
     root.classList.toggle('dark', dark);
     root.classList.toggle('light', !dark);
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent(THEME_EVENT, { detail: { dark } }));
+    }
+
     try {
       localStorage.setItem('nenabot-theme', dark ? 'dark' : 'light');
     } catch {
@@ -39,11 +46,20 @@ export function useDarkMode() {
       setDark(event.matches);
     };
 
+    const onThemeChange = (event: Event) => {
+      const customEvent = event as CustomEvent<{ dark?: boolean }>;
+      if (typeof customEvent.detail?.dark === 'boolean') {
+        setDark(customEvent.detail.dark);
+      }
+    };
+
     if (mq.addEventListener) {
       mq.addEventListener('change', onChange);
     } else {
       mq.addListener(onChange);
     }
+
+    window.addEventListener(THEME_EVENT, onThemeChange);
 
     return () => {
       if (mq.removeEventListener) {
@@ -51,6 +67,8 @@ export function useDarkMode() {
       } else {
         mq.removeListener(onChange);
       }
+
+      window.removeEventListener(THEME_EVENT, onThemeChange);
     };
   }, []);
 

@@ -189,4 +189,70 @@ describe('resultsApiHelpers', () => {
       height: 1200,
     });
   });
+
+  test('normalizeJobToResult uses image dimensions when available for normalization', async () => {
+    getJobImageUrlMocked.mockReturnValue('http://example/job/image-dimensions');
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      blob: jest.fn().mockResolvedValue(new Blob([makeJpegBytes(1000, 1000)])),
+    });
+
+    const job: JobApiResponse = {
+      id: 'job-dimensions',
+      measurements: [
+        {
+          pixelX: 100,
+          pixelY: 100,
+          waypoint: { x: 0, y: 0 },
+        },
+        {
+          pixelX: 200,
+          pixelY: 200,
+          waypoint: { x: 0, y: 0 },
+        },
+      ],
+    };
+
+    const result = await normalizeJobToResult(job);
+
+    expect(result.imageWidth).toBe(1000);
+    expect(result.imageHeight).toBe(1000);
+    expect(result.measurementPoints[0].x).toBeCloseTo(100 / 1000, 4);
+    expect(result.measurementPoints[0].y).toBeCloseTo(100 / 1000, 4);
+    expect(result.measurementPoints[1].x).toBeCloseTo(200 / 1000, 4);
+    expect(result.measurementPoints[1].y).toBeCloseTo(200 / 1000, 4);
+  });
+
+  test('normalizeJobToResult falls back to default dimensions when image unavailable', async () => {
+    getJobImageUrlMocked.mockReturnValue('http://example/job/image-fallback');
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      blob: jest.fn().mockResolvedValue(new Blob(['data'])),
+    });
+
+    const job: JobApiResponse = {
+      id: 'job-fallback',
+      measurements: [
+        {
+          pixelX: 100,
+          pixelY: 100,
+          waypoint: { x: 0, y: 0 },
+        },
+        {
+          pixelX: 200,
+          pixelY: 200,
+          waypoint: { x: 0, y: 0 },
+        },
+      ],
+    };
+
+    const result = await normalizeJobToResult(job);
+
+    expect(result.imageWidth).toBe(1280);
+    expect(result.imageHeight).toBe(720);
+    expect(result.measurementPoints[0].x).toBeCloseTo(100 / 1280, 4);
+    expect(result.measurementPoints[0].y).toBeCloseTo(100 / 720, 4);
+    expect(result.measurementPoints[1].x).toBeCloseTo(200 / 1280, 4);
+    expect(result.measurementPoints[1].y).toBeCloseTo(200 / 720, 4);
+  });
 });

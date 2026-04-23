@@ -19,15 +19,19 @@ interface JobImagePreview {
 }
 
 function normalizeAxisByBounds(value: number, max: number): number {
+  return normalizeAxisByRange(value, 0, max);
+}
+
+function normalizeAxisByRange(value: number, min: number, max: number): number {
   if (!Number.isFinite(value)) {
     return 0;
   }
 
-  if (max <= 0) {
+  if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) {
     return 0;
   }
 
-  return Math.max(0, Math.min(1, value / max));
+  return Math.max(0, Math.min(1, (value - min) / (max - min)));
 }
 
 function averageTopIntensities(values: unknown): number | null {

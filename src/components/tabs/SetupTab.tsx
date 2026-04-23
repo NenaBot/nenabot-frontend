@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronRight, RefreshCcw } from 'lucide-react';
+import { ChevronRight, RefreshCcw, Cpu } from 'lucide-react';
 import { CardSection } from '../CardSection';
+import { CalibrationModal } from '../modals/CalibrationModal';
 import { fetchDefaultProfile, fetchProfiles, ProfileApiResponse } from '../../services/apiCalls';
 import { ProfileModel } from '../../types/profile.types';
 import { getMockDefaultProfile, getMockProfiles } from '../../mocks/profileMocks';
@@ -107,6 +108,7 @@ export function SetupTab({ selectedProfile, onProfileChange, onNext }: SetupTabP
   const [profiles, setProfiles] = useState<ProfileModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isCalibrationOpen, setIsCalibrationOpen] = useState(false);
   const [workText, setWorkText] = useState<{ workZ: string; workR: string }>({
     workZ: '0',
     workR: '0',
@@ -426,7 +428,16 @@ export function SetupTab({ selectedProfile, onProfileChange, onNext }: SetupTabP
         </div>
       </CardSection>
 
-      <div className="flex items-center justify-end pt-4 border-t border-[var(--md-sys-color-outline-variant)]">
+      <CalibrationModal isOpen={isCalibrationOpen} onClose={() => setIsCalibrationOpen(false)} />
+
+      <div className="flex items-center justify-between pt-4 border-t border-[var(--md-sys-color-outline-variant)]">
+        <button
+          onClick={() => setIsCalibrationOpen(true)}
+          className="px-4 py-2 text-sm font-medium text-[var(--md-sys-color-primary)] border border-[var(--md-sys-color-primary)] rounded-full flex items-center gap-2 hover:bg-[var(--md-sys-color-primary)]/5 transition-colors"
+        >
+          <Cpu className="w-4 h-4" />
+          Calibrate Camera
+        </button>
         <button
           onClick={onNext}
           disabled={
