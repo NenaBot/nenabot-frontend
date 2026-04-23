@@ -177,6 +177,7 @@ export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: Rou
             profileName={selectedProfile?.name ?? '-'}
             workZ={selectedProfile?.settings.workZ ?? 0}
             workR={selectedProfile?.settings.workR ?? 0}
+            threshold={selectedProfile?.settings.threshold ?? 0}
             cornerPoints={state.cornerPoints.length}
             measurementPoints={state.measurementPoints.length}
             detectedBatteries={detectedBatteries}

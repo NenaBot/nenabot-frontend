@@ -10,6 +10,7 @@ interface RouteEstimateSummaryProps {
   profileName: string;
   workZ: number;
   workR: number;
+  threshold: number;
   cornerPoints: number;
   measurementPoints: number;
   detectedBatteries: number;
@@ -34,6 +35,7 @@ export function RouteEstimateSummary({
   profileName,
   workZ,
   workR,
+  threshold,
   cornerPoints,
   measurementPoints,
   detectedBatteries,
@@ -84,6 +86,9 @@ export function RouteEstimateSummary({
         </span>
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--md-sys-color-surface-container-high)] text-[var(--md-sys-color-on-surface)]">
           Work R {workR}
+        </span>
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[var(--md-sys-color-surface-container-high)] text-[var(--md-sys-color-on-surface)]">
+          Threshold {threshold}
         </span>
       </div>
 
