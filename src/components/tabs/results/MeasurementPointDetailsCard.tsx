@@ -15,14 +15,6 @@ interface MeasurementPointDetailsCardProps {
   onNext: () => void;
 }
 
-function formatAxis(value: number | null): string {
-  if (value === null) {
-    return '-';
-  }
-
-  return value.toFixed(3);
-}
-
 export function MeasurementPointDetailsCard({
   point,
   criticalThreshold,
