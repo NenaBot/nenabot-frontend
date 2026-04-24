@@ -3,6 +3,7 @@ import { AlertTriangle, CheckCircle, Loader, ChevronRight } from 'lucide-react';
 import { useCalibration } from '../../hooks/useCalibration';
 import { fetchStatusRoute } from '../../services/apiCalls';
 import { isMockModeEnabled } from '../../state/mockMode';
+import { CalibrationReferenceFrame } from '../shared/CalibrationReferenceFrame';
 
 interface CalibrationTabProps {
   onNext?: () => void;
@@ -19,7 +20,7 @@ export function CalibrationTab({ onNext, isActive = true }: CalibrationTabProps)
 
   // Check system status on mount and when tab becomes active
   useEffect(() => {
-    if (!isActive || !isMockModeEnabled()) {
+    if (!isActive) {
       return;
     }
 
@@ -75,32 +76,11 @@ export function CalibrationTab({ onNext, isActive = true }: CalibrationTabProps)
         {/* Reference Image with Target Point */}
         {calibration.referenceImage && (
           <div className="relative border border-[var(--md-sys-color-outline-variant)] rounded-xl overflow-hidden bg-black">
-            <div className="aspect-video relative flex items-center justify-center bg-gray-900">
-              <img
-                src={`data:image/jpeg;base64,${calibration.referenceImage}`}
-                alt="Reference frame"
-                className="w-full h-full object-contain"
-              />
-
-              {/* Target Point Overlay */}
-              {calibration.targetPoint && (
-                <div
-                  className="absolute w-12 h-12 border-4 border-red-500 rounded-full flex items-center justify-center bg-red-500/10 animate-pulse"
-                  style={{
-                    left: `${calibration.targetPoint.pixelX}px`,
-                    top: `${calibration.targetPoint.pixelY}px`,
-                    transform: 'translate(-50%, -50%)',
-                  }}
-                >
-                  <div className="absolute inset-1 border-2 border-red-500 rounded-full" />
-                  {calibration.targetPoint.label && (
-                    <span className="absolute -bottom-6 text-xs font-bold text-red-600 whitespace-nowrap">
-                      {calibration.targetPoint.label}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
+            <CalibrationReferenceFrame
+              referenceImage={calibration.referenceImage}
+              targetPoint={calibration.targetPoint}
+              capturedPoints={calibration.capturedPoints}
+            />
 
             {/* Current Step Badge */}
             <div className="absolute top-4 right-4 px-3 py-1 bg-black/60 backdrop-blur-sm rounded-full text-sm font-medium text-white">
@@ -114,7 +94,8 @@ export function CalibrationTab({ onNext, isActive = true }: CalibrationTabProps)
           {Array.from({ length: calibration.totalSteps }).map((_, index) => {
             const pointNumber = index + 1;
             const isCaptured = calibration.capturedPoints.length > index;
-            const isTarget = calibration.currentStep === pointNumber;
+            const isTarget =
+              (calibration.targetPoint?.step ?? calibration.currentStep + 1) === pointNumber;
 
             return (
               <div

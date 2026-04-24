@@ -231,6 +231,7 @@ export interface CalibrationPointApiResponse {
   pixelY: number;
   gridRow?: number | null;
   gridCol?: number | null;
+  step?: number | null;
   label?: string | null;
 }
 
