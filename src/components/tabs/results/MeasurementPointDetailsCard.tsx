@@ -85,12 +85,6 @@ export function MeasurementPointDetailsCard({
           <dd>#{point.waypointIndex}</dd>
         </div>
         <div className="flex items-center justify-between">
-          <dt className="text-[var(--md-sys-color-on-surface-variant)]">Position</dt>
-          <dd className="font-mono text-xs">
-            X: {formatAxis(point.x)} | Y: {formatAxis(point.y)} | Z: {formatAxis(null)}
-          </dd>
-        </div>
-        <div className="flex items-center justify-between">
           <dt className="text-[var(--md-sys-color-on-surface-variant)]">Measured</dt>
           <dd>{formatDateTime(point.timestamp)}</dd>
         </div>
