@@ -55,7 +55,7 @@ export const mockProgressTabState: ProgressTabState = {
     {
       id: 1,
       point: 'WP-4',
-      wavelength: '-',
+      time: '2:32:18 PM',
       intensity: 0.87,
       timestamp: '4/3/2026, 2:32:18 PM',
       rawScanResult: { evaluation: { intensityTopAverage: 0.87 } },
