@@ -72,13 +72,10 @@ export function MeasurementLogCard({ measurements }: MeasurementLogCardProps) {
                   </span>
                 </div>
                 <div>
-                  <span className="text-(--md-sys-color-on-surface-variant)">Time: </span>
-                  <span className="text-(--md-sys-color-on-surface)">{measurement.time}</span>
+                  <span className="text-(--md-sys-color-on-surface-variant)">Timestamp: </span>
+                  <span className="text-(--md-sys-color-on-surface)">{measurement.timestamp}</span>
                 </div>
               </div>
-              <p className="mt-2 text-xs text-[var(--md-sys-color-on-surface-variant)]">
-                Timestamp: {measurement.timestamp}
-              </p>
               <details className="mt-2 text-xs">
                 <summary className="cursor-pointer text-[var(--md-sys-color-primary)]">
                   Full scanResult payload

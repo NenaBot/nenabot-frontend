@@ -6,26 +6,12 @@ import { fetchDefaultProfile, fetchProfiles, ProfileApiResponse } from '../../se
 import { ProfileModel } from '../../types/profile.types';
 import { getMockDefaultProfile, getMockProfiles } from '../../mocks/profileMocks';
 import { isMockModeEnabled } from '../../state/mockMode';
+import { parseFiniteNumber } from '../../utils';
 
 interface SetupTabProps {
   selectedProfile: ProfileModel | null;
   onProfileChange: (profile: ProfileModel) => void;
   onNext?: () => void;
-}
-
-function parseFiniteNumber(value: unknown): number | null {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value;
-  }
-
-  if (typeof value === 'string') {
-    const parsed = Number(value);
-    if (Number.isFinite(parsed)) {
-      return parsed;
-    }
-  }
-
-  return null;
 }
 
 function resolveProfileThreshold(profile: ProfileApiResponse): number {

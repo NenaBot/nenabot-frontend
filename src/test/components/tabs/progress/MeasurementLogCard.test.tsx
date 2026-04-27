@@ -12,7 +12,8 @@ function createMeasurement(
     id,
     point,
     intensity,
-    time: `10:00:0${id}`,
+    timestamp: `10:00:0${id}`,
+    rawScanResult: null,
     status,
   };
 }

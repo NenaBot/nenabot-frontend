@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { mockJobEvents } from '../mocks/progressMocks';
 import { fetchJobs, JobEventApiResponse } from '../services/apiCalls';
+import { toMeasurementValue } from '../services/resultsApi/helpers';
 import { ProgressEvent, ProgressTabState, ScanLifecycleState } from '../types/progress.types';
 import {
   estimateRouteDurationSeconds,
@@ -51,69 +52,6 @@ function normalizeEventTime(timestamp: unknown): string {
   }
 
   return new Date(parsedMs).toLocaleTimeString();
-}
-
-function averageTopIntensities(values: unknown): number | null {
-  if (!Array.isArray(values)) {
-    return null;
-  }
-
-  const numericValues = values
-    .filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
-    .sort((a, b) => b - a)
-    .slice(0, 3);
-
-  if (numericValues.length === 0) {
-    return null;
-  }
-
-  return numericValues.reduce((sum, value) => sum + value, 0) / numericValues.length;
-}
-
-function toMeasurementIntensity(event: JobEventApiResponse): number {
-  const scanResult = event.measurement?.scanResult;
-  if (!scanResult || typeof scanResult !== 'object') {
-    return 0;
-  }
-
-  const evaluation = (scanResult as { evaluation?: unknown }).evaluation;
-  if (evaluation && typeof evaluation === 'object') {
-    const intensityCandidate = (evaluation as { intensityTopAverage?: unknown })
-      .intensityTopAverage;
-
-    if (typeof intensityCandidate === 'number' && Number.isFinite(intensityCandidate)) {
-      return intensityCandidate;
-    }
-
-    const intensityAverage = (evaluation as { intensity_average?: unknown }).intensity_average;
-    if (typeof intensityAverage === 'number' && Number.isFinite(intensityAverage)) {
-      return intensityAverage;
-    }
-
-    const evaluationTopAverage = averageTopIntensities(
-      (evaluation as { intensityTop?: unknown }).intensityTop,
-    );
-    if (evaluationTopAverage !== null) {
-      return evaluationTopAverage;
-    }
-  }
-
-  const bodyTopAverage = averageTopIntensities(
-    (
-      scanResult as {
-        body?: {
-          measurementData?: {
-            intensityTop?: unknown;
-          };
-        };
-      }
-    ).body?.measurementData?.intensityTop,
-  );
-  if (bodyTopAverage !== null) {
-    return bodyTopAverage;
-  }
-
-  return 0;
 }
 
 function normalizeMeasurementTimestamp(value: unknown): string {
@@ -323,8 +261,7 @@ function mapEventsToProgressState(
       .map((event, index) => ({
         id: index + 1,
         point: `WP-${event.measurement?.waypointIndex ?? index + 1}`,
-        time: normalizeEventTime(event.measurement?.timestamp ?? event.timestamp),
-        intensity: toMeasurementIntensity(event),
+        intensity: toMeasurementValue(event.measurement?.scanResult ?? null),
         timestamp: normalizeMeasurementTimestamp(event.measurement?.timestamp),
         rawScanResult: toScanResultPayload(event),
         status: normalizeEventType(event.type).includes('completed') ? 'complete' : 'processing',

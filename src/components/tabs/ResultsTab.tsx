@@ -7,6 +7,7 @@ import { ThresholdSettingsCard } from './results/ThresholdSettingsCard';
 import { formatDateTime, isCriticalMeasurement, ScanResult } from '../../types/results.types';
 import { fetchDefaultProfile, ProfileApiResponse } from '../../services/apiCalls';
 import { useResultsData } from '../../hooks/useResultsData';
+import { parseFiniteNumber } from '../../utils';
 
 type ExportFormat = 'json' | 'csv';
 
@@ -21,21 +22,6 @@ function getFirstPointId(result: ScanResult | null): string | null {
 interface ResultsTabProps {
   initialJobId?: string | null;
   isActive?: boolean;
-}
-
-function parseFiniteNumber(value: unknown): number | null {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value;
-  }
-
-  if (typeof value === 'string') {
-    const parsed = Number(value);
-    if (Number.isFinite(parsed)) {
-      return parsed;
-    }
-  }
-
-  return null;
 }
 
 function resolveInitialThreshold(profile: ProfileApiResponse): number {

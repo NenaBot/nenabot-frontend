@@ -179,7 +179,7 @@ async function resolveImageDimensions(
     const img = new Image();
     const timeoutId = window.setTimeout(() => {
       resolve(null);
-    }, 200);
+    }, 3000);
 
     img.onload = () => {
       window.clearTimeout(timeoutId);

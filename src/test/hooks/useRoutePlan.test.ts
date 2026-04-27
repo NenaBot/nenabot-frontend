@@ -29,8 +29,24 @@ const selectedProfile: ProfileModel = {
   },
 };
 
+/**
+ * Stub Image that immediately triggers onerror so resolveImageDimensions does not
+ * block on the 3-second timeout in test environments where jsdom cannot load images.
+ */
+class FakeImage {
+  onload: ((e: Event) => void) | null = null;
+  onerror: ((e: Event | string) => void) | null = null;
+  set src(_value: string) {
+    this.onerror?.(new Event('error'));
+  }
+}
+
 describe('useRoutePlan', () => {
+  let OriginalImage: typeof Image;
+
   beforeEach(() => {
+    OriginalImage = global.Image;
+    Object.defineProperty(global, 'Image', { value: FakeImage, writable: true, configurable: true });
     jest.clearAllMocks();
     jest.spyOn(console, 'error').mockImplementation(() => undefined);
     (isMockModeEnabled as jest.Mock).mockReturnValue(false);
@@ -68,6 +84,10 @@ describe('useRoutePlan', () => {
         { index: '2', batteryNr: 1, cornerIndex: 0, measurementIndex: 2, pixelX: 25, pixelY: 35 },
       ],
     });
+  });
+
+  afterEach(() => {
+    Object.defineProperty(global, 'Image', { value: OriginalImage, writable: true, configurable: true });
   });
 
   test('detects route points and populates path on mount', async () => {
