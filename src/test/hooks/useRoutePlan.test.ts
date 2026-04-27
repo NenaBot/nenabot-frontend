@@ -46,7 +46,11 @@ describe('useRoutePlan', () => {
 
   beforeEach(() => {
     OriginalImage = global.Image;
-    Object.defineProperty(global, 'Image', { value: FakeImage, writable: true, configurable: true });
+    Object.defineProperty(global, 'Image', {
+      value: FakeImage,
+      writable: true,
+      configurable: true,
+    });
     jest.clearAllMocks();
     jest.spyOn(console, 'error').mockImplementation(() => undefined);
     (isMockModeEnabled as jest.Mock).mockReturnValue(false);
@@ -87,7 +91,11 @@ describe('useRoutePlan', () => {
   });
 
   afterEach(() => {
-    Object.defineProperty(global, 'Image', { value: OriginalImage, writable: true, configurable: true });
+    Object.defineProperty(global, 'Image', {
+      value: OriginalImage,
+      writable: true,
+      configurable: true,
+    });
   });
 
   test('detects route points and populates path on mount', async () => {
