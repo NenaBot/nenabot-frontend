@@ -82,6 +82,8 @@ export interface ProfileApiResponse {
   description?: string | null;
   workZ?: number;
   workR?: number;
+  threshold?: number;
+  measuringPointsPerCm?: number;
   options?: Record<string, unknown> | null;
 }
 
@@ -158,9 +160,18 @@ export interface BatteryCornersApiResponse {
   corners: PixelPointApiResponse[];
 }
 
+export interface PopulateCornerApiRequest {
+  pixelX: number;
+  pixelY: number;
+}
+
+export interface PopulateBatteryApiRequest {
+  corners: PopulateCornerApiRequest[];
+}
+
 export interface PathPopulateRequestApi {
   // List of battery detections, each containing corner points
-  batteries: BatteryCornersApiResponse[];
+  batteries: PopulateBatteryApiRequest[];
   // Measurement density: number of interpolated points per cm between corners [0, 10]
   measuringPointsPerCm: number;
   options?: Record<string, unknown> | null;
@@ -220,6 +231,7 @@ export interface CalibrationPointApiResponse {
   pixelY: number;
   gridRow?: number | null;
   gridCol?: number | null;
+  step?: number | null;
   label?: string | null;
 }
 

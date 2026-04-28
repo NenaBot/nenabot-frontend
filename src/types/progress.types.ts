@@ -28,16 +28,18 @@ export interface ProgressEvent {
 type MeasurementComplete = {
   id: number;
   point: string;
-  wavelength: string;
   intensity: number;
+  timestamp: string;
+  rawScanResult: Record<string, unknown> | null;
   status: 'complete';
 };
 
 type MeasurementProcessing = {
   id: number;
   point: string;
-  wavelength: string;
   intensity: number;
+  timestamp: string;
+  rawScanResult: Record<string, unknown> | null;
   status: 'processing';
 };
 

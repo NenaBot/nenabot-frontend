@@ -1,6 +1,15 @@
 import { useState, useCallback } from 'react';
 import { calibrationStart, calibrationCapture } from '../services/apiCalls';
 
+export interface CalibrationPoint {
+  pixelX: number;
+  pixelY: number;
+  gridRow?: number | null;
+  gridCol?: number | null;
+  step?: number | null;
+  label?: string | null;
+}
+
 export interface CalibrationState {
   isLoading: boolean;
   error: string | null;
@@ -10,20 +19,8 @@ export interface CalibrationState {
   calibrated: boolean;
   lastCalibratedAt: string | null;
   referenceImage: string | null;
-  targetPoint: {
-    pixelX: number;
-    pixelY: number;
-    gridRow?: number | null;
-    gridCol?: number | null;
-    label?: string | null;
-  } | null;
-  capturedPoints: Array<{
-    pixelX: number;
-    pixelY: number;
-    gridRow?: number | null;
-    gridCol?: number | null;
-    label?: string | null;
-  }>;
+  targetPoint: CalibrationPoint | null;
+  capturedPoints: CalibrationPoint[];
   message: string;
   isInProgress: boolean;
 }
@@ -102,6 +99,9 @@ export function useCalibration() {
         return;
       }
 
+      const isComplete =
+        response.calibrated && !response.targetPoint && response.currentStep >= response.totalSteps;
+
       setState((prev) => ({
         ...prev,
         isLoading: false,
@@ -111,9 +111,9 @@ export function useCalibration() {
         targetPoint: response.targetPoint || null,
         capturedPoints: response.capturedPoints || [],
         message: response.message,
-        calibrated: response.calibrated,
+        calibrated: isComplete,
         lastCalibratedAt: response.lastCalibratedAt || null,
-        isInProgress: !response.calibrated,
+        isInProgress: !isComplete,
       }));
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error during capture';

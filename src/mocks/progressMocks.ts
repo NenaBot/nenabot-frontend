@@ -22,7 +22,7 @@ export const mockJobEvents: JobEventApiResponse[] = [
       waypoint: { x: 12, y: 24, z: 0, r: 0 },
       pixelX: 210,
       pixelY: 160,
-      scanResult: { measuredValue: 0.87 },
+      scanResult: { evaluation: { intensityTopAverage: 0.87 } },
       simulated: true,
       timestamp: '2026-04-03T14:32:18.000Z',
     },
@@ -51,6 +51,15 @@ export const mockProgressTabState: ProgressTabState = {
     { id: 2, time: '2:32:18 PM', level: 'success', message: 'job:waypoint_completed' },
     { id: 3, time: '2:32:20 PM', level: 'info', message: 'job:waypoint_started' },
   ],
-  measurements: [{ id: 1, point: 'WP-4', wavelength: '-', intensity: 0.87, status: 'complete' }],
+  measurements: [
+    {
+      id: 1,
+      point: 'WP-4',
+      intensity: 0.87,
+      timestamp: '4/3/2026, 2:32:18 PM',
+      rawScanResult: { evaluation: { intensityTopAverage: 0.87 } },
+      status: 'complete',
+    },
+  ],
   lastEventType: 'job:waypoint_started',
 };

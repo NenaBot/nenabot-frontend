@@ -5,7 +5,9 @@ import { MeasurementPointDetailsCard } from './results/MeasurementPointDetailsCa
 import { MeasurementPointsTable } from './results/MeasurementPointsTable';
 import { ThresholdSettingsCard } from './results/ThresholdSettingsCard';
 import { formatDateTime, isCriticalMeasurement, ScanResult } from '../../types/results.types';
+import { fetchDefaultProfile, ProfileApiResponse } from '../../services/apiCalls';
 import { useResultsData } from '../../hooks/useResultsData';
+import { parseFiniteNumber } from '../../utils';
 
 type ExportFormat = 'json' | 'csv';
 
@@ -20,6 +22,20 @@ function getFirstPointId(result: ScanResult | null): string | null {
 interface ResultsTabProps {
   initialJobId?: string | null;
   isActive?: boolean;
+}
+
+function resolveInitialThreshold(profile: ProfileApiResponse): number {
+  const fromTopLevel = parseFiniteNumber(profile.threshold);
+  if (fromTopLevel !== null) {
+    return fromTopLevel;
+  }
+
+  const fromOptions = parseFiniteNumber(profile.options?.threshold);
+  if (fromOptions !== null) {
+    return fromOptions;
+  }
+
+  return 120;
 }
 
 export function ResultsTab({ initialJobId, isActive = true }: ResultsTabProps) {
@@ -38,11 +54,51 @@ export function ResultsTab({ initialJobId, isActive = true }: ResultsTabProps) {
   } = useResultsData(initialJobId, isActive);
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
   const [exportFormat, setExportFormat] = useState<ExportFormat>('json');
-  const [criticalThreshold, setCriticalThreshold] = useState(1);
+  const [criticalThreshold, setCriticalThreshold] = useState<number>(120);
+  const [hasLoadedDefaultThreshold, setHasLoadedDefaultThreshold] = useState(false);
+  const imageAspectRatio =
+    scanResult &&
+    typeof scanResult.imageWidth === 'number' &&
+    typeof scanResult.imageHeight === 'number' &&
+    scanResult.imageWidth > 0 &&
+    scanResult.imageHeight > 0
+      ? scanResult.imageWidth / scanResult.imageHeight
+      : undefined;
 
   useEffect(() => {
     setSelectedPointId(getFirstPointId(scanResult));
   }, [scanResult]);
+
+  useEffect(() => {
+    if (!isActive || hasLoadedDefaultThreshold) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    const loadDefaultThreshold = async () => {
+      try {
+        const defaultProfile = await fetchDefaultProfile();
+        if (!isCancelled) {
+          setCriticalThreshold(resolveInitialThreshold(defaultProfile));
+        }
+      } catch {
+        if (!isCancelled) {
+          setCriticalThreshold(120);
+        }
+      } finally {
+        if (!isCancelled) {
+          setHasLoadedDefaultThreshold(true);
+        }
+      }
+    };
+
+    void loadDefaultThreshold();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [hasLoadedDefaultThreshold, isActive]);
 
   const criticalPointIds = useMemo(() => {
     if (!scanResult) {
@@ -209,6 +265,7 @@ export function ResultsTab({ initialJobId, isActive = true }: ResultsTabProps) {
               <RoutePreviewPanel
                 title="Scan Path and Measurements"
                 imageUrl={scanResult.previewImageUrl}
+                imageAspectRatio={imageAspectRatio}
                 routePath={scanResult.routePath}
                 criticalPointIds={criticalPointIds}
                 measurementPoints={scanResult.measurementPoints.map((point) => ({

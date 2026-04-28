@@ -61,8 +61,8 @@ describe('RoutePreviewPanel', () => {
         <RoutePreviewPanel measurementPoints={mockPoints} selectedPointId="p1" />,
       );
 
-      const circles = container.querySelectorAll('circle');
-      expect(circles.length).toBeGreaterThan(0);
+      const ellipses = container.querySelectorAll('ellipse');
+      expect(ellipses.length).toBeGreaterThan(0);
     });
 
     it('should apply critical point styling', () => {
@@ -70,8 +70,8 @@ describe('RoutePreviewPanel', () => {
         <RoutePreviewPanel measurementPoints={mockPoints} criticalPointIds={['p1']} />,
       );
 
-      const circles = container.querySelectorAll('circle[fill="var(--md-sys-color-error)"]');
-      expect(circles.length).toBeGreaterThan(0);
+      const ellipses = container.querySelectorAll('ellipse[fill="var(--md-sys-color-error)"]');
+      expect(ellipses.length).toBeGreaterThan(0);
     });
   });
 
@@ -83,12 +83,12 @@ describe('RoutePreviewPanel', () => {
       );
 
       // The circle elements have the onClick handler
-      const circles = container.querySelectorAll('circle[class="cursor-pointer"]');
+      const ellipses = container.querySelectorAll('ellipse[class="cursor-pointer"]');
 
-      if (circles.length > 0) {
+      if (ellipses.length > 0) {
         // Click on the circle which has the handler
         // The event should be properly captured by React's synthetic event system
-        fireEvent.click(circles[0]);
+        fireEvent.click(ellipses[0]);
 
         expect(onSelectPoint).toHaveBeenCalled();
       }
@@ -104,9 +104,9 @@ describe('RoutePreviewPanel', () => {
         />,
       );
 
-      const circles = container.querySelectorAll('circle');
-      if (circles.length > 0) {
-        fireEvent.click(circles[0]);
+      const ellipses = container.querySelectorAll('ellipse');
+      if (ellipses.length > 0) {
+        fireEvent.click(ellipses[0]);
 
         expect(onSelectPoint).not.toHaveBeenCalled();
       }
@@ -165,9 +165,9 @@ describe('RoutePreviewPanel', () => {
         />,
       );
 
-      const circles = container.querySelectorAll('circle');
-      if (circles.length > 0) {
-        fireEvent.mouseDown(circles[0]);
+      const ellipses = container.querySelectorAll('ellipse');
+      if (ellipses.length > 0) {
+        fireEvent.mouseDown(ellipses[0]);
         fireEvent.mouseMove(container.querySelector('svg')!);
         fireEvent.mouseUp(container.querySelector('svg')!);
       }
@@ -187,11 +187,11 @@ describe('RoutePreviewPanel', () => {
       );
 
       const svg = container.querySelector('svg') as SVGSVGElement;
-      const circles = container.querySelectorAll('circle');
+      const ellipses = container.querySelectorAll('ellipse');
 
-      if (circles.length > 0 && svg) {
+      if (ellipses.length > 0 && svg) {
         // Simulate drag by firing mousedown on circle, mousemove on svg, mouseup on svg
-        fireEvent.mouseDown(circles[0], { clientX: 100, clientY: 100, button: 0 });
+        fireEvent.mouseDown(ellipses[0], { clientX: 100, clientY: 100, button: 0 });
         fireEvent.mouseMove(svg, { clientX: 150, clientY: 150 });
         fireEvent.mouseUp(svg);
 

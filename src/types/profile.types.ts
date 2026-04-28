@@ -1,6 +1,7 @@
 export interface ProfileSettings {
   workZ: number;
   workR: number;
+  threshold: number;
   options: Record<string, unknown>;
 }
 

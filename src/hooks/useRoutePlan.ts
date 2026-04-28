@@ -5,6 +5,7 @@ import {
   PathDetectResponseApi,
   PathItemApiResponse,
   PathPopulatePointApiResponse,
+  PathPopulateRequestApi,
   populatePath,
   PixelPointApiResponse,
   BatteryCornersApiResponse,
@@ -31,6 +32,8 @@ interface DetectState {
   dryRun: boolean;
   measurementDensity: number;
   imageBase64: string | null;
+  imageWidth: number | null;
+  imageHeight: number | null;
   routeError: string | null;
   cornerPoints: PixelPointApiResponse[];
   measurementPoints: PixelPointApiResponse[];
@@ -165,6 +168,70 @@ function flattenBatteryCorners(batteries: BatteryCornersApiResponse[]): PixelPoi
   return batteries.flatMap((battery) => battery.corners);
 }
 
+async function resolveImageDimensions(
+  imageBase64: string | null,
+): Promise<{ width: number; height: number } | null> {
+  if (!imageBase64 || typeof Image === 'undefined') {
+    return null;
+  }
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    const timeoutId = window.setTimeout(() => {
+      resolve(null);
+    }, 3000);
+
+    img.onload = () => {
+      window.clearTimeout(timeoutId);
+      if (img.width > 0 && img.height > 0) {
+        resolve({ width: img.width, height: img.height });
+        return;
+      }
+      resolve(null);
+    };
+
+    img.onerror = () => {
+      window.clearTimeout(timeoutId);
+      resolve(null);
+    };
+
+    try {
+      img.src = `data:image/jpeg;base64,${imageBase64}`;
+    } catch {
+      window.clearTimeout(timeoutId);
+      resolve(null);
+    }
+  });
+}
+
+function getPreviewBounds(state: DetectState): PreviewBounds {
+  if (typeof state.imageWidth === 'number' && typeof state.imageHeight === 'number') {
+    return {
+      minX: 0,
+      maxX: state.imageWidth,
+      minY: 0,
+      maxY: state.imageHeight,
+    };
+  }
+
+  const cornerSource = flattenBatteryCorners(state.batteries);
+  if (cornerSource.length > 0) {
+    return {
+      minX: Math.min(...cornerSource.map((point) => point.x)),
+      maxX: Math.max(...cornerSource.map((point) => point.x)),
+      minY: Math.min(...cornerSource.map((point) => point.y)),
+      maxY: Math.max(...cornerSource.map((point) => point.y)),
+    };
+  }
+
+  return {
+    minX: 0,
+    maxX: 1,
+    minY: 0,
+    maxY: 1,
+  };
+}
+
 function createMockPopulatedPath(
   batteries: BatteryCornersApiResponse[],
   measuringPointsPerCm: number,
@@ -288,6 +355,8 @@ export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanO
       ? 0.5
       : getMeasurementDensityFromProfile(selectedProfile),
     imageBase64: null,
+    imageWidth: null,
+    imageHeight: null,
     routeError: null,
     cornerPoints: [],
     measurementPoints: [],
@@ -317,24 +386,46 @@ export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanO
 
       const requestId = populateRequestCounterRef.current + 1;
       populateRequestCounterRef.current = requestId;
+      const cornerCount = batteries.reduce((count, battery) => count + battery.corners.length, 0);
       logRoutePlan('populate:start', {
         requestId,
         batteryCount: batteries.length,
+        cornerCount,
         measurementDensity,
         mockMode: isMockModeEnabled(),
       });
       setState((prev) => ({ ...prev, isPopulating: true, routeError: null }));
 
       try {
+        const populateRequestBatteries: PathPopulateRequestApi['batteries'] = batteries.map(
+          (battery) => ({
+            corners: battery.corners.map((corner) => ({
+              pixelX: corner.x,
+              pixelY: corner.y,
+            })),
+          }),
+        );
+
+        const populateRequestPayload = {
+          batteries: populateRequestBatteries,
+          measuringPointsPerCm: measurementDensity,
+          options: selectedProfile?.settings.options ?? {},
+        };
+
+        logRoutePlan('populate:request', {
+          requestId,
+          batteryCount: batteries.length,
+          cornerCount,
+          measuringPointsPerCm: measurementDensity,
+          optionKeys: Object.keys(populateRequestPayload.options ?? {}),
+          mockMode: isMockModeEnabled(),
+        });
+
         const populateResponse = isMockModeEnabled()
           ? {
               path: createMockPopulatedPath(batteries, measurementDensity),
             }
-          : await populatePath({
-              batteries,
-              measuringPointsPerCm: measurementDensity,
-              options: selectedProfile?.settings.options ?? {},
-            });
+          : await populatePath(populateRequestPayload);
 
         if (populateRequestCounterRef.current !== requestId) {
           logRoutePlan('populate:stale-response', {
@@ -430,6 +521,8 @@ export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanO
       });
 
       const detectedPoints = flattenBatteryCorners(detectedBatteries);
+      const imageBase64 = detectionResponse.image_base64 ?? null;
+      const imageDimensions = await resolveImageDimensions(imageBase64);
 
       setState((prev) => ({
         ...prev,
@@ -439,7 +532,9 @@ export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanO
         populatedPath: [],
         populatedPathWithMetadata: [],
         batteries: detectedBatteries,
-        imageBase64: detectionResponse.image_base64 ?? null,
+        imageBase64,
+        imageWidth: imageDimensions?.width ?? null,
+        imageHeight: imageDimensions?.height ?? null,
       }));
 
       await runPopulate(detectedBatteries, defaultMeasurementDensity);
@@ -471,6 +566,8 @@ export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanO
         populatedPathWithMetadata: [],
         batteries: [],
         imageBase64: null,
+        imageWidth: null,
+        imageHeight: null,
       }));
       return;
     }
@@ -646,13 +743,7 @@ export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanO
       };
     }
 
-    const source = [...routePoints, ...allPoints];
-    const bounds: PreviewBounds = {
-      minX: Math.min(...source.map((point) => point.x)),
-      maxX: Math.max(...source.map((point) => point.x)),
-      minY: Math.min(...source.map((point) => point.y)),
-      maxY: Math.max(...source.map((point) => point.y)),
-    };
+    const bounds = getPreviewBounds(state);
 
     const normalizedRoutePath = routePoints.map((point) => normalizeToUnit(point, bounds));
     const normalizedCorners = state.batteries.flatMap((battery, bIndex) =>
@@ -676,7 +767,14 @@ export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanO
       draggablePointIds: cornerPointIds,
       bounds,
     };
-  }, [state.batteries, state.cornerPoints, state.measurementPoints, state.populatedPath]);
+  }, [
+    state.batteries,
+    state.cornerPoints,
+    state.measurementPoints,
+    state.populatedPath,
+    state.imageWidth,
+    state.imageHeight,
+  ]);
 
   const resetRoutePlan = useCallback(async () => {
     logRoutePlan('reset:start', {
@@ -689,6 +787,8 @@ export function useRoutePlan({ selectedProfile, isActive = true }: UseRoutePlanO
       isPopulating: false,
       routeError: null,
       imageBase64: null,
+      imageWidth: null,
+      imageHeight: null,
       cornerPoints: [],
       measurementPoints: [],
       populatedPath: [],

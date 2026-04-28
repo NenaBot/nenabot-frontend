@@ -21,6 +21,7 @@ const selectedProfile: ProfileModel = {
   settings: {
     workZ: 10,
     workR: 20,
+    threshold: 120,
     options: {
       speed: 'slow',
       measurementDensity: 0.7,
@@ -28,8 +29,28 @@ const selectedProfile: ProfileModel = {
   },
 };
 
+/**
+ * Stub Image that immediately triggers onerror so resolveImageDimensions does not
+ * block on the 3-second timeout in test environments where jsdom cannot load images.
+ */
+class FakeImage {
+  onload: ((e: Event) => void) | null = null;
+  onerror: ((e: Event | string) => void) | null = null;
+  set src(_value: string) {
+    this.onerror?.(new Event('error'));
+  }
+}
+
 describe('useRoutePlan', () => {
+  let OriginalImage: typeof Image;
+
   beforeEach(() => {
+    OriginalImage = global.Image;
+    Object.defineProperty(global, 'Image', {
+      value: FakeImage,
+      writable: true,
+      configurable: true,
+    });
     jest.clearAllMocks();
     jest.spyOn(console, 'error').mockImplementation(() => undefined);
     (isMockModeEnabled as jest.Mock).mockReturnValue(false);
@@ -69,6 +90,14 @@ describe('useRoutePlan', () => {
     });
   });
 
+  afterEach(() => {
+    Object.defineProperty(global, 'Image', {
+      value: OriginalImage,
+      writable: true,
+      configurable: true,
+    });
+  });
+
   test('detects route points and populates path on mount', async () => {
     const { result } = renderHook(() => useRoutePlan({ selectedProfile }));
 
@@ -82,18 +111,18 @@ describe('useRoutePlan', () => {
         batteries: [
           {
             corners: [
-              { x: 5, y: 15 },
-              { x: 15, y: 15 },
-              { x: 15, y: 25 },
-              { x: 5, y: 25 },
+              { pixelX: 5, pixelY: 15 },
+              { pixelX: 15, pixelY: 15 },
+              { pixelX: 15, pixelY: 25 },
+              { pixelX: 5, pixelY: 25 },
             ],
           },
           {
             corners: [
-              { x: 25, y: 35 },
-              { x: 35, y: 35 },
-              { x: 35, y: 45 },
-              { x: 25, y: 45 },
+              { pixelX: 25, pixelY: 35 },
+              { pixelX: 35, pixelY: 35 },
+              { pixelX: 35, pixelY: 45 },
+              { pixelX: 25, pixelY: 45 },
             ],
           },
         ],
@@ -185,18 +214,18 @@ describe('useRoutePlan', () => {
         batteries: [
           {
             corners: [
-              { x: 0, y: 100 },
-              { x: 15, y: 15 },
-              { x: 15, y: 25 },
-              { x: 5, y: 25 },
+              { pixelX: 0, pixelY: 100 },
+              { pixelX: 15, pixelY: 15 },
+              { pixelX: 15, pixelY: 25 },
+              { pixelX: 5, pixelY: 25 },
             ],
           },
           {
             corners: [
-              { x: 25, y: 35 },
-              { x: 35, y: 35 },
-              { x: 35, y: 45 },
-              { x: 25, y: 45 },
+              { pixelX: 25, pixelY: 35 },
+              { pixelX: 35, pixelY: 35 },
+              { pixelX: 35, pixelY: 45 },
+              { pixelX: 25, pixelY: 45 },
             ],
           },
         ],
@@ -375,7 +404,11 @@ describe('useRoutePlan', () => {
     const { result } = renderHook(() => useRoutePlan({ selectedProfile }));
 
     await waitFor(() => {
-      expect(result.current.state.isPopulating).toBe(false);
+      expect(populatePath).toHaveBeenCalled();
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.populatedPathWithMetadata).toHaveLength(2);
     });
 
     expect(result.current.state.populatedPathWithMetadata).toHaveLength(2);
@@ -400,7 +433,13 @@ describe('useRoutePlan', () => {
     const { result } = renderHook(() => useRoutePlan({ selectedProfile }));
 
     await waitFor(() => {
-      expect(result.current.state.isPopulating).toBe(false);
+      expect(populatePath).toHaveBeenCalled();
+    });
+
+    await waitFor(() => {
+      expect(result.current.state.routeError).toBe(
+        'Received invalid route metadata from backend. Please retry.',
+      );
     });
 
     expect(result.current.state.populatedPathWithMetadata).toEqual([]);
@@ -451,10 +490,10 @@ describe('useRoutePlan', () => {
           batteries: [
             {
               corners: [
-                { x: 101, y: 201 },
-                { x: 111, y: 201 },
-                { x: 111, y: 211 },
-                { x: 101, y: 211 },
+                { pixelX: 101, pixelY: 201 },
+                { pixelX: 111, pixelY: 201 },
+                { pixelX: 111, pixelY: 211 },
+                { pixelX: 101, pixelY: 211 },
               ],
             },
           ],

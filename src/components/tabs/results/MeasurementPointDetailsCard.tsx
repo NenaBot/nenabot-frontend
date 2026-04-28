@@ -15,14 +15,6 @@ interface MeasurementPointDetailsCardProps {
   onNext: () => void;
 }
 
-function formatAxis(value: number | null): string {
-  if (value === null) {
-    return '-';
-  }
-
-  return value.toFixed(3);
-}
-
 export function MeasurementPointDetailsCard({
   point,
   criticalThreshold,
@@ -83,12 +75,6 @@ export function MeasurementPointDetailsCard({
         <div className="flex items-center justify-between">
           <dt className="text-[var(--md-sys-color-on-surface-variant)]">Waypoint</dt>
           <dd>#{point.waypointIndex}</dd>
-        </div>
-        <div className="flex items-center justify-between">
-          <dt className="text-[var(--md-sys-color-on-surface-variant)]">Position</dt>
-          <dd className="font-mono text-xs">
-            X: {formatAxis(point.x)} | Y: {formatAxis(point.y)} | Z: {formatAxis(null)}
-          </dd>
         </div>
         <div className="flex items-center justify-between">
           <dt className="text-[var(--md-sys-color-on-surface-variant)]">Measured</dt>

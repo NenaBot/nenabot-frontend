@@ -21,6 +21,8 @@ interface PanSession {
 
 export interface RoutePreviewCamera {
   zoom: number;
+  panX: number;
+  panY: number;
   canZoomIn: boolean;
   canZoomOut: boolean;
   viewBox: string;
@@ -111,6 +113,8 @@ export function useRoutePreviewCamera(): RoutePreviewCamera {
 
   return {
     zoom: camera.zoom,
+    panX: camera.panX,
+    panY: camera.panY,
     canZoomIn: camera.zoom < ZOOM_MAX,
     canZoomOut: camera.zoom > ZOOM_MIN,
     viewBox,

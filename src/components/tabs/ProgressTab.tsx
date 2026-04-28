@@ -17,7 +17,7 @@ interface ProgressTabProps {
 const LIVE_TERMINAL_EVENT_TYPES = new Set(['job:completed', 'job:failed', 'job:stopped']);
 
 export function ProgressTab({ jobId, onNext, isActive = true }: ProgressTabProps) {
-  const { progressState, isLoading, error } = useProgressData(jobId, isActive);
+  const { activeJobId, progressState, isLoading, error } = useProgressData(jobId, isActive);
   const [isAborting, setIsAborting] = useState(false);
   const scanProgress = useMemo(() => {
     if (!progressState) {
@@ -30,24 +30,24 @@ export function ProgressTab({ jobId, onNext, isActive = true }: ProgressTabProps
 
   const handleAbort = async () => {
     if (
-      !jobId ||
+      !activeJobId ||
       isMockModeEnabled() ||
       !progressState ||
       isTerminalScanState(progressState.scan.state)
     ) {
       console.log(
-        `[ProgressTab] Abort cancelled: jobId=${jobId}, mockMode=${isMockModeEnabled()}, terminalState=${progressState ? isTerminalScanState(progressState.scan.state) : 'no progress state'}`,
+        `[ProgressTab] Abort cancelled: jobId=${activeJobId}, mockMode=${isMockModeEnabled()}, terminalState=${progressState ? isTerminalScanState(progressState.scan.state) : 'no progress state'}`,
       );
       return;
     }
 
-    console.log(`[ProgressTab] Aborting job ${jobId}`);
+    console.log(`[ProgressTab] Aborting job ${activeJobId}`);
     setIsAborting(true);
     try {
-      await deleteJob(jobId);
-      console.log(`[ProgressTab] Job ${jobId} aborted successfully`);
+      await deleteJob(activeJobId);
+      console.log(`[ProgressTab] Job ${activeJobId} aborted successfully`);
     } catch (abortError) {
-      console.error(`[ProgressTab] Failed to abort job ${jobId}:`, abortError);
+      console.error(`[ProgressTab] Failed to abort job ${activeJobId}:`, abortError);
     } finally {
       setIsAborting(false);
     }
@@ -102,7 +102,9 @@ export function ProgressTab({ jobId, onNext, isActive = true }: ProgressTabProps
             onAbort={() => {
               void handleAbort();
             }}
-            isAbortDisabled={!jobId || isAborting || isTerminalScanState(progressState.scan.state)}
+            isAbortDisabled={
+              !activeJobId || isAborting || isTerminalScanState(progressState.scan.state)
+            }
           />
           <EventLogCard events={progressState.events} />
           <MeasurementLogCard measurements={progressState.measurements} />
@@ -110,12 +112,14 @@ export function ProgressTab({ jobId, onNext, isActive = true }: ProgressTabProps
 
         {/* Right Panel - Live Camera Feed */}
         <div className="lg:col-span-2">
-          <CameraView
-            title="Live Camera Feed"
-            showStatus={true}
-            height="full"
-            isActive={isActive}
-          />
+          {isActive && (
+            <CameraView
+              title="Live Camera Feed"
+              showStatus={true}
+              height="full"
+              isActive={isActive}
+            />
+          )}
 
           {isTerminal && (
             <div className="mt-4 p-4 border border-[var(--md-sys-color-outline-variant)] rounded-xl bg-[var(--md-sys-color-surface-container-low)]">

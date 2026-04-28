@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { useProgressData } from '../../hooks/useProgressData';
 import { useJobEvents } from '../../hooks/useJobEvents';
 import { useMockMode } from '../../hooks/useMockMode';
@@ -12,10 +12,20 @@ jest.mock('../../hooks/useMockMode', () => ({
   useMockMode: jest.fn(),
 }));
 
+jest.mock('../../services/apiCalls', () => ({
+  fetchJobs: jest.fn(),
+}));
+
+const { fetchJobs } = jest.requireMock('../../services/apiCalls') as {
+  fetchJobs: jest.Mock;
+};
+
 describe('useProgressData', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.useRealTimers();
     (useMockMode as jest.Mock).mockReturnValue([false, jest.fn()]);
+    fetchJobs.mockResolvedValue([]);
     (useJobEvents as jest.Mock).mockReturnValue({
       events: [],
       error: null,
@@ -31,7 +41,153 @@ describe('useProgressData', () => {
 
     expect(result.current.progressState).toBeNull();
     expect(result.current.error).toBe('No active job selected.');
+    expect(result.current.activeJobId).toBeNull();
+    expect(fetchJobs).toHaveBeenCalledTimes(1);
     expect(useJobEvents).toHaveBeenCalledWith(null, true);
+  });
+
+  test('recovers the most recent running job when no job id is provided', async () => {
+    fetchJobs.mockResolvedValue([
+      { id: 'job-old', status: { state: 'running' } },
+      { id: 'job-new', status: { state: 'running' } },
+    ]);
+    const recoveredEventResponse = {
+      events: [
+        {
+          type: 'job:started',
+          state: 'running',
+          totalPoints: 5,
+          lastPointProcessed: 1,
+          timestamp: '2026-03-18T10:00:00.000Z',
+        },
+      ],
+      error: null,
+    };
+    const emptyEventResponse = {
+      events: [],
+      error: null,
+    };
+    (useJobEvents as jest.Mock).mockImplementation((resolvedJobId: string | null) => {
+      if (resolvedJobId === 'job-new') {
+        return recoveredEventResponse;
+      }
+
+      return emptyEventResponse;
+    });
+
+    const { result } = renderHook(() => useProgressData(null));
+
+    await waitFor(() => {
+      expect(result.current.activeJobId).toBe('job-new');
+    });
+
+    expect(fetchJobs).toHaveBeenCalledTimes(1);
+    expect(result.current.error).toBeNull();
+    expect(result.current.progressState?.scan.state).toBe('running');
+  });
+
+  test('falls back to the most recent completed job when no running job exists', async () => {
+    fetchJobs.mockResolvedValue([
+      { id: 'job-completed-old', status: { state: 'completed' } },
+      { id: 'job-completed-new', status: { state: 'completed' } },
+    ]);
+    const completedEventResponse = {
+      events: [
+        {
+          type: 'job:snapshot',
+          state: 'completed',
+          totalPoints: 6,
+          lastPointProcessed: 6,
+          timestamp: '2026-03-18T10:10:00.000Z',
+        },
+      ],
+      error: null,
+    };
+    const emptyEventResponse = {
+      events: [],
+      error: null,
+    };
+    (useJobEvents as jest.Mock).mockImplementation((resolvedJobId: string | null) => {
+      if (resolvedJobId === 'job-completed-new') {
+        return completedEventResponse;
+      }
+
+      return emptyEventResponse;
+    });
+
+    const { result } = renderHook(() => useProgressData(null));
+
+    await waitFor(() => {
+      expect(result.current.activeJobId).toBe('job-completed-new');
+    });
+
+    expect(fetchJobs).toHaveBeenCalledTimes(1);
+    expect(result.current.error).toBeNull();
+    expect(result.current.progressState?.scan.state).toBe('completed');
+  });
+
+  test('prefers running jobs over completed jobs when both exist', async () => {
+    fetchJobs.mockResolvedValue([
+      { id: 'job-completed-new', status: { state: 'completed' } },
+      { id: 'job-running-old', status: { state: 'running' } },
+      { id: 'job-running-new', status: { state: 'running' } },
+    ]);
+    const runningEventResponse = {
+      events: [
+        {
+          type: 'job:started',
+          state: 'running',
+          totalPoints: 7,
+          lastPointProcessed: 1,
+          timestamp: '2026-03-18T10:20:00.000Z',
+        },
+      ],
+      error: null,
+    };
+    const emptyEventResponse = {
+      events: [],
+      error: null,
+    };
+    (useJobEvents as jest.Mock).mockImplementation((resolvedJobId: string | null) => {
+      if (resolvedJobId === 'job-running-new') {
+        return runningEventResponse;
+      }
+
+      return emptyEventResponse;
+    });
+
+    const { result } = renderHook(() => useProgressData(null));
+
+    await waitFor(() => {
+      expect(result.current.activeJobId).toBe('job-running-new');
+    });
+
+    expect(result.current.progressState?.scan.state).toBe('running');
+  });
+
+  test('prefers explicit job id and does not perform recovery lookup', async () => {
+    (useJobEvents as jest.Mock).mockReturnValue({
+      events: [
+        {
+          type: 'job:started',
+          state: 'running',
+          totalPoints: 4,
+          lastPointProcessed: 0,
+          timestamp: '2026-03-18T10:00:00.000Z',
+        },
+      ],
+      error: null,
+    });
+
+    const { result } = renderHook(() => useProgressData('job-direct'));
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.activeJobId).toBe('job-direct');
+    expect(fetchJobs).not.toHaveBeenCalled();
+    expect(useJobEvents).toHaveBeenCalledWith('job-direct', true);
   });
 
   test('maps SSE events into progress, events, and measurements', async () => {
@@ -67,6 +223,8 @@ describe('useProgressData', () => {
     expect(result.current.progressState?.scan.state).toBe('running');
     expect(result.current.progressState?.scan.totalPoints).toBe(10);
     expect(result.current.progressState?.scan.completedPoints).toBe(4);
+    expect(result.current.progressState?.scan.elapsedSeconds).toBe(1);
+    expect(result.current.progressState?.scan.estimatedRemainingSeconds).toBe(14);
     expect(result.current.progressState?.events[0].level).toBe('success');
     expect(result.current.progressState?.events[1].level).toBe('success');
     expect(result.current.progressState?.measurements).toHaveLength(1);
@@ -74,12 +232,14 @@ describe('useProgressData', () => {
       expect.objectContaining({
         point: 'WP-4',
         intensity: 0,
+        timestamp: '-',
+        rawScanResult: null,
         status: 'complete',
       }),
     );
   });
 
-  test('extracts measured intensity from measurement scanResult', async () => {
+  test('extracts measured intensity from measurement scanResult.evaluation.intensityTopAverage', async () => {
     (useJobEvents as jest.Mock).mockReturnValue({
       events: [
         {
@@ -91,8 +251,11 @@ describe('useProgressData', () => {
           measurement: {
             waypointIndex: 5,
             scanResult: {
-              measuredValue: 0.63,
+              evaluation: {
+                intensityTopAverage: 0.63,
+              },
             },
+            timestamp: '2026-03-18T10:00:01.000Z',
           },
         },
       ],
@@ -109,6 +272,55 @@ describe('useProgressData', () => {
       expect.objectContaining({
         point: 'WP-5',
         intensity: 0.63,
+        timestamp: expect.any(String),
+        rawScanResult: {
+          evaluation: {
+            intensityTopAverage: 0.63,
+          },
+        },
+        status: 'complete',
+      }),
+    );
+  });
+
+  test('extracts measured intensity from measurement scanResult.evaluation.intensity_average', async () => {
+    (useJobEvents as jest.Mock).mockReturnValue({
+      events: [
+        {
+          type: 'job:waypoint_completed',
+          state: 'running',
+          totalPoints: 12,
+          lastPointProcessed: 6,
+          timestamp: '2026-03-18T10:00:02.000Z',
+          measurement: {
+            waypointIndex: 6,
+            scanResult: {
+              evaluation: {
+                intensity_average: 0.71,
+              },
+            },
+            timestamp: '2026-03-18T10:00:02.000Z',
+          },
+        },
+      ],
+      error: null,
+    });
+
+    const { result } = renderHook(() => useProgressData('job-1'));
+
+    await waitFor(() => {
+      expect(result.current.progressState?.measurements).toHaveLength(1);
+    });
+
+    expect(result.current.progressState?.measurements[0]).toEqual(
+      expect.objectContaining({
+        point: 'WP-6',
+        intensity: 0.71,
+        rawScanResult: {
+          evaluation: {
+            intensity_average: 0.71,
+          },
+        },
         status: 'complete',
       }),
     );
@@ -163,10 +375,99 @@ describe('useProgressData', () => {
     expect(result.current.progressState?.scan.totalPoints).toBe(8);
   });
 
+  test('ticks elapsed time while scan remains running between SSE events', async () => {
+    jest.useFakeTimers();
+    (useJobEvents as jest.Mock).mockReturnValue({
+      events: [
+        {
+          type: 'job:started',
+          state: 'running',
+          totalPoints: 10,
+          lastPointProcessed: 2,
+          timestamp: '2026-03-18T10:00:00.000Z',
+        },
+      ],
+      error: null,
+    });
+
+    const { result } = renderHook(() => useProgressData('job-live'));
+
+    await waitFor(() => {
+      expect(result.current.progressState).not.toBeNull();
+    });
+
+    const initialElapsed = result.current.progressState?.scan.elapsedSeconds ?? 0;
+    const initialRemaining = result.current.progressState?.scan.estimatedRemainingSeconds ?? 0;
+
+    act(() => {
+      jest.advanceTimersByTime(3000);
+    });
+
+    expect(result.current.progressState?.scan.elapsedSeconds).toBe(initialElapsed + 3);
+    expect(result.current.progressState?.scan.estimatedRemainingSeconds).toBeLessThan(
+      initialRemaining,
+    );
+  });
+
+  test('falls back to progress-based elapsed estimation for snapshot-only running reconnects', async () => {
+    (useJobEvents as jest.Mock).mockReturnValue({
+      events: [
+        {
+          type: 'job:snapshot',
+          state: 'running',
+          totalPoints: 10,
+          lastPointProcessed: 4,
+          timestamp: '2026-03-18T10:00:00.000Z',
+        },
+      ],
+      error: null,
+    });
+
+    const { result } = renderHook(() => useProgressData('job-reconnect'));
+
+    await waitFor(() => {
+      expect(result.current.progressState).not.toBeNull();
+    });
+
+    expect(result.current.progressState?.scan.elapsedSeconds).toBe(16);
+    expect(result.current.progressState?.scan.estimatedRemainingSeconds).toBe(9);
+  });
+
+  test('sets remaining estimate to zero in terminal states', async () => {
+    (useJobEvents as jest.Mock).mockReturnValue({
+      events: [
+        {
+          type: 'job:started',
+          state: 'running',
+          totalPoints: 5,
+          lastPointProcessed: 0,
+          timestamp: '2026-03-18T10:00:00.000Z',
+        },
+        {
+          type: 'job:completed',
+          state: 'completed',
+          totalPoints: 5,
+          lastPointProcessed: 5,
+          timestamp: '2026-03-18T10:00:18.000Z',
+        },
+      ],
+      error: null,
+    });
+
+    const { result } = renderHook(() => useProgressData('job-done'));
+
+    await waitFor(() => {
+      expect(result.current.progressState?.scan.state).toBe('completed');
+    });
+
+    expect(result.current.progressState?.scan.elapsedSeconds).toBe(18);
+    expect(result.current.progressState?.scan.estimatedRemainingSeconds).toBe(0);
+  });
+
   test('uses mock progress state when mock mode is enabled', async () => {
     (useMockMode as jest.Mock).mockReturnValue([true, jest.fn()]);
 
-    const { result } = renderHook(() => useProgressData('job-3'));
+    const { result } = renderHook(() => useProgressData(null));
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -180,10 +481,13 @@ describe('useProgressData', () => {
       expect.objectContaining({
         point: 'WP-4',
         intensity: 0.87,
+        rawScanResult: { evaluation: { intensityTopAverage: 0.87 } },
         status: 'complete',
       }),
     );
     expect(result.current.error).toBeNull();
+    expect(result.current.activeJobId).toBeNull();
+    expect(fetchJobs).not.toHaveBeenCalled();
     expect(useJobEvents).toHaveBeenCalledWith(null, true);
   });
 });

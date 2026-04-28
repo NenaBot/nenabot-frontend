@@ -8,6 +8,7 @@ import { useRoutePreviewDrag } from './routePreview/hooks/useRoutePreviewDrag';
 interface RoutePreviewPanelProps {
   title?: string;
   imageUrl?: string | null;
+  imageAspectRatio?: number;
   routePath?: RoutePreviewCoordinate[];
   measurementPoints?: RoutePreviewPoint[];
   selectedPointId?: string | null;
@@ -25,6 +26,7 @@ export type { RoutePreviewCoordinate, RoutePreviewPoint };
 export function RoutePreviewPanel({
   title = 'Scan Area Preview',
   imageUrl,
+  imageAspectRatio,
   routePath = [],
   measurementPoints = [],
   selectedPointId = null,
@@ -40,6 +42,8 @@ export function RoutePreviewPanel({
   const drag = useRoutePreviewDrag(enablePointDragging, onPointDragEnd);
   const hasOverlayData = routePath.length > 0 || measurementPoints.length > 0;
   const showGridOverlay = !imageUrl;
+  const viewportAspectRatio = imageAspectRatio && imageAspectRatio > 0 ? imageAspectRatio : 16 / 9;
+  const imageTransform = `scale(${camera.zoom}) translate(${-camera.panX}%, ${-camera.panY}%)`;
 
   const handleSvgMouseDown = (event: React.MouseEvent<SVGSVGElement>) => {
     // Start panning only from the empty canvas area, not from point elements.
@@ -72,12 +76,19 @@ export function RoutePreviewPanel({
         onZoomOut={camera.zoomOut}
       />
 
-      <div className="w-full aspect-video matrix-canvas relative overflow-hidden">
+      <div
+        className="w-full matrix-canvas relative overflow-hidden"
+        style={{ aspectRatio: viewportAspectRatio }}
+      >
         {imageUrl ? (
           <img
             src={imageUrl}
             alt="Scan area preview"
             className="absolute inset-0 w-full h-full object-contain"
+            style={{
+              transformOrigin: 'top left',
+              transform: imageTransform,
+            }}
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -95,6 +106,7 @@ export function RoutePreviewPanel({
         <RoutePreviewSvgLayer
           routePath={routePath}
           measurementPoints={measurementPoints}
+          viewportAspectRatio={viewportAspectRatio}
           selectedPointId={selectedPointId}
           criticalPointIds={criticalPointIds}
           cornerPointIds={cornerPointIds}

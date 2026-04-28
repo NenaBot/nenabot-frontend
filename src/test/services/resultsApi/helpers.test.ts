@@ -2,6 +2,7 @@ import {
   normalizeAxisByBounds,
   normalizeJobSummary,
   normalizeJobToResult,
+  readImageDimensionsFromBlob,
   toMeasurementValue,
 } from '../../../services/resultsApi/helpers';
 import { getJobImageUrl, type MeasurementApiResponse } from '../../../services/apiCalls';
@@ -9,6 +10,34 @@ import { JobApiResponse } from '../../../services/apiCalls';
 
 jest.mock('../../../services/apiCalls');
 const getJobImageUrlMocked = getJobImageUrl as jest.MockedFunction<typeof getJobImageUrl>;
+
+function makeJpegBytes(width: number, height: number): Uint8Array {
+  return new Uint8Array([
+    0xff,
+    0xd8,
+    0xff,
+    0xc0,
+    0x00,
+    0x11,
+    0x08,
+    (height >> 8) & 0xff,
+    height & 0xff,
+    (width >> 8) & 0xff,
+    width & 0xff,
+    0x03,
+    0x01,
+    0x11,
+    0x00,
+    0x02,
+    0x11,
+    0x00,
+    0x03,
+    0x11,
+    0x00,
+    0xff,
+    0xd9,
+  ]);
+}
 
 describe('resultsApiHelpers', () => {
   beforeEach(() => {
@@ -35,10 +64,22 @@ describe('resultsApiHelpers', () => {
     expect(normalizeAxisByBounds(Number.NaN, 10)).toBe(0);
   });
 
-  test('toMeasurementValue selects first numeric candidate', () => {
-    expect(toMeasurementValue({ measuredValue: 3 })).toBe(3);
-    expect(toMeasurementValue({ measuredValue: 'x', value: 4 })).toBe(4);
-    expect(toMeasurementValue({ intensity: 5 })).toBe(5);
+  test('toMeasurementValue reads evaluation intensity fields and top arrays', () => {
+    expect(toMeasurementValue({ evaluation: { intensityTopAverage: 3 } })).toBe(3);
+    expect(toMeasurementValue({ evaluation: { intensity_average: 4 } })).toBe(4);
+    expect(toMeasurementValue({ evaluation: { intensityTop: [10, 20, 30] } })).toBe(20);
+    expect(
+      toMeasurementValue({
+        body: {
+          measurementData: {
+            intensityTop: [40, 10, 20],
+          },
+        },
+      }),
+    ).toBeCloseTo((40 + 20 + 10) / 3, 6);
+    expect(toMeasurementValue({ measuredValue: 9 })).toBe(0);
+    expect(toMeasurementValue({ value: 4 })).toBe(0);
+    expect(toMeasurementValue({ intensity: 5 })).toBe(0);
     expect(toMeasurementValue({})).toBe(0);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect(toMeasurementValue(null as any)).toBe(0);
@@ -79,7 +120,7 @@ describe('resultsApiHelpers', () => {
           pixelX: 5,
           pixelY: 10,
           waypointIndex: 2,
-          scanResult: { value: 7 },
+          scanResult: { evaluation: { intensity_average: 7 } },
           simulated: true,
           timestamp: 't1',
           waypoint: { x: 1, y: 1 },
@@ -87,7 +128,7 @@ describe('resultsApiHelpers', () => {
         {
           pixelX: 0,
           pixelY: 0,
-          scanResult: { measuredValue: 1 },
+          scanResult: { evaluation: { intensity_average: 1 } },
           waypointIndex: 1,
           timestamp: 't2',
           waypoint: { x: 0, y: 0 },
@@ -106,26 +147,54 @@ describe('resultsApiHelpers', () => {
     expect(result.measurementPoints[0]).toMatchObject({
       waypointIndex: 2,
       measuredValue: 7,
+      rawScanResult: { evaluation: { intensity_average: 7 } },
       comment: 'Simulated',
     });
-    expect(result.routePath).toEqual([
-      { x: 1, y: 1 },
-      { x: 0, y: 0 },
-    ]);
+    expect(result.routePath).toHaveLength(2);
+    expect(result.routePath[0].x).toBeCloseTo(5 / 1280, 6);
+    expect(result.routePath[0].y).toBeCloseTo(10 / 720, 6);
+    expect(result.routePath[1]).toEqual({ x: 0, y: 0 });
+  });
+
+  test('normalizeJobToResult uses stored image dimensions for pixel normalization', async () => {
+    getJobImageUrlMocked.mockReturnValue('http://example/job/image');
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      blob: jest.fn().mockResolvedValue(new Blob([makeJpegBytes(1920, 1080)])),
+    });
+
+    const result = await normalizeJobToResult({
+      id: 'job-hires',
+      measurements: [
+        {
+          pixelX: 960,
+          pixelY: 540,
+          waypointIndex: 0,
+          waypoint: { x: 0, y: 0 },
+        },
+      ],
+    } as JobApiResponse);
+
+    expect(result.imageWidth).toBe(1920);
+    expect(result.imageHeight).toBe(1080);
+    expect(result.measurementPoints[0].x).toBeCloseTo(0.5, 6);
+    expect(result.measurementPoints[0].y).toBeCloseTo(0.5, 6);
+  });
+
+  test('readImageDimensionsFromBlob parses JPEG dimensions', async () => {
+    await expect(
+      readImageDimensionsFromBlob(new Blob([makeJpegBytes(1600, 1200)])),
+    ).resolves.toEqual({
+      width: 1600,
+      height: 1200,
+    });
   });
 
   test('normalizeJobToResult uses image dimensions when available for normalization', async () => {
     getJobImageUrlMocked.mockReturnValue('http://example/job/image-dimensions');
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
-      blob: jest.fn().mockResolvedValue(new Blob(['data'])),
-    });
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (global as any).createImageBitmap = jest.fn().mockResolvedValue({
-      width: 1000,
-      height: 1000,
-      close: jest.fn(),
+      blob: jest.fn().mockResolvedValue(new Blob([makeJpegBytes(1000, 1000)])),
     });
 
     const job: JobApiResponse = {
@@ -146,21 +215,20 @@ describe('resultsApiHelpers', () => {
 
     const result = await normalizeJobToResult(job);
 
-    expect(result.measurementPoints[0].x).toBeCloseTo(100 / 999, 4);
-    expect(result.measurementPoints[0].y).toBeCloseTo(100 / 999, 4);
-    expect(result.measurementPoints[1].x).toBeCloseTo(200 / 999, 4);
-    expect(result.measurementPoints[1].y).toBeCloseTo(200 / 999, 4);
+    expect(result.imageWidth).toBe(1000);
+    expect(result.imageHeight).toBe(1000);
+    expect(result.measurementPoints[0].x).toBeCloseTo(100 / 1000, 4);
+    expect(result.measurementPoints[0].y).toBeCloseTo(100 / 1000, 4);
+    expect(result.measurementPoints[1].x).toBeCloseTo(200 / 1000, 4);
+    expect(result.measurementPoints[1].y).toBeCloseTo(200 / 1000, 4);
   });
 
-  test('normalizeJobToResult falls back to min-max normalization when image dimensions are unavailable', async () => {
+  test('normalizeJobToResult falls back to default dimensions when image unavailable', async () => {
     getJobImageUrlMocked.mockReturnValue('http://example/job/image-fallback');
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       blob: jest.fn().mockResolvedValue(new Blob(['data'])),
     });
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (global as any).createImageBitmap = undefined;
 
     const job: JobApiResponse = {
       id: 'job-fallback',
@@ -180,9 +248,11 @@ describe('resultsApiHelpers', () => {
 
     const result = await normalizeJobToResult(job);
 
-    expect(result.measurementPoints[0].x).toBeCloseTo(0, 4);
-    expect(result.measurementPoints[0].y).toBeCloseTo(0, 4);
-    expect(result.measurementPoints[1].x).toBeCloseTo(1, 4);
-    expect(result.measurementPoints[1].y).toBeCloseTo(1, 4);
+    expect(result.imageWidth).toBe(1280);
+    expect(result.imageHeight).toBe(720);
+    expect(result.measurementPoints[0].x).toBeCloseTo(100 / 1280, 4);
+    expect(result.measurementPoints[0].y).toBeCloseTo(100 / 720, 4);
+    expect(result.measurementPoints[1].x).toBeCloseTo(200 / 1280, 4);
+    expect(result.measurementPoints[1].y).toBeCloseTo(200 / 720, 4);
   });
 });

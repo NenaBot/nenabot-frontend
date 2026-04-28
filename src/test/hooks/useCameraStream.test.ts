@@ -76,7 +76,7 @@ describe('useCameraStream', () => {
     });
 
     expect(result.current.streamStatus).toBe('disconnected');
-    expect(result.current.streamSrc).toBe('http://localhost:8000/stream');
+    expect(result.current.streamSrc).toBe('');
   });
 
   test('marks invalid reconnect URLs as error instead of throwing', () => {

@@ -1,9 +1,13 @@
 import { Play, RotateCcw } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { RoutePreviewPanel } from '../shared/RoutePreviewPanel';
 import { useRoutePlan } from '../../hooks/useRoutePlan';
 import { ProfileModel } from '../../types/profile.types';
-import { getMeasurementDensityValidationError } from '../../types/route.types';
+import {
+  estimateRouteDurationSeconds,
+  getMeasurementDensityValidationError,
+} from '../../types/route.types';
+import { RouteEstimateSummary } from './route/RouteEstimateSummary';
 import { RouteSettingsCard } from './route/RouteSettingsCard';
 
 interface RouteTabProps {
@@ -27,6 +31,13 @@ export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: Rou
   });
 
   const imageUrl = state.imageBase64 ? `data:image/jpeg;base64,${state.imageBase64}` : null;
+  const imageAspectRatio =
+    typeof state.imageWidth === 'number' &&
+    typeof state.imageHeight === 'number' &&
+    state.imageWidth > 0 &&
+    state.imageHeight > 0
+      ? state.imageWidth / state.imageHeight
+      : undefined;
   const [measurementDensityInput, setMeasurementDensityInput] = useState(
     state.measurementDensity.toString(),
   );
@@ -47,34 +58,16 @@ export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: Rou
     !state.isInitializing &&
     !state.isPopulating;
   const isStartDisabled = !isRouteReady || state.isCreatingJob || !selectedProfile;
+  const isPopulateDisabled =
+    !selectedProfile ||
+    state.isInitializing ||
+    state.isPopulating ||
+    Boolean(measurementDensityError);
 
   useEffect(() => {
     setMeasurementDensityInput(state.measurementDensity.toString());
     setPendingMeasurementDensity(state.measurementDensity);
   }, [state.measurementDensity]);
-
-  useEffect(() => {
-    if (measurementDensityError) {
-      return;
-    }
-
-    if (pendingMeasurementDensity === state.measurementDensity) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      setMeasurementDensity(pendingMeasurementDensity);
-    }, 300);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [
-    measurementDensityError,
-    pendingMeasurementDensity,
-    setMeasurementDensity,
-    state.measurementDensity,
-  ]);
 
   const handleMeasurementDensityChange = (nextValue: string) => {
     setMeasurementDensityInput(nextValue);
@@ -89,6 +82,14 @@ export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: Rou
     setPendingMeasurementDensity(Number(nextValue));
   };
 
+  const handlePopulatePath = () => {
+    if (measurementDensityError) {
+      return;
+    }
+
+    setMeasurementDensity(pendingMeasurementDensity);
+  };
+
   const handleCornerPointDragEnd = (pointId: string, normalizedX: number, normalizedY: number) => {
     const spanX = Math.max(preview.bounds.maxX - preview.bounds.minX, 1);
     const spanY = Math.max(preview.bounds.maxY - preview.bounds.minY, 1);
@@ -99,6 +100,24 @@ export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: Rou
       preview.bounds.minY + normalizedY * spanY,
     );
   };
+  const routeEstimate = useMemo(() => {
+    const estimatedPoints =
+      state.populatedPath.length > 0
+        ? state.populatedPath.length
+        : state.cornerPoints.length > 0
+          ? state.cornerPoints.length
+          : 0;
+
+    return {
+      measurementPoints: estimatedPoints,
+      estimatedSeconds: estimateRouteDurationSeconds(estimatedPoints),
+    };
+  }, [state.cornerPoints.length, state.populatedPath.length]);
+  const routeStatusMessage = state.isInitializing
+    ? 'Detecting initial path...'
+    : state.isPopulating
+      ? 'Updating populated path...'
+      : 'Route preview up to date.';
 
   return (
     <div className="space-y-6">
@@ -141,30 +160,31 @@ export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: Rou
             measurementDensityError={measurementDensityError}
             dryRun={state.dryRun}
             isLoading={state.isInitializing || state.isPopulating}
+            isPopulateDisabled={isPopulateDisabled}
             onDryRunChange={setDryRun}
             onMeasurementDensityInputChange={handleMeasurementDensityChange}
+            onPopulatePath={handlePopulatePath}
           />
-
-          <div className="mt-4 text-xs text-[var(--md-sys-color-on-surface-variant)] space-y-1">
-            <p>Profile: {selectedProfile?.name ?? '-'}</p>
-            <p>Work Z: {selectedProfile?.settings.workZ ?? 0}</p>
-            <p>Work R: {selectedProfile?.settings.workR ?? 0}</p>
-            <p>Corner points: {state.cornerPoints.length}</p>
-            <p>Measurement points: {state.measurementPoints.length}</p>
-            <p>
-              {state.isInitializing
-                ? 'Detecting initial path...'
-                : state.isPopulating
-                  ? 'Updating populated path...'
-                  : 'Route preview up to date.'}
-            </p>
-          </div>
+          <RouteEstimateSummary
+            estimate={routeEstimate}
+            profileName={selectedProfile?.name ?? '-'}
+            workZ={selectedProfile?.settings.workZ ?? 0}
+            workR={selectedProfile?.settings.workR ?? 0}
+            threshold={selectedProfile?.settings.threshold ?? 0}
+            cornerPoints={state.cornerPoints.length}
+            measurementPoints={state.measurementPoints.length}
+            detectedBatteries={detectedBatteries}
+            checkedWaypoints={checkedWaypoints}
+            statusMessage={routeStatusMessage}
+            isBusy={state.isInitializing || state.isPopulating}
+          />
         </div>
 
         <div className="lg:col-span-2">
           <RoutePreviewPanel
             title="Detected Route Preview"
             imageUrl={imageUrl}
+            imageAspectRatio={imageAspectRatio}
             routePath={preview.routePath}
             measurementPoints={preview.points}
             cornerPointIds={preview.cornerPointIds}
@@ -184,11 +204,6 @@ export function RouteTab({ selectedProfile, onJobCreated, isActive = true }: Rou
             </span>
           </div>
         </div>
-      </div>
-
-      <div className="flex items-center justify-between text-sm text-[var(--md-sys-color-on-surface-variant)] border border-[var(--md-sys-color-outline-variant)] rounded-lg px-3 py-2">
-        <span>Detected batteries: {detectedBatteries}</span>
-        <span>Checked waypoints: {checkedWaypoints}</span>
       </div>
 
       <button

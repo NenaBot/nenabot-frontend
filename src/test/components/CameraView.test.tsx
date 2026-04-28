@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { CameraView } from '../../components/CameraView';
 
 jest.mock('../../services/apiCalls', () => ({
@@ -74,5 +74,32 @@ describe('CameraView', () => {
 
     expect(getStreamUrl).not.toHaveBeenCalled();
     expect(screen.queryByAltText('Live camera stream')).not.toBeInTheDocument();
+  });
+
+  test('stops rendering stream image when page becomes hidden', async () => {
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      value: 'visible',
+    });
+
+    render(<CameraView />);
+    expect(screen.getByAltText('Live camera stream')).toBeInTheDocument();
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      value: 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByAltText('Live camera stream')).not.toBeInTheDocument();
+    });
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      value: 'visible',
+    });
   });
 });
