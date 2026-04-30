@@ -1,3 +1,9 @@
+/**
+ * Type definitions for profile settings and scanning parameters.
+ *
+ * Defines interfaces for user profiles containing scanning preferences,
+ * measurement parameters, and hardware configuration.
+ */
 export interface ProfileSettings {
   workZ: number;
   workR: number;

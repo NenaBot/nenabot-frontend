@@ -1,3 +1,9 @@
+/**
+ * Type definitions for route planning and waypoint management.
+ *
+ * Defines interfaces for route settings, coordinates, and waypoint data
+ * used in route planning and preview functionality.
+ */
 export interface RouteSettings {
   alwaysScanOnWaypoints: boolean;
   pointsPerCm: number;

@@ -1,3 +1,9 @@
+/**
+ * API call wrappers and type definitions for backend service integration.
+ *
+ * Provides functions for communicating with the NenaBot backend API including
+ * job management, calibration, route planning, camera streaming, and result retrieval.
+ */
 import { apiClient } from './apiClient';
 
 function logApiCall(event: string, details: Record<string, unknown>): void {

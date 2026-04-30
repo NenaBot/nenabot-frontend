@@ -1,3 +1,8 @@
+/**
+ * Type definitions for hardware status and device information.
+ *
+ * Defines types for hardware component states and status reporting.
+ */
 export type HardwareStatus = 'online' | 'offline' | 'error' | 'warning' | 'idle';
 
 export type HardwareDeviceType = 'ionvision' | 'camera' | 'robot';

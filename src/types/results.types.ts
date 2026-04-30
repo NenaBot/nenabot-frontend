@@ -1,3 +1,9 @@
+/**
+ * Type definitions for scan results and measurement data.
+ *
+ * Defines interfaces for scan coordinates, measurement points, and scan result objects
+ * displayed in the Results tab.
+ */
 export interface ScanRouteCoordinate {
   x: number;
   y: number;
