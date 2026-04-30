@@ -38,7 +38,9 @@ nenabot-ui/
 |-- tests-ui/
 |-- .github/workflows/
 |   |-- unit-tests.yml
-|   `-- ui-tests.yml
+|   |-- ui-tests.yml
+|   |-- linter.yml
+|   `-- Build.yml
 |-- build/
 |-- DEVELOPMENT.md
 `-- package.json
@@ -56,27 +58,38 @@ nenabot-ui/
     - Development fallback data in `mocks/`
 - Keep side effects in hooks: data polling/fetching behavior belongs in custom hooks (for example `useHardwareData`).
 - Test conventions:
-    - Unit tests in `src/test/` (organized by area such as `components/`, `hooks/`, `services/`)
-    - UI/E2E tests in `tests-ui/`
+    - Colocated unit tests are supported and common under `__tests__/` folders near implementation files.
+    - Centralized unit tests also exist in `src/test/` (organized by area such as `components/`, `hooks/`, `services/`).
+    - Jest discovers tests via both patterns: `src/**/__tests__/**/*.{test,spec}.{ts,tsx}` and `src/**/*.{test,spec}.{ts,tsx}`.
+    - UI/E2E tests are in `tests-ui/`.
 
 ## CI Workflows
 
-Two independent workflows run in GitHub Actions:
+Four developer-facing workflows run in GitHub Actions:
 
 - Unit tests: `.github/workflows/unit-tests.yml`
     - Installs dependencies with `npm ci`
-    - Runs `npm test`
+    - Runs Jest unit tests with coverage output
+    - Uploads coverage HTML report artifacts
 - UI tests: `.github/workflows/ui-tests.yml`
     - Installs dependencies with `npm ci`
     - Installs Playwright browsers
     - Runs `npm run test:ui`
     - Uploads Playwright report artifacts
+- Lint: `.github/workflows/linter.yml`
+    - Installs dependencies with `npm ci`
+    - Runs `npm run lint`
+    - Checks Prettier formatting with `npx prettier --check`
+- Build: `.github/workflows/Build.yml`
+    - Installs dependencies
+    - Runs TypeScript type check (`npx tsc --noEmit`)
+    - Runs `npm run build`
 
 Why this split exists:
 
-- Clear PR checks (`unit-tests` and `ui-tests` appear separately)
-- Faster diagnosis when only one test layer fails
-- Easier branch protection rules per test type
+- Clear PR checks (`unit-tests`, `ui-tests`, `lint`, and `build` appear separately)
+- Faster diagnosis when only one validation layer fails
+- Easier branch protection rules per check type
 
 ## Setup And Run Instructions
 
@@ -131,8 +144,15 @@ Output is generated in `build/`.
 
 ```bash
 npm run lint
+npm run build
 npm run test
 npm run test:ui
+```
+
+Recommended strict validation before opening or updating a PR:
+
+```bash
+npm run lint && npm run build && npm test -- --runInBand
 ```
 
 Optional Playwright debug mode:
