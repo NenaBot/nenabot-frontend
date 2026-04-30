@@ -63,6 +63,31 @@ nenabot-ui/
     - Jest discovers tests via both patterns: `src/**/__tests__/**/*.{test,spec}.{ts,tsx}` and `src/**/*.{test,spec}.{ts,tsx}`.
     - UI/E2E tests are in `tests-ui/`.
 
+- Component patterns and principles:
+    - Prefer small, focused components that do one thing; prefer composition over large monolithic components.
+    - Distinguish presentational (pure) components from stateful/container components where appropriate.
+    - Keep domain and side-effect logic out of presentation layers — use hooks (`src/hooks/`) and services (`src/services/`) for data fetching, transformations, and API interaction.
+    - Favor props-down / events-up data flow: pass data and callbacks via props; lift state when sibling coordination is needed.
+    - Use TypeScript interfaces/types in `src/types/` to document component props and domain shapes.
+    - Styling is done with Tailwind utility classes and project globals in `src/styles/globals.css`.
+    - Aim for accessible markup: use semantic elements and ARIA attributes for interactive widgets and modals.
+    - Write colocated tests for components to keep behavior and expectations near implementation.
+
+## React Components
+
+- Overview:
+    - The UI is composed from small, focused React components grouped by feature under `src/components/`.
+    - Tab views (`src/components/tabs/`) implement the main workflow screens and are composed into the top-level app layout.
+    - Shared UI (`src/components/shared/`) contains reusable widgets like `RoutePreviewPanel`, `StatusCards`, and other building blocks used across tabs.
+    - Modals and overlays are implemented under `src/components/modals/` and are typically controlled by parent components via props/state.
+
+- How they work together:
+    - The app shell (top-level routes / tab navigation) composes tab components and passes down required data via props.
+    - Data fetching and subscriptions are handled in hooks (`src/hooks/`) and exposed to components as simple interfaces (data + callbacks) to keep components declarative.
+    - Services (`src/services/`) provide API clients and helpers; components remain focused on rendering and user interaction.
+    - Communication between sibling components is achieved by lifting state into shared parents or via contextual providers when broader scope is required.
+    - Tests and Storybook-style examples (if present) should exercise components in isolation and composed states.
+
 ## CI Workflows
 
 Four developer-facing workflows run in GitHub Actions:
